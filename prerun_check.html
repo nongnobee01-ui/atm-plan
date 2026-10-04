@@ -1,0 +1,387 @@
+<title>เช็กก่อนวิ่ง</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* layout: single-column form on top, result card below, collapsible 7-day log at bottom */
+:root{
+  --bg:#0f1511;
+  --surface:#171f19;
+  --surface-2:#1e2a21;
+  --line:#2b3a2f;
+  --fg:#eef3ee;
+  --muted:#9fb3a3;
+  --accent:#ff6a3d;
+  --ok-bg:#163523; --ok-fg:#7fe3a3; --ok-line:#2a5a3c;
+  --warn-bg:#3a2f12; --warn-fg:#f0c04b; --warn-line:#5c4a1a;
+  --bad-bg:#3a1414; --bad-fg:#ff8a7a; --bad-line:#5c2222;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f6f3;
+    --surface:#ffffff;
+    --surface-2:#eef2ec;
+    --line:#dbe3d7;
+    --fg:#141a15;
+    --muted:#5c6b60;
+    --accent:#e2552a;
+    --ok-bg:#e4f5e9; --ok-fg:#1c7a42; --ok-line:#bfe6cc;
+    --warn-bg:#fcf1d8; --warn-fg:#8a6412; --warn-line:#f0dba4;
+    --bad-bg:#fbe3e0; --bad-fg:#a32f22; --bad-line:#f2bdb6;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f4f6f3; --surface:#ffffff; --surface-2:#eef2ec; --line:#dbe3d7;
+  --fg:#141a15; --muted:#5c6b60; --accent:#e2552a;
+  --ok-bg:#e4f5e9; --ok-fg:#1c7a42; --ok-line:#bfe6cc;
+  --warn-bg:#fcf1d8; --warn-fg:#8a6412; --warn-line:#f0dba4;
+  --bad-bg:#fbe3e0; --bad-fg:#a32f22; --bad-line:#f2bdb6;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:"IBM Plex Sans Thai","IBM Plex Mono",ui-sans-serif,system-ui,sans-serif;
+  padding:24px 16px calc(40px + env(safe-area-inset-bottom,0px));
+  display:flex; justify-content:center;
+}
+.wrap{width:100%; max-width:480px; display:flex; flex-direction:column; gap:18px}
+
+.header{display:flex; flex-direction:column; gap:4px; padding-top:4px}
+.eyebrow{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:500}
+h1{font-family:"Space Grotesk",sans-serif; font-size:26px; font-weight:700; margin:0; text-wrap:balance; line-height:1.15}
+.sub{color:var(--muted); font-size:13.5px; line-height:1.5; margin:0}
+
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:14px;
+  padding:18px; display:flex; flex-direction:column; gap:16px;
+}
+.field{display:flex; flex-direction:column; gap:6px}
+.field label{font-size:12.5px; color:var(--muted); display:flex; justify-content:space-between; gap:8px}
+.field label .val{font-family:"IBM Plex Mono",monospace; color:var(--fg); font-weight:500; font-variant-numeric:tabular-nums}
+input[type="number"]{
+  background:var(--surface-2); border:1px solid var(--line); border-radius:9px;
+  color:var(--fg); font-size:15px; padding:9px 10px; font-family:"IBM Plex Mono",monospace;
+  font-variant-numeric:tabular-nums; width:100%;
+}
+input[type="number"]:focus{outline:2px solid var(--accent); outline-offset:1px}
+input[type="range"]{width:100%; accent-color:var(--accent)}
+
+.seg{display:flex; gap:6px; background:var(--surface-2); border-radius:9px; padding:4px; border:1px solid var(--line)}
+.seg button{
+  flex:1; border:none; background:transparent; color:var(--muted); padding:8px 6px;
+  border-radius:7px; font-family:inherit; font-size:13px; font-weight:500; cursor:pointer;
+  transition:background .15s, color .15s;
+}
+.seg button[aria-pressed="true"]{background:var(--accent); color:#1a0e08; font-weight:600}
+.seg button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+.stepper{display:flex; align-items:center; gap:10px}
+.stepper button{
+  width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2);
+  color:var(--fg); font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-family:"IBM Plex Mono",monospace;
+}
+.stepper button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.stepper .count{flex:1; text-align:center; font-family:"IBM Plex Mono",monospace; font-size:15px; font-variant-numeric:tabular-nums}
+
+.result{
+  border-radius:14px; border:1px solid var(--line); padding:18px; display:flex; flex-direction:column; gap:10px;
+  transition:background .2s, border-color .2s;
+}
+.result .tag{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+  font-weight:600; width:fit-content; padding:3px 9px; border-radius:999px;
+}
+.result h2{font-family:"Space Grotesk",sans-serif; font-size:19px; margin:0; line-height:1.3; text-wrap:balance}
+.result p{margin:0; font-size:13.5px; line-height:1.55; color:var(--fg); opacity:.92}
+.result .note{font-size:12px; color:var(--muted); border-top:1px dashed var(--line); padding-top:10px; margin-top:2px}
+
+.state-ok{background:var(--ok-bg); border-color:var(--ok-line)}
+.state-ok .tag{background:var(--ok-line); color:var(--ok-fg)}
+.state-warn{background:var(--warn-bg); border-color:var(--warn-line)}
+.state-warn .tag{background:var(--warn-line); color:var(--warn-fg)}
+.state-bad{background:var(--bad-bg); border-color:var(--bad-line)}
+.state-bad .tag{background:var(--bad-line); color:var(--bad-fg)}
+
+.logbtn{
+  background:none; border:1px solid var(--line); color:var(--muted); font-family:inherit;
+  font-size:12.5px; padding:9px 12px; border-radius:9px; cursor:pointer; text-align:left;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.logbtn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.loglist{display:flex; flex-direction:column; gap:0; border:1px solid var(--line); border-radius:12px; overflow:hidden}
+.logrow{
+  display:grid; grid-template-columns:72px 1fr auto; gap:10px; align-items:center;
+  padding:10px 12px; border-bottom:1px solid var(--line); font-size:12.5px;
+}
+.logrow:last-child{border-bottom:none}
+.logrow .d{color:var(--muted); font-family:"IBM Plex Mono",monospace; font-size:11.5px}
+.logrow .dot{width:9px; height:9px; border-radius:50%; flex-shrink:0}
+.logrow .lbl{display:flex; align-items:center; gap:7px; min-width:0}
+.logrow .lbl span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.empty{color:var(--muted); font-size:12.5px; padding:14px; text-align:center}
+
+footer{text-align:center; color:var(--muted); font-size:11px; padding-top:6px}
+</style>
+
+<div class="wrap">
+  <div class="header">
+    <span class="eyebrow">Auto-regulation</span>
+    <h1>เช็กก่อนวิ่ง</h1>
+    <p class="sub">กรอกค่าเช้านี้ แล้วระบบจะปรับคำแนะนำของวันให้ทันที — ใช้ก่อนวันที่มี Long run หรือ MP ทุกครั้ง</p>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label>HRV เฉลี่ย 7 วัน (baseline) <span class="val" id="hrvBaseVal">55 ms</span></label>
+      <input type="range" id="hrvBase" min="30" max="90" step="1" value="55">
+    </div>
+    <div class="field">
+      <label>HRV เช้านี้ <span class="val" id="hrvTodayVal">48 ms</span></label>
+      <input type="range" id="hrvToday" min="20" max="100" step="1" value="48">
+    </div>
+    <div class="field">
+      <label>จำนวนวันติดกันที่ HRV ไม่สมดุล (รวมเช้านี้)</label>
+      <div class="stepper">
+        <button type="button" id="dayMinus" aria-label="ลด">−</button>
+        <div class="count" id="dayCount">1</div>
+        <button type="button" id="dayPlus" aria-label="เพิ่ม">+</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>คะแนนนอนหลับ <span class="val" id="sleepVal">79</span></label>
+      <input type="range" id="sleep" min="0" max="100" step="1" value="79">
+    </div>
+    <div class="field">
+      <label>Resting HR ปกติ (baseline) <span class="val" id="rhrBaseVal">55 bpm</span></label>
+      <input type="range" id="rhrBase" min="35" max="80" step="1" value="55">
+    </div>
+    <div class="field">
+      <label>Resting HR เช้านี้ <span class="val" id="rhrTodayVal">53 bpm</span></label>
+      <input type="range" id="rhrToday" min="35" max="90" step="1" value="53">
+    </div>
+    <div class="field">
+      <label>วันนี้มีแผนอะไร</label>
+      <div class="seg" id="dayType">
+        <button type="button" data-v="mp" aria-pressed="true">Long run + MP</button>
+        <button type="button" data-v="easy" aria-pressed="false">Easy / SCR</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="result" id="result">
+    <span class="tag" id="resultTag">—</span>
+    <h2 id="resultTitle">กำลังคำนวณ...</h2>
+    <p id="resultBody"></p>
+    <p class="note" id="resultNote"></p>
+  </div>
+
+  <button class="logbtn" id="saveBtn">
+    <span>บันทึกเข้าประวัติของเครื่องนี้</span>
+    <span>＋</span>
+  </button>
+
+  <div class="field">
+    <label style="margin-bottom:2px">ประวัติ 7 วันล่าสุด (เครื่องนี้)</label>
+    <div class="loglist" id="logList"></div>
+  </div>
+
+  <footer>ข้อมูลเก็บไว้ในเบราว์เซอร์นี้เท่านั้น ไม่ซิงก์ข้ามอุปกรณ์</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var els = {
+    hrvBase: document.getElementById("hrvBase"),
+    hrvBaseVal: document.getElementById("hrvBaseVal"),
+    hrvToday: document.getElementById("hrvToday"),
+    hrvTodayVal: document.getElementById("hrvTodayVal"),
+    dayCount: document.getElementById("dayCount"),
+    dayMinus: document.getElementById("dayMinus"),
+    dayPlus: document.getElementById("dayPlus"),
+    sleep: document.getElementById("sleep"),
+    sleepVal: document.getElementById("sleepVal"),
+    rhrBase: document.getElementById("rhrBase"),
+    rhrBaseVal: document.getElementById("rhrBaseVal"),
+    rhrToday: document.getElementById("rhrToday"),
+    rhrTodayVal: document.getElementById("rhrTodayVal"),
+    dayType: document.getElementById("dayType"),
+    result: document.getElementById("result"),
+    resultTag: document.getElementById("resultTag"),
+    resultTitle: document.getElementById("resultTitle"),
+    resultBody: document.getElementById("resultBody"),
+    resultNote: document.getElementById("resultNote"),
+    saveBtn: document.getElementById("saveBtn"),
+    logList: document.getElementById("logList")
+  };
+
+  var state = { dayCount: 1, dayType: "mp" };
+
+  function clampDay(n){ return Math.max(0, Math.min(14, n)); }
+
+  function isImbalanced(today, base){
+    return today <= base * 0.9; // >=10% below 7-day baseline reads as "ไม่สมดุล"
+  }
+
+  function computeResult(){
+    var hrvBase = Number(els.hrvBase.value);
+    var hrvToday = Number(els.hrvToday.value);
+    var sleep = Number(els.sleep.value);
+    var rhrBase = Number(els.rhrBase.value);
+    var rhrToday = Number(els.rhrToday.value);
+    var days = state.dayCount;
+    var dayType = state.dayType;
+
+    var imbalanced = isImbalanced(hrvToday, hrvBase);
+    var rhrElevated = rhrToday >= rhrBase + 3;
+    var sleepLow = sleep < 75;
+
+    var level, tag, title, body, note;
+
+    if (!imbalanced && !sleepLow && days === 0) {
+      level = "ok"; tag = "พร้อมเต็มที่";
+      title = dayType === "mp" ? "ซ้อมเต็มตามแผน รวม MP ได้" : "ซ้อม Easy/SCR ตามแผนได้ปกติ";
+      body = "HRV สมดุล นอนหลับ " + sleep + " คะแนน และไม่มีสัญญาณล้าสะสม — ร่างกายพร้อมรับโหลดตามแผน";
+      note = "เช็กซ้ำพรุ่งนี้เช้าก่อนออกวิ่งเหมือนเดิม";
+    } else if (imbalanced && days <= 1 && !(rhrElevated && days >= 1)) {
+      level = "warn"; tag = "ระวัง — วันเดียว";
+      title = dayType === "mp" ? "ตัด MP ออก เหลือแค่ Easy/SCR" : "วิ่ง Easy/SCR ได้ตามแผน แต่ลดโบนัสโหลดถ้ามี";
+      body = "HRV เช้านี้ (" + hrvToday + " ms) ต่ำกว่าค่าเฉลี่ย 7 วัน (" + hrvBase + " ms) เกิน 10% — สัญญาณเตือนระยะสั้น ยังไม่ต้องหยุด แต่ลดความหนักของวันนี้ลง";
+      note = "ถ้าพรุ่งนี้ HRV กลับมาสมดุล กลับไปตามแผนเดิมได้เลย";
+    } else if (imbalanced && days >= 2) {
+      level = "bad"; tag = "พัก / ลดโหลด";
+      title = rhrElevated ? "สลับเป็นวันพัก หรือลดระยะทั้งหมดลง" : "ลดระยะทั้งหมดลง ไม่ใช่แค่ตัด MP";
+      body = "HRV ไม่สมดุลติดกัน " + days + " วัน" + (rhrElevated ? " และ Resting HR สูงกว่าปกติ (" + rhrToday + " เทียบ " + rhrBase + " bpm)" : "") + " — เป็นสัญญาณล้าสะสมเรื้อรัง ฝืนซ้อมมีโอกาสพังกลางทางแบบที่กม. 21 สูง";
+      note = "พักหรือลดโหลดก่อน แล้วค่อยกลับไปดันเป้าใหม่เมื่อ HRV กลับมาสมดุล 2 วันติด";
+    } else if (sleepLow && !imbalanced) {
+      level = "warn"; tag = "นอนไม่พอ";
+      title = "ซ้อมได้ตามแผน แต่จับตาความหนักให้ดี";
+      body = "คะแนนนอนหลับ " + sleep + " ต่ำกว่าเกณฑ์ 75 ทั้งที่ HRV ยังสมดุล — ให้ความสำคัญกับการฟื้นตัวคืนนี้เป็นพิเศษ";
+      note = "ถ้าคืนนี้นอนไม่พออีก ให้ตัด MP ออกแม้ HRV จะยังโอเคอยู่";
+    } else {
+      level = "warn"; tag = "ระวัง";
+      title = "ลดความหนักลงหนึ่งขั้น";
+      body = "ค่าที่กรอกอยู่ระหว่างเกณฑ์ปลอดภัยกับเกณฑ์เตือน — เลือกฝั่งปลอดภัยไว้ก่อน ตัดท่อนหนักออกถ้ามี";
+      note = "";
+    }
+
+    els.result.className = "result state-" + level;
+    els.resultTag.textContent = tag;
+    els.resultTitle.textContent = title;
+    els.resultBody.textContent = body;
+    els.resultNote.textContent = note;
+    els.resultNote.style.display = note ? "block" : "none";
+
+    return { level: level, tag: tag, title: title, hrvToday: hrvToday, hrvBase: hrvBase, sleep: sleep, rhrToday: rhrToday, rhrBase: rhrBase, days: days, dayType: dayType };
+  }
+
+  function render(){
+    els.hrvBaseVal.textContent = els.hrvBase.value + " ms";
+    els.hrvTodayVal.textContent = els.hrvToday.value + " ms";
+    els.sleepVal.textContent = els.sleep.value;
+    els.rhrBaseVal.textContent = els.rhrBase.value + " bpm";
+    els.rhrTodayVal.textContent = els.rhrToday.value + " bpm";
+    els.dayCount.textContent = state.dayCount;
+    computeResult();
+  }
+
+  [els.hrvBase, els.hrvToday, els.sleep, els.rhrBase, els.rhrToday].forEach(function(input){
+    input.addEventListener("input", render);
+  });
+
+  els.dayMinus.addEventListener("click", function(){ state.dayCount = clampDay(state.dayCount - 1); render(); });
+  els.dayPlus.addEventListener("click", function(){ state.dayCount = clampDay(state.dayCount + 1); render(); });
+
+  els.dayType.querySelectorAll("button").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      els.dayType.querySelectorAll("button").forEach(function(b){ b.setAttribute("aria-pressed", "false"); });
+      btn.setAttribute("aria-pressed", "true");
+      state.dayType = btn.getAttribute("data-v");
+      render();
+    });
+  });
+
+  var LOG_KEY = "prerun_check_log_v1";
+
+  function loadLog(){
+    try {
+      var raw = localStorage.getItem(LOG_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  }
+
+  function saveLog(entries){
+    try { localStorage.setItem(LOG_KEY, JSON.stringify(entries)); } catch (e) {}
+  }
+
+  function fmtDate(iso){
+    var d = new Date(iso);
+    var mm = String(d.getMonth() + 1).padStart(2, "0");
+    var dd = String(d.getDate()).padStart(2, "0");
+    return dd + "/" + mm;
+  }
+
+  function dotColor(level){
+    if (level === "ok") return "var(--ok-fg)";
+    if (level === "bad") return "var(--bad-fg)";
+    return "var(--warn-fg)";
+  }
+
+  function renderLog(){
+    var entries = loadLog();
+    els.logList.innerHTML = "";
+    if (!entries.length) {
+      var empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "ยังไม่มีประวัติ — กดบันทึกด้านบนหลังกรอกค่าเช้านี้";
+      els.logList.appendChild(empty);
+      return;
+    }
+    entries.slice(0, 7).forEach(function(e){
+      var row = document.createElement("div");
+      row.className = "logrow";
+      var d = document.createElement("div");
+      d.className = "d";
+      d.textContent = fmtDate(e.date);
+      var lbl = document.createElement("div");
+      lbl.className = "lbl";
+      var dot = document.createElement("span");
+      dot.className = "dot";
+      dot.style.background = dotColor(e.level);
+      var span = document.createElement("span");
+      span.textContent = e.title;
+      lbl.appendChild(dot);
+      lbl.appendChild(span);
+      var meta = document.createElement("div");
+      meta.className = "d";
+      meta.textContent = "HRV " + e.hrvToday + "/" + e.hrvBase;
+      row.appendChild(d);
+      row.appendChild(lbl);
+      row.appendChild(meta);
+      els.logList.appendChild(row);
+    });
+  }
+
+  els.saveBtn.addEventListener("click", function(){
+    var r = computeResult();
+    var entries = loadLog();
+    entries.unshift({
+      date: new Date().toISOString(),
+      level: r.level, title: r.title,
+      hrvToday: r.hrvToday, hrvBase: r.hrvBase,
+      sleep: r.sleep, rhrToday: r.rhrToday, rhrBase: r.rhrBase,
+      days: r.days, dayType: r.dayType
+    });
+    entries = entries.slice(0, 14);
+    saveLog(entries);
+    renderLog();
+  });
+
+  render();
+  renderLog();
+})();
+</script>
