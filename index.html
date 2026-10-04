@@ -35,26 +35,10 @@
   --p-pretaper:#6a7a75;
   --p-other:#5f7872;
 }
-@media (prefers-color-scheme: light){
-  :root:not([data-theme="dark"]){
-    --bg:#f2f6f3; --bg2:#eaf1ec; --surface:#ffffff; --surface2:#eef3ef; --surface3:#e3ece5;
-    --border:#d7e2db; --border-soft:#e4ece6;
-    --fg:#0f201a; --fg-dim:#4d6359; --fg-faint:#87988f;
-    --accent:#0e9a6e; --accent-strong:#0b8961; --accent-dim:#cdeee1;
-    --warn:#a8720d; --good:#0e9a6e;
-    --shadow: 0 1px 2px rgba(20,40,30,.06), 0 10px 24px -14px rgba(20,40,30,.18);
-    color-scheme: light;
-  }
-}
-:root[data-theme="light"]{
-  --bg:#f2f6f3; --bg2:#eaf1ec; --surface:#ffffff; --surface2:#eef3ef; --surface3:#e3ece5;
-  --border:#d7e2db; --border-soft:#e4ece6;
-  --fg:#0f201a; --fg-dim:#4d6359; --fg-faint:#87988f;
-  --accent:#0e9a6e; --accent-strong:#0b8961; --accent-dim:#cdeee1;
-  --warn:#a8720d; --good:#0e9a6e;
-  --shadow: 0 1px 2px rgba(20,40,30,.06), 0 10px 24px -14px rgba(20,40,30,.18);
-  color-scheme: light;
-}
+/* Committed to a single navy look on purpose (per request) — the page no longer
+   switches to a light palette based on device/system theme. */
+:root,
+:root[data-theme="light"],
 :root[data-theme="dark"]{ color-scheme: dark; }
 
 *{box-sizing:border-box}
