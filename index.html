@@ -611,10 +611,16 @@ section[hidden]{display:none}
     return null;
   }
 
+  // the xlsx plan uses "-" as a placeholder for "not recorded yet" — treat that
+  // (and blanks) as no data, not as a real logged distance
+  function isRealNum(v){
+    return v!==undefined && v!==null && v!=='' && v!=='-' && !isNaN(parseFloat(v));
+  }
+
   function effectiveActual(d){
     var a = actualsCache[d.date];
     if(a) return {dist:a.dist, hr:a.hr, source:'db'};
-    if(d.act_dist) return {dist:d.act_dist, hr:d.act_hr, source:'xlsx'};
+    if(isRealNum(d.act_dist)) return {dist:d.act_dist, hr:isRealNum(d.act_hr)?d.act_hr:null, source:'xlsx'};
     return null;
   }
 
@@ -844,7 +850,7 @@ section[hidden]{display:none}
       btnSave.hidden = false;
       btnCancel.textContent = 'ยกเลิก';
 
-      var a = actualsCache[dateStr] || (d.act_dist ? {dist:d.act_dist, h:0, m:0, s:0, hr:d.act_hr, note:''} : null);
+      var a = actualsCache[dateStr] || (isRealNum(d.act_dist) ? {dist:d.act_dist, h:0, m:0, s:0, hr:isRealNum(d.act_hr)?d.act_hr:null, note:''} : null);
       fDist.value = a ? a.dist : '';
       fH.value = a && a.h ? a.h : '';
       fM.value = a && a.m ? a.m : '';
