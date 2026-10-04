@@ -1,0 +1,977 @@
+<title>แผนซ้อม ATM 42</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: a trail-map spine (vertical phase timeline) running down the page,
+   weekly panels read like elevation-profile segments along that spine, each day a
+   clickable waypoint card that opens a logbook entry for its run. */
+:root{
+  --bg:#0a1310;
+  --bg2:#0d1a16;
+  --surface:#131f1b;
+  --surface2:#182723;
+  --surface3:#1e2f29;
+  --border:#24372f;
+  --border-soft:#1a2b25;
+  --fg:#eef4f0;
+  --fg-dim:#9fb6ab;
+  --fg-faint:#5e7b70;
+  --accent:#4fe3ac;
+  --accent-strong:#2fcf96;
+  --accent-dim:#1e4a3b;
+  --warn:#e8b34a;
+  --good:#4fe3ac;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px -16px rgba(0,0,0,.6);
+
+  --p-base:#6fd17a;
+  --p-specific:#4fa8e0;
+  --p-peak:#ef6e5b;
+  --p-taper:#b48bf0;
+  --p-recovery:#7c93a0;
+  --p-race:#f0c84a;
+  --p-sharpen:#49c7c2;
+  --p-rebuild:#8fcf5a;
+  --p-pretaper:#6a7a75;
+  --p-other:#5f7872;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f2f6f3; --bg2:#eaf1ec; --surface:#ffffff; --surface2:#eef3ef; --surface3:#e3ece5;
+    --border:#d7e2db; --border-soft:#e4ecе6;
+    --fg:#0f201a; --fg-dim:#4d6359; --fg-faint:#87988f;
+    --accent:#0e9a6e; --accent-strong:#0b8961; --accent-dim:#cdeee1;
+    --warn:#a8720d; --good:#0e9a6e;
+    --shadow: 0 1px 2px rgba(20,40,30,.06), 0 10px 24px -14px rgba(20,40,30,.18);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f2f6f3; --bg2:#eaf1ec; --surface:#ffffff; --surface2:#eef3ef; --surface3:#e3ece5;
+  --border:#d7e2db; --border-soft:#e4ece6;
+  --fg:#0f201a; --fg-dim:#4d6359; --fg-faint:#87988f;
+  --accent:#0e9a6e; --accent-strong:#0b8961; --accent-dim:#cdeee1;
+  --warn:#a8720d; --good:#0e9a6e;
+  --shadow: 0 1px 2px rgba(20,40,30,.06), 0 10px 24px -14px rgba(20,40,30,.18);
+  color-scheme: light;
+}
+:root[data-theme="dark"]{ color-scheme: dark; }
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:
+    radial-gradient(ellipse 900px 420px at 15% -10%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 110% 10%, color-mix(in srgb, var(--p-specific) 10%, transparent), transparent 60%),
+    var(--bg);
+  color:var(--fg);
+  font-family:"IBM Plex Sans Thai","IBM Plex Sans",system-ui,sans-serif;
+  padding-inline:16px;
+  padding-block:20px 48px;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto}
+h1,h2,h3{font-family:"Chakra Petch","IBM Plex Sans Thai",sans-serif;text-wrap:balance;margin:0}
+.tnum{font-variant-numeric:tabular-nums}
+button{font-family:inherit}
+
+/* contour-line trail texture behind the hero */
+.topo{
+  position:relative;border-radius:20px;overflow:hidden;
+  background:linear-gradient(165deg, var(--surface3), var(--surface));
+  border:1px solid var(--border);box-shadow:var(--shadow);
+  padding:22px 24px;margin-bottom:18px;
+}
+.topo svg{position:absolute;inset:0;width:100%;height:100%;opacity:.35;pointer-events:none}
+.topo .content{position:relative;z-index:1}
+
+/* ---------- header ---------- */
+.hero{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.hero .eyebrow{font-size:11.5px;letter-spacing:.09em;color:var(--fg-dim);text-transform:uppercase;margin-bottom:8px;opacity:.9}
+.hero h1{font-size:clamp(28px,5vw,42px);font-weight:700;color:var(--fg);letter-spacing:.01em}
+.hero .sub{color:var(--fg-dim);font-size:14px;margin-top:7px}
+.racepill{
+  display:flex;align-items:center;gap:10px;background:color-mix(in srgb, var(--surface) 60%, transparent);
+  backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:999px;padding:9px 18px;font-size:13px;color:var(--fg-dim);
+}
+.racepill b{color:var(--fg);font-family:"Chakra Petch";font-size:19px}
+.racepill .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent)}
+
+/* ---------- stat tiles ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+@media (max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:15px 16px;min-width:0;box-shadow:var(--shadow)}
+.stat .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-faint);margin-bottom:7px}
+.stat .v{font-family:"Chakra Petch";font-size:25px;font-weight:600;color:var(--fg)}
+.stat .v span{font-size:14px;color:var(--fg-dim);font-weight:500;font-family:"IBM Plex Sans Thai"}
+.stat .d{font-size:11.5px;color:var(--fg-dim);margin-top:4px}
+
+/* ---------- timeline ---------- */
+.timeline{margin-bottom:18px;background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:16px 18px;box-shadow:var(--shadow)}
+.timeline .lbl{font-size:12px;color:var(--fg-faint);margin-bottom:9px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.timeline .lbl b{color:var(--fg-dim)}
+.tlbar{display:flex;height:11px;border-radius:5px;overflow:hidden;border:1px solid var(--border);gap:1px;background:var(--border)}
+.tlbar i{flex:1;min-width:2px}
+.tlbar i.today{outline:2px solid var(--fg);outline-offset:-2px;z-index:1}
+.legend{display:flex;flex-wrap:wrap;gap:9px 16px;margin-top:11px;font-size:11.5px;color:var(--fg-dim)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
+
+/* ---------- decision callouts ---------- */
+.notes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+@media (max-width:760px){.notes{grid-template-columns:1fr}}
+.note{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:13px 15px;box-shadow:var(--shadow)}
+.note .t{font-size:11.5px;color:var(--accent);font-weight:700;letter-spacing:.04em;margin-bottom:5px}
+.note p{margin:0;font-size:13px;color:var(--fg-dim);line-height:1.6}
+
+/* ---------- weeks ---------- */
+.weeksbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+.weeksbar h2{font-size:18px}
+.weeksbar .hint{font-size:12px;color:var(--fg-faint)}
+.toggle{
+  background:var(--surface2);border:1px solid var(--border);color:var(--fg-dim);
+  border-radius:9px;padding:8px 14px;font-size:13px;cursor:pointer;transition:border-color .15s,color .15s;
+}
+.toggle:hover{color:var(--fg);border-color:var(--accent-dim)}
+
+.week{border:1px solid var(--border);border-radius:16px;background:var(--surface);margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow)}
+.week.past{opacity:.68}
+.week .whead{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:13px 17px;
+  border-bottom:1px solid var(--border);background:var(--surface2);
+}
+.week .whead .chip{
+  font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px;color:#06140f;letter-spacing:.03em;
+}
+.week .whead .wname{font-family:"Chakra Petch";font-size:15px;font-weight:600;color:var(--fg)}
+.week .whead .wmeta{margin-left:auto;font-size:12px;color:var(--fg-dim);display:flex;gap:14px}
+.week .whead .wmeta b{color:var(--fg);font-weight:600}
+
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:0}
+@media (max-width:900px){.days{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:480px){.days{grid-template-columns:1fr}}
+.day{
+  border-right:1px solid var(--border-soft);border-top:1px solid var(--border-soft);
+  padding:12px 13px;min-width:0;position:relative;min-height:112px;
+  transition:background .12s;
+}
+.days .day:nth-child(7n){border-right:none}
+@media (max-width:900px){.days .day{border-right:1px solid var(--border-soft)}.days .day:nth-child(2n){border-right:none}}
+@media (max-width:480px){.days .day{border-right:none!important}}
+.day.today{background:color-mix(in srgb, var(--accent) 9%, transparent)}
+.day.clickable{cursor:pointer}
+.day.clickable:hover{background:var(--surface2)}
+.day .ddate{font-size:11px;color:var(--fg-faint);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.day .ddate .today-tag{background:var(--accent);color:#06140f;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:999px}
+.day .dtype{font-size:12.5px;font-weight:600;color:var(--fg);margin-bottom:3px}
+.day .ddesc{font-size:11.5px;color:var(--fg-dim);line-height:1.42;margin-bottom:5px;word-break:break-word}
+.day .dzone{font-size:11px;color:var(--fg-faint);line-height:1.42}
+.day .dactual{margin-top:7px;font-size:11px;color:var(--good);display:flex;align-items:center;gap:4px;font-weight:600}
+.day .dactual.miss{color:var(--fg-faint);font-weight:400}
+.day.rest{color:var(--fg-faint)}
+.day.rest .dtype{color:var(--fg-faint)}
+.day .editicon{position:absolute;top:10px;right:11px;font-size:10px;color:var(--fg-faint);opacity:0;transition:opacity .12s}
+.day.clickable:hover .editicon{opacity:1}
+
+footer{margin-top:28px;font-size:12px;color:var(--fg-faint);text-align:center}
+
+/* ---------- modal ---------- */
+.overlay{
+  position:fixed;inset:0;background:rgba(5,10,8,.6);backdrop-filter:blur(2px);
+  display:flex;align-items:center;justify-content:center;padding:16px;z-index:50;
+}
+.overlay[hidden]{display:none}
+.modal{
+  width:100%;max-width:420px;max-height:88vh;overflow-y:auto;background:var(--surface);
+  border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:0 20px 60px -20px rgba(0,0,0,.6);
+}
+.modal h3{font-size:17px;margin-bottom:3px}
+.modal .msub{font-size:12px;color:var(--fg-dim);margin-bottom:12px}
+.modal .mplan{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--fg-dim);line-height:1.5;margin-bottom:14px}
+.modal .mplan:empty{display:none}
+.exlist{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:6px}
+.exlist .exrow{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);padding:11px 13px;font-size:13px}
+.exlist .exrow .exname{color:var(--fg)}
+.exlist .exrow .exsets{color:var(--fg-dim);font-family:"Chakra Petch";font-variant-numeric:tabular-nums;white-space:nowrap}
+.modal label{display:block;font-size:11.5px;color:var(--fg-faint);margin-bottom:5px;margin-top:12px;letter-spacing:.02em}
+.modal label:first-of-type{margin-top:0}
+.modal input{
+  width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--fg);
+  border-radius:8px;padding:9px 11px;font-size:14px;font-family:inherit;
+}
+.modal input:focus{outline:2px solid var(--accent-dim);border-color:var(--accent)}
+.timegrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.timegrid span{font-size:10px;color:var(--fg-faint);display:block;margin-top:3px;text-align:center}
+.modal .derived{font-size:12px;color:var(--accent);margin-top:10px;min-height:16px}
+.modal .mbtns{display:flex;gap:8px;margin-top:18px}
+.btn{border-radius:9px;padding:10px 14px;font-size:13.5px;font-weight:600;cursor:pointer;border:1px solid transparent;flex:1}
+.btn-primary{background:var(--accent);color:#06140f}
+.btn-primary:hover{background:var(--accent-strong)}
+.btn-ghost{background:transparent;border-color:var(--border);color:var(--fg-dim)}
+.btn-ghost:hover{color:var(--fg);border-color:var(--fg-faint)}
+.btn-danger{background:transparent;border-color:color-mix(in srgb, #e05a4e 50%, var(--border));color:#e05a4e;flex:0 0 auto}
+.btn-danger:hover{background:color-mix(in srgb, #e05a4e 12%, transparent)}
+.modal .close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--fg-faint);font-size:18px;cursor:pointer;line-height:1}
+.modal{position:relative}
+.savestate{font-size:11.5px;color:var(--fg-faint);margin-top:8px;min-height:14px}
+
+/* ---------- top nav ---------- */
+.topnav{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:30;
+  display:flex;align-items:center;gap:4px;margin-bottom:18px;padding:6px;
+  background:color-mix(in srgb, var(--surface) 88%, transparent);backdrop-filter:blur(10px);
+  border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow);
+}
+.topnav .brand{font-family:"Chakra Petch";font-weight:700;font-size:15px;color:var(--fg);padding:0 10px 0 6px;white-space:nowrap}
+.topnav .tabs{display:flex;gap:2px;flex:1;overflow-x:auto}
+.navtab{
+  border:none;background:transparent;color:var(--fg-dim);font-size:13px;font-weight:600;
+  padding:9px 14px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:background .12s,color .12s;
+}
+.navtab:hover{color:var(--fg)}
+.navtab.active{background:var(--accent);color:#06140f}
+section[hidden]{display:none}
+
+/* ---------- profile view ---------- */
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:600px){.pgrid{grid-template-columns:1fr}}
+.field{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow)}
+.field label{display:block;font-size:11.5px;color:var(--fg-faint);margin-bottom:7px}
+.field input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--fg);border-radius:8px;padding:9px 10px;font-size:15px;font-family:"Chakra Petch"}
+.field input:focus{outline:2px solid var(--accent-dim);border-color:var(--accent)}
+.pbgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+@media (max-width:700px){.pbgrid{grid-template-columns:repeat(2,1fr)}}
+.pbfield{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow)}
+.pbfield .pblabel{font-size:11.5px;color:var(--fg-faint);margin-bottom:8px}
+.pbtime{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.pbtime input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--fg);border-radius:7px;padding:7px 6px;font-size:13px;text-align:center;font-family:"Chakra Petch"}
+.pbtime span{display:block;font-size:9.5px;color:var(--fg-faint);text-align:center;margin-top:3px}
+.sectitle{font-size:16px;font-family:"Chakra Petch";font-weight:600;margin:22px 0 10px}
+.sectitle.first{margin-top:4px}
+.zonetable{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.zonetable th,.zonetable td{padding:11px 14px;text-align:left;font-size:13px;border-bottom:1px solid var(--border-soft)}
+.zonetable th{color:var(--fg-faint);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;background:var(--surface2)}
+.zonetable tr:last-child td{border-bottom:none}
+.zonetable td.z{display:flex;align-items:center;gap:9px;font-weight:600}
+.zonetable td.z i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.zonetable td.bpm{font-family:"Chakra Petch";font-variant-numeric:tabular-nums}
+.profilebtns{display:flex;gap:10px;margin-top:18px;align-items:center}
+.profilebtns .btn{flex:0 0 auto;padding:10px 22px}
+.profilebtns .savestate{margin-top:0}
+
+/* ---------- principles view ---------- */
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:12px;box-shadow:var(--shadow)}
+.pcard h3{font-size:15.5px;margin-bottom:8px;color:var(--accent)}
+.pcard p{font-size:13.5px;line-height:1.75;color:var(--fg-dim);margin:0 0 10px}
+.pcard p:last-child{margin-bottom:0}
+.pcard ul{margin:0 0 10px;padding-left:20px;font-size:13.5px;line-height:1.75;color:var(--fg-dim)}
+.pcard b{color:var(--fg)}
+</style>
+
+<div class="wrap">
+
+  <div class="topnav">
+    <span class="brand">🏃 แผนซ้อม Bee</span>
+    <div class="tabs" id="navtabs">
+      <button class="navtab active" data-view="home">หน้าแรก</button>
+      <button class="navtab" data-view="profile">โปรไฟล์</button>
+      <button class="navtab" data-view="principles">หลักการ</button>
+    </div>
+  </div>
+
+  <section id="view-home">
+
+  <div class="topo">
+    <svg viewBox="0 0 800 220" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M-20 170 C 100 120, 180 190, 260 140 S 420 60, 520 110 S 680 180, 840 100" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".5"/>
+      <path d="M-20 200 C 120 150, 220 210, 320 160 S 460 90, 560 140 S 720 200, 840 130" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"/>
+      <path d="M-20 140 C 90 95, 190 150, 300 105 S 440 40, 560 80 S 700 140, 840 70" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".25"/>
+    </svg>
+    <div class="content">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">แผนซ้อมต่อเนื่อง · กำแพงแสน 50K → ATM → เชียงใหม่ 21K → บุรีรัมย์</div>
+          <h1>ATM Marathon 42.2K</h1>
+          <div class="sub">วันแข่ง 29 พ.ย. 2569 · สนามหลวง · สตาร์ท 02:00 น.</div>
+        </div>
+        <div class="racepill"><span class="dot"></span><span id="countdown-lbl">เหลืออีก</span> <b id="countdown-num" class="tnum">—</b> วัน</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="k">เป้าหมาย A / B</div>
+      <div class="v" id="stat-goal">—</div>
+      <div class="d" id="stat-goal-pace">—</div>
+    </div>
+    <div class="stat">
+      <div class="k">Adherence</div>
+      <div class="v" id="stat-adh">—<span>%</span></div>
+      <div class="d">ทำตามแผน (เฉพาะวันวิ่ง, ถึงวันนี้)</div>
+    </div>
+    <div class="stat">
+      <div class="k">ระยะสะสม</div>
+      <div class="v" id="stat-km">—<span>กม.</span></div>
+      <div class="d">บันทึกผลจริงแล้วตลอดแผน</div>
+    </div>
+    <div class="stat">
+      <div class="k">PB มาราธอน</div>
+      <div class="v" id="stat-pb">—</div>
+      <div class="d">สถิติส่วนตัว</div>
+    </div>
+  </div>
+
+  <div class="timeline">
+    <div class="lbl"><span>ไทม์ไลน์เฟส — 28 สัปดาห์</span><b id="tl-current">—</b></div>
+    <div class="tlbar" id="tlbar"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <div class="t">DECISION · 1 ต.ค. 2569</div>
+      <p>ปรับเป้า A/B จาก 3:35/3:40 → <b style="color:var(--fg)">3:45:00 / 3:50:00</b> — อิงหลักฐาน 4 แหล่ง: สูตร VCR ของแผน (ทำนาย 3:49:49), VDOT App, ตาราง MCR 90%VCR ในไฟล์เอง และผลจริงจาก FIT file วันที่ 1 ต.ค. (วิ่ง MP ได้ 5:25-5:26/กม.)</p>
+    </div>
+    <div class="note">
+      <div class="t">RULE · HR ceiling 176 bpm</div>
+      <p>วันคุณภาพ (Tempo/Threshold/Interval/MP) เพซนำตามปกติ แต่ถ้า HR ทะลุ 176 bpm ต่อเนื่องช่วงกลาง-ท้าย ให้ผ่อนเพซทันที ไม่ฝืนกดให้ครบตามแผนเป๊ะ</p>
+    </div>
+  </div>
+
+  <div class="weeksbar">
+    <h2>ตารางซ้อมรายสัปดาห์</h2>
+    <span class="hint" id="db-hint"></span>
+    <button class="toggle" id="toggle-past">แสดงสัปดาห์ที่ผ่านมา</button>
+  </div>
+
+  <div id="weeks"></div>
+
+  <footer>อัปเดตจากไฟล์แผนซ้อม ATM.xlsx — คำนวณเพซ/โซนจาก VCR ปัจจุบัน (3.4 m/s) และ HR จาก Karvonen (Resting 53, Max 195) — กดวันที่มีวิ่งเพื่อบันทึกผลจริง</footer>
+  </section>
+
+  <section id="view-profile" hidden>
+    <div class="sectitle first">ข้อมูลนักวิ่ง</div>
+    <div class="pgrid">
+      <div class="field">
+        <label for="p-rhr">Resting HR (bpm)</label>
+        <input id="p-rhr" type="number" min="30" max="120">
+      </div>
+      <div class="field">
+        <label for="p-mhr">Max HR (bpm)</label>
+        <input id="p-mhr" type="number" min="120" max="230">
+      </div>
+      <div class="field">
+        <label for="p-age">อายุ (ปี)</label>
+        <input id="p-age" type="number" min="10" max="100">
+      </div>
+    </div>
+
+    <div class="sectitle">สถิติส่วนตัว (Personal Best)</div>
+    <div class="pbgrid">
+      <div class="pbfield">
+        <div class="pblabel">5K</div>
+        <div class="pbtime">
+          <div><input id="pb-5k-h" type="number" min="0" max="23"><span>ชม.</span></div>
+          <div><input id="pb-5k-m" type="number" min="0" max="59"><span>นาที</span></div>
+          <div><input id="pb-5k-s" type="number" min="0" max="59"><span>วินาที</span></div>
+        </div>
+      </div>
+      <div class="pbfield">
+        <div class="pblabel">10K</div>
+        <div class="pbtime">
+          <div><input id="pb-10k-h" type="number" min="0" max="23"><span>ชม.</span></div>
+          <div><input id="pb-10k-m" type="number" min="0" max="59"><span>นาที</span></div>
+          <div><input id="pb-10k-s" type="number" min="0" max="59"><span>วินาที</span></div>
+        </div>
+      </div>
+      <div class="pbfield">
+        <div class="pblabel">21.1K</div>
+        <div class="pbtime">
+          <div><input id="pb-21k-h" type="number" min="0" max="23"><span>ชม.</span></div>
+          <div><input id="pb-21k-m" type="number" min="0" max="59"><span>นาที</span></div>
+          <div><input id="pb-21k-s" type="number" min="0" max="59"><span>วินาที</span></div>
+        </div>
+      </div>
+      <div class="pbfield">
+        <div class="pblabel">42.2K (มาราธอน)</div>
+        <div class="pbtime">
+          <div><input id="pb-42k-h" type="number" min="0" max="23"><span>ชม.</span></div>
+          <div><input id="pb-42k-m" type="number" min="0" max="59"><span>นาที</span></div>
+          <div><input id="pb-42k-s" type="number" min="0" max="59"><span>วินาที</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="profilebtns">
+      <button class="btn btn-primary" id="p-save">บันทึกโปรไฟล์</button>
+      <span class="savestate" id="p-savestate"></span>
+    </div>
+
+    <div class="sectitle">โซนหัวใจ (Karvonen — คำนวณจาก Resting/Max HR ด้านบน)</div>
+    <table class="zonetable">
+      <thead><tr><th>โซน</th><th>%HRR</th><th>ช่วง bpm</th></tr></thead>
+      <tbody id="zonetable-body"></tbody>
+    </table>
+  </section>
+
+  <section id="view-principles" hidden>
+    <div class="sectitle first">หลักการของแผนนี้</div>
+
+    <div class="pcard">
+      <h3>1. ระบบพื้นฐาน — VCR (Critical Velocity)</h3>
+      <p>แผนนี้สร้างจากตาราง VCR ของ Gunter Lange / อ.เอกวิทย์ — คำนวณ VCR จากผลทดสอบ แล้วแบ่งเพซเป็น 10 โซน ตั้งแต่ ARR (70%) ไปจนถึง EXT110 (110%) โดย VCR ปัจจุบันอิงจากผล 10K race จริง (6 ก.ย. 2569): <b>3.4 m/s</b></p>
+      <p>เหตุผลที่ใช้ผล 10K จากถนนจริงแทนการเทสต์บนลู่ยาง — ลู่ยางสังเคราะห์ได้เปรียบกว่าถนนจริงมาก (energy return, พื้นเรียบ) ขณะที่สนามแข่งจริงทั้งหมดแข่งบนถนน</p>
+    </div>
+
+    <div class="pcard">
+      <h3>2. ปรัชญาการฝึก — Polarized (HR-governed) แทน VCR-pace-only ล้วนๆ</h3>
+      <p>ต้นฉบับ อ.เอกวิทย์/Gunter Lange เป็นระบบ pace-based ล้วนๆ แต่แผนนี้เลือกใช้ Polarized (ARR-heavy, 70/30) แทน MCR-heavy เพราะ:</p>
+      <ul>
+        <li>งานวิจัยนักกีฬา endurance ระดับโลก (Seiler) สนับสนุน 80% เวลาที่ Zone 1-2 ต่ำจริง</li>
+        <li>หลักฐานจากกำแพงแสน 50K — breakdown ชัดเจนช่วง กม.33-51 ขณะที่ HR 72% ของเวลาทั้งหมดอยู่ Zone 3 ขึ้นไป บ่งชี้ว่าร่างกายชินกับ effort สูงเกินจนไม่รู้ตัว</li>
+      </ul>
+      <p><b>กฎ HR-governor:</b> วัน ARR/SCR/Long run — HR นำ เพซตาม (ชะลอทันทีถ้า HR สูงกว่า baseline +8-10bpm) ส่วนวันคุณภาพ (Tempo/Threshold/Interval/MP) — เพซนำตามปกติ แต่มี <b>HR ceiling 176 bpm</b> กันไว้ ถ้าทะลุต่อเนื่องให้ผ่อนเพซทันที</p>
+    </div>
+
+    <div class="pcard">
+      <h3>3. โครงสร้าง MP Tempo แบบ Progressive</h3>
+      <p>Session ที่มี MP tail ยาว (เช่น Dress Rehearsal) แบ่งเป็น 3 ช่วง: ช่วง 1 (~35-40%) @SCR-สูง ฝึกกดตัวเอง → ช่วง 2 (~35-40%) @MP รักษาจังหวะ → ช่วง 3 (~15-20%) เร่งได้ @FCR ถ้า HR ยังไม่เกิน Zone 4 — จำลอง 10 กม.สุดท้ายวันแข่งจริง</p>
+    </div>
+
+    <div class="pcard">
+      <h3>4. โครงสร้างสัปดาห์</h3>
+      <p>จ.เวทบน (เบา) → อ.Quality → พ.Easy → พฤ.Quality → ศ.เวทขา (หนักสุด/สัปดาห์) → ส.พัก/Easy → อา.Long run — เวทขาเหลือแค่ 1 ครั้ง/สัปดาห์ ห่างจาก Quality session ก่อนหน้าและ Long run อย่างน้อย 24-48 ชม. เพื่อไม่ให้กล้ามเนื้อล้าซ้อนทับ</p>
+    </div>
+
+    <div class="pcard">
+      <h3>5. การตัดสินใจล่าสุด (1 ต.ค. 2569)</h3>
+      <p>ปรับเป้า A/B ของ ATM จาก 3:35:00/3:40:00 เป็น <b>3:45:00/3:50:00</b> โดยไม่รอผล CT 22 ต.ค. — อิงหลักฐาน 5 แหล่งอิสระที่ชี้ไปทางเดียวกัน: สูตร VCR ของแผน, VDOT App, ตาราง VDOT แบบ manual, ตาราง MCR 90%VCR ในไฟล์เอง และผลจริงจาก FIT file วันที่ 1 ต.ค. (วิ่ง MP ได้ 5:25-5:26/กม. ตรงเป๊ะกับที่โมเดลทำนายไว้)</p>
+    </div>
+  </section>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" id="modal">
+    <button class="close" id="modal-close" aria-label="ปิด">✕</button>
+    <h3 id="m-title">—</h3>
+    <div class="msub" id="m-sub">—</div>
+    <div class="mplan" id="m-plan">—</div>
+
+    <div class="exlist" id="exlist" hidden></div>
+
+    <div id="run-fields">
+      <label for="f-dist">ระยะจริง (กม.)</label>
+      <input id="f-dist" type="number" step="0.01" min="0" inputmode="decimal" placeholder="เช่น 23.1">
+
+      <label>เวลาที่ใช้</label>
+      <div class="timegrid">
+        <div><input id="f-h" type="number" min="0" max="23" placeholder="0"><span>ชม.</span></div>
+        <div><input id="f-m" type="number" min="0" max="59" placeholder="0"><span>นาที</span></div>
+        <div><input id="f-s" type="number" min="0" max="59" placeholder="0"><span>วินาที</span></div>
+      </div>
+
+      <label for="f-hr">HR เฉลี่ย (bpm) — ไม่บังคับ</label>
+      <input id="f-hr" type="number" min="0" max="230" placeholder="เช่น 167">
+
+      <label for="f-note">โน้ต — ไม่บังคับ</label>
+      <input id="f-note" type="text" placeholder="เช่น ขาหนักช่วงท้าย">
+
+      <div class="derived" id="m-derived"></div>
+    </div>
+    <div class="savestate" id="m-savestate"></div>
+
+    <div class="mbtns">
+      <button class="btn btn-danger" id="f-delete" hidden>ลบ</button>
+      <button class="btn btn-ghost" id="f-cancel">ยกเลิก</button>
+      <button class="btn btn-primary" id="f-save">บันทึกผล</button>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="plan-data">{"weeks": [{"idx": 1, "monday": "2026-07-13", "phase": "PreTaper", "label": "เตรียมพร้อมก่อน Taper", "plan_km": 4, "actual_km": 34.5, "days": [{"date": "2026-07-18", "day": "ส.", "group": "เตรียมพร้อมก่อน Taper | เป้าหมาย: เก็บ long run สุดท้ายก่อนลดโหลดเข้า taper", "type": "Run", "desc": "Long run (ซ้อมเอง ก่อนเข้าสัปดาห์ Taper อย่างเป็นทางการ)", "dist": null, "zone": "-", "note": "บันทึกผลจริงแล้ว: 16กม. @6:05/กม. + 14กม. @5:45-5:50/กม. รวม 30กม. — เพซท่อนหลังเร็วขึ้น (negative split) ฟอร์มดีมาก สอดคล้องกับค่า VCR ปัจจุบัน", "act_dist": 30, "act_hr": 156, "rpe": 7, "gymimpact": null, "group_filled": "เตรียมพร้อมก่อน Taper | เป้าหมาย: เก็บ long run สุดท้ายก่อนลดโหลดเข้า taper", "phase": "PreTaper", "act_dist_f": 30.0}, {"date": "2026-07-19", "day": "อา.", "group": null, "type": "Run", "desc": "ARR ฟื้นฟูเบาๆ หลัง long run", "dist": 4, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "กรอกระยะ/HR/RPE จริงที่คอลัมน์ Actual (I-K) ทางขวาได้เลย", "act_dist": 4.5, "act_hr": 131, "rpe": 5, "gymimpact": null, "group_filled": "เตรียมพร้อมก่อน Taper | เป้าหมาย: เก็บ long run สุดท้ายก่อนลดโหลดเข้า taper", "phase": "PreTaper", "act_dist_f": 4.5}]}, {"idx": 2, "monday": "2026-07-20", "phase": "Taper", "label": "Taper Wk1 (กำแพงแสน 50K)", "plan_km": 64.5, "actual_km": 50.2, "days": [{"date": "2026-07-20", "day": "จ.", "group": "Taper Wk1 (กำแพงแสน 50K) | เป้าหมาย: เริ่มลด volume คงความเข้ม เก็บแรงไว้ก่อนแข่ง 50K", "type": "Run", "desc": "MCR45: วิ่งต่อเนื่องปานกลาง 45 นาที + ยืดเหยียด (FLX) 10 นาที", "dist": 7.5, "zone": "SCR เป้า 6:17 น./กม. (ช่วง 6:05-6:30)", "note": "เก็บแรงไว้ ไม่ต้องเร่ง", "act_dist": 7.7, "act_hr": 153, "rpe": 7, "gymimpact": null, "group_filled": "Taper Wk1 (กำแพงแสน 50K) | เป้าหมาย: เริ่มลด volume คงความเข้ม เก็บแรงไว้ก่อนแข่ง 50K", "phase": "Taper", "act_dist_f": 7.7}, {"date": "2026-07-21", "day": "อ.", "group": null, "type": "Run", "desc": "SCR60 + Strides: วิ่งช้าต่อเนื่อง 60 นาที + Strides 4x100m ท้ายเซสชัน", "dist": 9.5, "zone": "SCR เป้า 6:03 น./กม. (ช่วง 5:54-6:12)", "note": "strides เบาๆ กระตุ้นระบบประสาท-กล้ามเนื้อ", "act_dist": 9.2, "act_hr": 155, "rpe": 6, "gymimpact": null, "group_filled": "Taper Wk1 (กำแพงแสน 50K) | เป้าหมาย: เริ่มลด volume คงความเข้ม เก็บแรงไว้ก่อนแข่ง 50K", "phase": "Taper", "act_dist_f": 9.2}, {"date": "2026-07-22", "day": "พ.", "group": null, "type": "Rest", "desc": "PHB/MOT: พัก หรือ mobility/prehab 20-30 นาที + core เบาๆ (CBT)", "dist": null, "zone": "-", "note": "ฟังร่างกาย ถ้าเมื่อยล้าให้พักเต็มวัน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper Wk1 (กำแพงแสน 50K) | เป้าหมาย: เริ่มลด volume คงความเข้ม เก็บแรงไว้ก่อนแข่ง 50K", "phase": "Taper", "act_dist_f": null}, {"date": "2026-07-23", "day": "พฤ.", "group": null, "type": "Run", "desc": "TPR/RP practice: ซ้อมจังหวะแข่งจริง (race-pace practice) 18-20 กม.", "dist": 19, "zone": "SCR เป้า 6:17 น./กม. (ช่วง 6:05-6:30)", "note": "ซ้อมกิน-ดื่ม/เจลเหมือนแผนวันแข่งจริง", "act_dist": 14.5, "act_hr": 154, "rpe": 7, "gymimpact": null, "group_filled": "Taper Wk1 (กำแพงแสน 50K) | เป้าหมาย: เริ่มลด volume คงความเข้ม เก็บแรงไว้ก่อนแข่ง 50K", "phase": "Taper", "act_dist_f": 14.5}, {"date": "2026-07-24", "day": "ศ.", "group": null, "type": "Run", "desc": "ARR30: วิ่งฟื้นฟูเบาๆ 30 นาที หรือพัก", "dist": 4.5, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "เบามาก ให้ร่างกายฟื้นจากวันก่อน", "act_dist": 4.26, "act_hr": 139, "rpe": 4, "gymimpact": null, "group_filled": "Taper Wk1 (กำแพงแสน 50K) | เป้าหมาย: เริ่มลด volume คงความเข้ม เก็บแรงไว้ก่อนแข่ง 50K", "phase": "Taper", "act_dist_f": 4.26}, {"date": "2026-07-25", "day": "ส.", "group": null, "type": "Run", "desc": "SCR long + Run/Walk: Long run สุดท้าย 22-26 กม. ใช้ระบบ run/walk (วิ่ง 25 นาที/เดินเร็ว 5 นาที) ซ้อมเจล-เกลือแร่ตามแผนวันแข่ง", "dist": 24, "zone": "SCR เป้า 6:27 น./กม. (ช่วง 6:17-6:37)", "note": "ปรับระยะลงถ้า long run ล่าสุดที่เคยซ้อมสั้นกว่านี้มาก", "act_dist": 14.5, "act_hr": 149, "rpe": 7, "gymimpact": null, "group_filled": "Taper Wk1 (กำแพงแสน 50K) | เป้าหมาย: เริ่มลด volume คงความเข้ม เก็บแรงไว้ก่อนแข่ง 50K", "phase": "Taper", "act_dist_f": 14.5}, {"date": "2026-07-26", "day": "อา.", "group": null, "type": "Rest", "desc": "พัก + FLX/PHB: พักเต็มวัน ยืดเหยียด/prehab เต็มรูปแบบ", "dist": null, "zone": "-", "note": "นวด/โฟมโรลเลอร์ได้", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper Wk1 (กำแพงแสน 50K) | เป้าหมาย: เริ่มลด volume คงความเข้ม เก็บแรงไว้ก่อนแข่ง 50K", "phase": "Taper", "act_dist_f": null}]}, {"idx": 3, "monday": "2026-07-27", "phase": "Taper", "label": "Taper Wk2 (กำแพงแสน 50K)", "plan_km": 16.5, "actual_km": 68.9, "days": [{"date": "2026-07-27", "day": "จ.", "group": "Taper Wk2 (กำแพงแสน 50K) | เป้าหมาย: ลด volume ต่อเนื่อง เตรียมร่างกาย/คาร์บโหลดให้พร้อมวันแข่งจริง", "type": "Run", "desc": "MCR30 + Strides: วิ่งเบา 30 นาที + Strides 3x100m", "dist": 5, "zone": "SCR เป้า 6:03 น./กม. (ช่วง 5:54-6:12)", "note": "ลดปริมาณลงชัดเจนจากสัปดาห์ก่อน", "act_dist": 5, "act_hr": 152, "rpe": 7, "gymimpact": null, "group_filled": "Taper Wk2 (กำแพงแสน 50K) | เป้าหมาย: ลด volume ต่อเนื่อง เตรียมร่างกาย/คาร์บโหลดให้พร้อมวันแข่งจริง", "phase": "Taper", "act_dist_f": 5.0}, {"date": "2026-07-28", "day": "อ.", "group": null, "type": "Run", "desc": "พัก / ARR: พักเต็มวัน หรือ ARR20 เบามากถ้าอยากขยับตัว", "dist": 3, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "เริ่มนอนให้ได้ 7-8 ชม./คืน", "act_dist": 5.7, "act_hr": 133, "rpe": 4, "gymimpact": null, "group_filled": "Taper Wk2 (กำแพงแสน 50K) | เป้าหมาย: ลด volume ต่อเนื่อง เตรียมร่างกาย/คาร์บโหลดให้พร้อมวันแข่งจริง", "phase": "Taper", "act_dist_f": 5.7}, {"date": "2026-07-29", "day": "พ.", "group": null, "type": "Run", "desc": "SCR30-40 + Strides: วิ่งเบา 30-40 นาที + Strides 4x150m เบาๆ", "dist": 5.5, "zone": "SCR เป้า 6:03 น./กม. (ช่วง 5:54-6:12)", "note": "ยังรู้สึกคมอยู่ แต่ไม่เหนื่อย", "act_dist": 5, "act_hr": 158, "rpe": 7, "gymimpact": null, "group_filled": "Taper Wk2 (กำแพงแสน 50K) | เป้าหมาย: ลด volume ต่อเนื่อง เตรียมร่างกาย/คาร์บโหลดให้พร้อมวันแข่งจริง", "phase": "Taper", "act_dist_f": 5.0}, {"date": "2026-07-30", "day": "พฤ.", "group": null, "type": "Rest", "desc": "พัก + Carb-load เริ่ม: พักเต็มวัน เริ่มเพิ่มสัดส่วนคาร์บ ~60-70% ของแคลอรี่", "dist": null, "zone": "-", "note": "ลดไฟเบอร์/อาหารเสี่ยงท้องเสียตั้งแต่วันนี้", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper Wk2 (กำแพงแสน 50K) | เป้าหมาย: ลด volume ต่อเนื่อง เตรียมร่างกาย/คาร์บโหลดให้พร้อมวันแข่งจริง", "phase": "Taper", "act_dist_f": null}, {"date": "2026-07-31", "day": "ศ.", "group": null, "type": "Run", "desc": "ARR20 Shakeout: Shakeout เบามาก 15-20 นาที + strides สั้น 2-3 ครั้ง", "dist": 3, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "เช็คอุปกรณ์/เบอร์วิ่ง/เตรียมเจล-เกลือแร่", "act_dist": 2.8, "act_hr": 129, "rpe": 3, "gymimpact": null, "group_filled": "Taper Wk2 (กำแพงแสน 50K) | เป้าหมาย: ลด volume ต่อเนื่อง เตรียมร่างกาย/คาร์บโหลดให้พร้อมวันแข่งจริง", "phase": "Taper", "act_dist_f": 2.8}, {"date": "2026-08-01", "day": "ส.", "group": null, "type": "Rest", "desc": "พักเต็มวัน: พักเต็มวัน, carb-load เต็มที่, ดื่มน้ำ/เกลือแร่สม่ำเสมอ, นอนเร็ว", "dist": null, "zone": "-", "note": "เตรียมกระเป๋า/อุปกรณ์คืนนี้ให้พร้อม", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper Wk2 (กำแพงแสน 50K) | เป้าหมาย: ลด volume ต่อเนื่อง เตรียมร่างกาย/คาร์บโหลดให้พร้อมวันแข่งจริง", "phase": "Taper", "act_dist_f": null}, {"date": "2026-08-02", "day": "อา.", "group": null, "type": "Race", "desc": "50K RACE: Thailand 100K Ultra Marathon 2026 (ระยะ 50 กม.) @ ม.เกษตรศาสตร์ กำแพงแสน", "dist": 50, "zone": "ดูกลยุทธ์ในแท็บ Race Day & Notes", "note": "เริ่มช้ากว่าที่รู้สึกว่าทำได้ในช่วง 10 กม.แรกเสมอ | ผลจริง: จบ 5:32:57 เพซเฉลี่ย 6:36/กม. คุมจังหวะดีมากถึง กม.30 (5:55-6:15/กม. คงที่) จากนั้น pace ร่วงหนักช่วง กม.33-51 (cadence 184→126spm, GCT 246→315ms) ขณะที่ HR กลับลดลง = กล้ามเนื้อ/glycogen ล้า ไม่ใช่ระบบหัวใจ-ปอด — กรอก RPE ส่วนตัวที่ K21 ได้เลย", "act_dist": 50.4, "act_hr": 159, "rpe": 9, "gymimpact": null, "group_filled": "Taper Wk2 (กำแพงแสน 50K) | เป้าหมาย: ลด volume ต่อเนื่อง เตรียมร่างกาย/คาร์บโหลดให้พร้อมวันแข่งจริง", "phase": "Taper", "act_dist_f": 50.4}]}, {"idx": 4, "monday": "2026-08-03", "phase": "Recovery", "label": "Wk1: ฟื้นฟู (Recovery)", "plan_km": 9, "actual_km": 31.7, "days": [{"date": "2026-08-03", "day": "จ.", "group": "Wk1: ฟื้นฟู (Recovery) | เป้าหมาย: ฟื้นตัวเต็มที่หลัง 50K — volume ต่ำสุดของทั้งแผน ห้ามฝืนฟอร์ม", "type": "Rest", "desc": "พักเต็มวัน — ฟื้นตัวจาก Long run เมื่อวาน + เตรียมพร้อมสำหรับ Quality session วันอังคาร", "dist": null, "zone": null, "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk1: ฟื้นฟู (Recovery) | เป้าหมาย: ฟื้นตัวเต็มที่หลัง 50K — volume ต่ำสุดของทั้งแผน ห้ามฝืนฟอร์ม", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-08-04", "day": "อ.", "group": null, "type": "Run", "desc": "ARR วิ่งฟื้นฟูเบามาก", "dist": 2, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "ถ้ายังปวดขา ให้เดินแทนได้เลย", "act_dist": 2.4, "act_hr": 121, "rpe": 3, "gymimpact": null, "group_filled": "Wk1: ฟื้นฟู (Recovery) | เป้าหมาย: ฟื้นตัวเต็มที่หลัง 50K — volume ต่ำสุดของทั้งแผน ห้ามฝืนฟอร์ม", "phase": "Recovery", "act_dist_f": 2.4}, {"date": "2026-08-05", "day": "พ.", "group": "Wk1: ฟื้นฟู (Recovery) | เป้าหมาย: ฟื้นตัวเต็มที่หลัง 50K — volume ต่ำสุดของทั้งแผน ห้ามฝืนฟอร์ม", "type": "Gym", "desc": "พัก หรือ mobility เบามาก (ไม่ยกน้ำหนัก)", "dist": null, "zone": "-", "note": "ให้ร่างกายฟื้นจากอัลตร้าก่อน | เนื่องจาก 50K นี้มี pace breakdown ชัดเจนช่วง กม.33+ (กล้ามเนื้อ/เอ็นล้าสะสมมากกว่าปกติ) ให้สังเกตขา/เอ็นร้อยหวายละเอียดกว่าปกติสัปดาห์นี้ ถ้าวันที่ 5-6 ยังตึง/ปวดอยู่ ให้ขยายสัปดาห์ฟื้นฟูต่ออีก 3-5 วันตามกฎเดิมของแผน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk1: ฟื้นฟู (Recovery) | เป้าหมาย: ฟื้นตัวเต็มที่หลัง 50K — volume ต่ำสุดของทั้งแผน ห้ามฝืนฟอร์ม", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-08-06", "day": "พฤ.", "group": null, "type": "Run", "desc": "ARR วิ่งฟื้นฟูเบามาก", "dist": 2, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "สังเกตอาการปวด/บวมที่ขา", "act_dist": 6.2, "act_hr": 143, "rpe": 5, "gymimpact": null, "group_filled": "Wk1: ฟื้นฟู (Recovery) | เป้าหมาย: ฟื้นตัวเต็มที่หลัง 50K — volume ต่ำสุดของทั้งแผน ห้ามฝืนฟอร์ม", "phase": "Recovery", "act_dist_f": 6.2}, {"date": "2026-08-07", "day": "ศ.", "group": null, "type": "Gym", "desc": "พัก", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk1: ฟื้นฟู (Recovery) | เป้าหมาย: ฟื้นตัวเต็มที่หลัง 50K — volume ต่ำสุดของทั้งแผน ห้ามฝืนฟอร์ม", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-08-08", "day": "ส.", "group": null, "type": "Run", "desc": "ARR วิ่งเบา", "dist": 1, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "ถ้ารู้สึกดีค่อยเพิ่มระยะสัปดาห์หน้า", "act_dist": 7.8, "act_hr": 145, "rpe": 6, "gymimpact": null, "group_filled": "Wk1: ฟื้นฟู (Recovery) | เป้าหมาย: ฟื้นตัวเต็มที่หลัง 50K — volume ต่ำสุดของทั้งแผน ห้ามฝืนฟอร์ม", "phase": "Recovery", "act_dist_f": 7.8}, {"date": "2026-08-09", "day": "อา.", "group": null, "type": "Run", "desc": "ARR วิ่งเบาสบายๆ ปิดสัปดาห์ฟื้นฟู", "dist": 4, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "เตรียมกลับมาซ้อมจริงสัปดาห์หน้า", "act_dist": 15.3, "act_hr": 143, "rpe": 5, "gymimpact": null, "group_filled": "Wk1: ฟื้นฟู (Recovery) | เป้าหมาย: ฟื้นตัวเต็มที่หลัง 50K — volume ต่ำสุดของทั้งแผน ห้ามฝืนฟอร์ม", "phase": "Recovery", "act_dist_f": 15.3}]}, {"idx": 5, "monday": "2026-08-10", "phase": "Base", "label": "Wk2: Base 1", "plan_km": 40, "actual_km": 38.6, "days": [{"date": "2026-08-10", "day": "จ.", "group": "Wk2: Base 1 | เป้าหมาย: เริ่มสร้างฐานแอโรบิคหลังฟื้นตัว เพิ่ม volume แบบค่อยเป็นค่อยไป มี CT เช็คฟอร์มกลางสัปดาห์", "type": "Rest", "desc": "พักเต็มวัน — ฟื้นตัวจาก Long run เมื่อวาน + เตรียมพร้อมสำหรับ Quality session วันอังคาร", "dist": null, "zone": null, "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk2: Base 1 | เป้าหมาย: เริ่มสร้างฐานแอโรบิคหลังฟื้นตัว เพิ่ม volume แบบค่อยเป็นค่อยไป มี CT เช็คฟอร์มกลางสัปดาห์", "phase": "Base", "act_dist_f": null}, {"date": "2026-08-11", "day": "อ.", "group": null, "type": "Run", "desc": "WU 10นาที + Fartlek เบาๆ 6x2นาที @MCR สลับจ๊อกฟื้นตัว 2นาที @ARR + CD 10นาที", "dist": 6, "zone": "MCR เป้า 5:27 น./กม. (ช่วง 5:21-5:32)", "note": "จ๊อกฟื้นตัวระหว่างเซต = โซน ARR (ช้าๆ ไม่ต้องคุมเพซ) — ดูคำอธิบายเพิ่มที่แท็บ How-To & FAQ", "act_dist": 2.93, "act_hr": 159, "rpe": 7, "gymimpact": null, "group_filled": "Wk2: Base 1 | เป้าหมาย: เริ่มสร้างฐานแอโรบิคหลังฟื้นตัว เพิ่ม volume แบบค่อยเป็นค่อยไป มี CT เช็คฟอร์มกลางสัปดาห์", "phase": "Base", "act_dist_f": 2.93}, {"date": "2026-08-12", "day": "พ.", "group": "Wk2: Base 1 | เป้าหมาย: เริ่มสร้างฐานแอโรบิคหลังฟื้นตัว เพิ่ม volume แบบค่อยเป็นค่อยไป มี CT เช็คฟอร์มกลางสัปดาห์", "type": "Gym", "desc": "General Strength A (ดูแท็บ Gym Program)", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk2: Base 1 | เป้าหมาย: เริ่มสร้างฐานแอโรบิคหลังฟื้นตัว เพิ่ม volume แบบค่อยเป็นค่อยไป มี CT เช็คฟอร์มกลางสัปดาห์", "phase": "Base", "act_dist_f": null}, {"date": "2026-08-13", "day": "พฤ.", "group": null, "type": "Run", "desc": "CT — Control Test: วอร์มอัพ 15 นาที แล้ววิ่ง 10 กม. จับเวลาเต็มที่ (ควบคุมได้ ไม่ต้องเจ็บตัว)", "dist": 11, "zone": "วิ่งเทสเต็มที่ 10 กม. (ไม่ใช่โซนฝึกปกติ)", "note": "จบแล้วนำเวลาไปใส่ในเซลล์ B11 แท็บ \"Overview & VCR\" ทันที — เพซทั้งไฟล์จะปรับตามอัตโนมัติ (11 วันหลัง 50K ถือว่าฟื้นพอสำหรับเทสนี้)", "act_dist": 12.7, "act_hr": 183, "rpe": 10, "gymimpact": null, "group_filled": "Wk2: Base 1 | เป้าหมาย: เริ่มสร้างฐานแอโรบิคหลังฟื้นตัว เพิ่ม volume แบบค่อยเป็นค่อยไป มี CT เช็คฟอร์มกลางสัปดาห์", "phase": "Base", "act_dist_f": 12.7}, {"date": "2026-08-14", "day": "ศ.", "group": null, "type": "Gym", "desc": "General Strength A", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk2: Base 1 | เป้าหมาย: เริ่มสร้างฐานแอโรบิคหลังฟื้นตัว เพิ่ม volume แบบค่อยเป็นค่อยไป มี CT เช็คฟอร์มกลางสัปดาห์", "phase": "Base", "act_dist_f": null}, {"date": "2026-08-15", "day": "ส.", "group": null, "type": "Run", "desc": "Easy run", "dist": 4, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": 4, "act_hr": 149, "rpe": 5, "gymimpact": "ช่วย", "group_filled": "Wk2: Base 1 | เป้าหมาย: เริ่มสร้างฐานแอโรบิคหลังฟื้นตัว เพิ่ม volume แบบค่อยเป็นค่อยไป มี CT เช็คฟอร์มกลางสัปดาห์", "phase": "Base", "act_dist_f": 4.0}, {"date": "2026-08-16", "day": "อา.", "group": null, "type": "Run", "desc": "Long run easy 19กม. (70/30: 13กม.@ARR + 6กม.@SCR)", "dist": 19, "zone": "ช่วงต้น-กลาง (13กม., 70%) @ARR เป้า 7:00 น./กม. (Zone1-2 ≤152bpm) / ช่วงท้าย (6กม., 30%) @SCR เป้า 6:08 น./กม. (Zone3 ~155-165bpm)", "note": "ซ้อมกินเจล/น้ำทุก 45 นาที | โครงสร้าง 70/30 ARR/SCR — เพิ่ม Zone1-2 volume เพื่อสร้างฐานแอโรบิคแน่นขึ้น โดยใช้ session เดิมที่มีอยู่แล้ว ไม่เพิ่มวันซ้อมใหม่", "act_dist": 19, "act_hr": 144, "rpe": 5, "gymimpact": null, "group_filled": "Wk2: Base 1 | เป้าหมาย: เริ่มสร้างฐานแอโรบิคหลังฟื้นตัว เพิ่ม volume แบบค่อยเป็นค่อยไป มี CT เช็คฟอร์มกลางสัปดาห์", "phase": "Base", "act_dist_f": 19.0}]}, {"idx": 6, "monday": "2026-08-17", "phase": "Base", "label": "Wk3: Base 2", "plan_km": 43, "actual_km": 44.0, "days": [{"date": "2026-08-17", "day": "จ.", "group": "Wk3: Base 2 | เป้าหมาย: สร้างฐานแอโรบิคต่อเนื่อง เริ่มใส่ tempo สั้นๆ ทดสอบความหนักที่เพิ่มขึ้น", "type": "Rest", "desc": "พักเต็มวัน — ฟื้นตัวจาก Long run เมื่อวาน + เตรียมพร้อมสำหรับ Quality session วันอังคาร", "dist": null, "zone": null, "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk3: Base 2 | เป้าหมาย: สร้างฐานแอโรบิคต่อเนื่อง เริ่มใส่ tempo สั้นๆ ทดสอบความหนักที่เพิ่มขึ้น", "phase": "Base", "act_dist_f": null}, {"date": "2026-08-18", "day": "อ.", "group": null, "type": "Run", "desc": "Tempo 20 นาที @FCR ต้นโซน (ใน 8กม.รวม)", "dist": 8, "zone": "FCR เป้า 5:13 น./กม. (ช่วง 5:08-5:18)", "note": "warm-up 15 นาทีก่อน tempo | [Decoupling Check] แบ่งช่วงนี้เป็น 2 ครึ่งเท่ากัน วิ่งเพซคงที่ตลอด (ห้ามเร่ง/ชะลอ) จดบันทึก HR เฉลี่ยครึ่งแรก vs ครึ่งหลังแยกกัน (จาก Garmin auto-lap หรือดูกราฟ HR หลังวิ่ง) แล้วกรอกลงตาราง Decoupling Tracker ในแท็บ Weekly Progress & Suggestions", "act_dist": 3.97, "act_hr": 159, "rpe": 8, "gymimpact": null, "group_filled": "Wk3: Base 2 | เป้าหมาย: สร้างฐานแอโรบิคต่อเนื่อง เริ่มใส่ tempo สั้นๆ ทดสอบความหนักที่เพิ่มขึ้น", "phase": "Base", "act_dist_f": 3.97}, {"date": "2026-08-19", "day": "พ.", "group": "Wk3: Base 2 | เป้าหมาย: สร้างฐานแอโรบิคต่อเนื่อง เริ่มใส่ tempo สั้นๆ ทดสอบความหนักที่เพิ่มขึ้น", "type": "Gym", "desc": "General Strength A", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk3: Base 2 | เป้าหมาย: สร้างฐานแอโรบิคต่อเนื่อง เริ่มใส่ tempo สั้นๆ ทดสอบความหนักที่เพิ่มขึ้น", "phase": "Base", "act_dist_f": null}, {"date": "2026-08-20", "day": "พฤ.", "group": null, "type": "Run", "desc": "วิ่งเล่นเขาตีนไก่ (ทดแทน Hill sprints — ได้ประโยชน์จากเนินคล้ายกัน)", "dist": 7, "zone": "ไม่คุมเพซ/โซนตายตัว — วิ่งเล่นตามเส้นทางเนินจริง ฟังร่างกายเป็นหลัก", "note": "สลับมาจากวันอังคารเดิม — ถ้าอยากได้ข้อมูลเปรียบเทียบ บันทึกระยะ/HR/RPE ตามจริงไว้ด้วย", "act_dist": 12, "act_hr": 113, "rpe": 5, "gymimpact": null, "group_filled": "Wk3: Base 2 | เป้าหมาย: สร้างฐานแอโรบิคต่อเนื่อง เริ่มใส่ tempo สั้นๆ ทดสอบความหนักที่เพิ่มขึ้น", "phase": "Base", "act_dist_f": 12.0}, {"date": "2026-08-21", "day": "ศ.", "group": null, "type": "Gym", "desc": "General Strength A", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk3: Base 2 | เป้าหมาย: สร้างฐานแอโรบิคต่อเนื่อง เริ่มใส่ tempo สั้นๆ ทดสอบความหนักที่เพิ่มขึ้น", "phase": "Base", "act_dist_f": null}, {"date": "2026-08-22", "day": "ส.", "group": null, "type": "Run", "desc": "Easy/medium run", "dist": 5, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": 5, "act_hr": 139, "rpe": 5, "gymimpact": null, "group_filled": "Wk3: Base 2 | เป้าหมาย: สร้างฐานแอโรบิคต่อเนื่อง เริ่มใส่ tempo สั้นๆ ทดสอบความหนักที่เพิ่มขึ้น", "phase": "Base", "act_dist_f": 5.0}, {"date": "2026-08-23", "day": "อา.", "group": null, "type": "Run", "desc": "Long run easy 23กม. (70/30: 16กม.@ARR + 7กม.@SCR)", "dist": 23, "zone": "ช่วงต้น-กลาง (16กม., 70%) @ARR เป้า 7:00 น./กม. (Zone1-2 ≤152bpm) / ช่วงท้าย (7กม., 30%) @SCR เป้า 6:08 น./กม. (Zone3 ~155-165bpm)", "note": "เริ่มลองรองเท้า/เจลที่จะใช้ซ้อมจริง | โครงสร้าง 70/30 ARR/SCR — เพิ่ม Zone1-2 volume เพื่อสร้างฐานแอโรบิคแน่นขึ้น โดยใช้ session เดิมที่มีอยู่แล้ว ไม่เพิ่มวันซ้อมใหม่", "act_dist": 23, "act_hr": 145, "rpe": 5, "gymimpact": null, "group_filled": "Wk3: Base 2 | เป้าหมาย: สร้างฐานแอโรบิคต่อเนื่อง เริ่มใส่ tempo สั้นๆ ทดสอบความหนักที่เพิ่มขึ้น", "phase": "Base", "act_dist_f": 23.0}]}, {"idx": 7, "monday": "2026-08-24", "phase": "Base", "label": "Wk4: Base 3 (Down)", "plan_km": 36, "actual_km": 35.3, "days": [{"date": "2026-08-24", "day": "จ.", "group": "Wk4: Base 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน (Down week) — ลด volume ให้ร่างกายซึมซับการปรับตัวจาก 2 สัปดาห์ก่อน", "type": "Rest", "desc": "พักเต็มวัน — ฟื้นตัวจาก Long run เมื่อวาน + เตรียมพร้อมสำหรับ Quality session วันอังคาร", "dist": null, "zone": null, "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk4: Base 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน (Down week) — ลด volume ให้ร่างกายซึมซับการปรับตัวจาก 2 สัปดาห์ก่อน", "phase": "Base", "act_dist_f": null}, {"date": "2026-08-25", "day": "อ.", "group": null, "type": "Run", "desc": "WU 10นาที + Fartlek เบา 5x2นาที @MCR สลับจ๊อกฟื้นตัว @ARR + CD 10นาที", "dist": 7, "zone": "MCR เป้า 5:27 น./กม. (ช่วง 5:21-5:32)", "note": "จ๊อกฟื้นตัว = โซน ARR", "act_dist": 6.3, "act_hr": 145, "rpe": 7, "gymimpact": null, "group_filled": "Wk4: Base 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน (Down week) — ลด volume ให้ร่างกายซึมซับการปรับตัวจาก 2 สัปดาห์ก่อน", "phase": "Base", "act_dist_f": 6.3}, {"date": "2026-08-26", "day": "พ.", "group": "Wk4: Base 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน (Down week) — ลด volume ให้ร่างกายซึมซับการปรับตัวจาก 2 สัปดาห์ก่อน", "type": "Gym", "desc": "General Strength A (ลด volume ~30%)", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk4: Base 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน (Down week) — ลด volume ให้ร่างกายซึมซับการปรับตัวจาก 2 สัปดาห์ก่อน", "phase": "Base", "act_dist_f": null}, {"date": "2026-08-27", "day": "พฤ.", "group": null, "type": "Run", "desc": "Easy + strides 6x100m", "dist": 7, "zone": "SCR เป้า 6:03 น./กม. (ช่วง 5:54-6:12)", "note": "strides = เร่งสั้นๆ ไม่ใช่สปรินต์สุดแรง", "act_dist": 7, "act_hr": 155, "rpe": 7, "gymimpact": null, "group_filled": "Wk4: Base 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน (Down week) — ลด volume ให้ร่างกายซึมซับการปรับตัวจาก 2 สัปดาห์ก่อน", "phase": "Base", "act_dist_f": 7.0}, {"date": "2026-08-28", "day": "ศ.", "group": null, "type": "Gym", "desc": "General Strength A (เบา)", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk4: Base 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน (Down week) — ลด volume ให้ร่างกายซึมซับการปรับตัวจาก 2 สัปดาห์ก่อน", "phase": "Base", "act_dist_f": null}, {"date": "2026-08-29", "day": "ส.", "group": null, "type": "Run", "desc": "Easy run", "dist": 5, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": 5, "act_hr": 149, "rpe": 5, "gymimpact": null, "group_filled": "Wk4: Base 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน (Down week) — ลด volume ให้ร่างกายซึมซับการปรับตัวจาก 2 สัปดาห์ก่อน", "phase": "Base", "act_dist_f": 5.0}, {"date": "2026-08-30", "day": "อา.", "group": null, "type": "Run", "desc": "Long run easy (ลดระยะ) 17กม. (70/30: 12กม.@ARR + 5กม.@SCR)", "dist": 17, "zone": "ช่วงต้น-กลาง (12กม., 70%) @ARR เป้า 7:00 น./กม. (Zone1-2 ≤152bpm) / ช่วงท้าย (5กม., 30%) @SCR เป้า 6:08 น./กม. (Zone3 ~155-165bpm)", "note": "สัปดาห์ผ่อน ฟังร่างกายเป็นหลัก | โครงสร้าง 70/30 ARR/SCR — เพิ่ม Zone1-2 volume เพื่อสร้างฐานแอโรบิคแน่นขึ้น โดยใช้ session เดิมที่มีอยู่แล้ว ไม่เพิ่มวันซ้อมใหม่", "act_dist": 17, "act_hr": 145, "rpe": 5, "gymimpact": null, "group_filled": "Wk4: Base 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน (Down week) — ลด volume ให้ร่างกายซึมซับการปรับตัวจาก 2 สัปดาห์ก่อน", "phase": "Base", "act_dist_f": 17.0}]}, {"idx": 8, "monday": "2026-08-31", "phase": "Base", "label": "Wk5: Base 4", "plan_km": 20, "actual_km": 21.4, "days": [{"date": "2026-08-31", "day": "จ.", "group": "Wk5: Base 4 | เป้าหมาย: ปิดท้าย Base phase + มี 10K tune-up race ปลายสัปดาห์เพื่อทดสอบฟอร์มและอัปเดต VCR", "type": "Rest", "desc": "พักเต็มวัน — ฟื้นตัวจาก Long run เมื่อวาน + เตรียมพร้อมสำหรับ Quality session วันอังคาร", "dist": null, "zone": null, "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk5: Base 4 | เป้าหมาย: ปิดท้าย Base phase + มี 10K tune-up race ปลายสัปดาห์เพื่อทดสอบฟอร์มและอัปเดต VCR", "phase": "Base", "act_dist_f": null}, {"date": "2026-09-01", "day": "อ.", "group": null, "type": "Run", "desc": "WU 10นาที + Hill sprints 10x15วิ (เดินลง recovery เต็มที่) + CD 10นาที", "dist": 8, "zone": "Hill/แรงระเบิด: ออกแรงสูงสุดช่วงสั้นๆ (ไม่คุมเพซ) — ดูวิธีทำที่ How-To & FAQ", "note": "ไม่มีทางชัน? ดูทางเลือกที่แท็บ How-To & FAQ", "act_dist": 4, "act_hr": 134, "rpe": 7, "gymimpact": null, "group_filled": "Wk5: Base 4 | เป้าหมาย: ปิดท้าย Base phase + มี 10K tune-up race ปลายสัปดาห์เพื่อทดสอบฟอร์มและอัปเดต VCR", "phase": "Base", "act_dist_f": 4.0}, {"date": "2026-09-02", "day": "พ.", "group": "Wk5: Base 4 | เป้าหมาย: ปิดท้าย Base phase + มี 10K tune-up race ปลายสัปดาห์เพื่อทดสอบฟอร์มและอัปเดต VCR", "type": "Gym", "desc": "General Strength A/เริ่มปรับเป็น B", "dist": null, "zone": "-", "note": "เริ่มเพิ่มน้ำหนัก ลดจำนวนครั้งลงเล็กน้อย", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk5: Base 4 | เป้าหมาย: ปิดท้าย Base phase + มี 10K tune-up race ปลายสัปดาห์เพื่อทดสอบฟอร์มและอัปเดต VCR", "phase": "Base", "act_dist_f": null}, {"date": "2026-09-03", "day": "พฤ.", "group": null, "type": "Run", "desc": "Tempo 25 นาที @FCR", "dist": 8, "zone": "FCR เป้า 5:13 น./กม. (ช่วง 5:08-5:18)", "note": "[Decoupling Check] แบ่งช่วงนี้เป็น 2 ครึ่งเท่ากัน วิ่งเพซคงที่ตลอด (ห้ามเร่ง/ชะลอ) จดบันทึก HR เฉลี่ยครึ่งแรก vs ครึ่งหลังแยกกัน (จาก Garmin auto-lap หรือดูกราฟ HR หลังวิ่ง) แล้วกรอกลงตาราง Decoupling Tracker ในแท็บ Weekly Progress & Suggestions", "act_dist": 4, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk5: Base 4 | เป้าหมาย: ปิดท้าย Base phase + มี 10K tune-up race ปลายสัปดาห์เพื่อทดสอบฟอร์มและอัปเดต VCR", "phase": "Base", "act_dist_f": 4.0}, {"date": "2026-09-04", "day": "ศ.", "group": null, "type": "Gym", "desc": "General Strength A/B (เบาลง เน้นเทคนิค ไม่เอาหนักถึงล้า — 2 วันก่อนแข่ง 10K)", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk5: Base 4 | เป้าหมาย: ปิดท้าย Base phase + มี 10K tune-up race ปลายสัปดาห์เพื่อทดสอบฟอร์มและอัปเดต VCR", "phase": "Base", "act_dist_f": null}, {"date": "2026-09-05", "day": "ส.", "group": null, "type": "Run", "desc": "Shakeout เบาๆ 20 นาที + Strides 4x80m (เปิดขา ก่อนแข่ง 10K พรุ่งนี้)", "dist": 4, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": "พักผ่อนให้เต็มที่คืนนี้ เตรียมอุปกรณ์/เบอร์วิ่งให้พร้อม งดลองรองเท้า/อาหารใหม่ก่อนแข่ง", "act_dist": 3.14, "act_hr": 143, "rpe": 4, "gymimpact": null, "group_filled": "Wk5: Base 4 | เป้าหมาย: ปิดท้าย Base phase + มี 10K tune-up race ปลายสัปดาห์เพื่อทดสอบฟอร์มและอัปเดต VCR", "phase": "Base", "act_dist_f": 3.14}, {"date": "2026-09-06", "day": "อา.", "group": null, "type": "Race", "desc": "10K RACE (ทดสอบฟอร์ม/Tune-up race) — WU เบาๆ 15-20 นาที + Strides 3x80m ก่อนสตาร์ท, แข่งเต็มที่ 10 กม., คูลดาวน์จ๊อกเบา 10 นาที", "dist": 13, "zone": "เป้าหมาย Stretch 40:00 (4:00 น./กม.) | เป้าหมาย Solid 42:00 (4:12 น./กม.) | ตามฟอร์มจริงตอนนี้ ~43:30-44:30 (4:21-4:27 น./กม.)", "note": "เป้า 40-42 นาทีเร็วกว่าผลเทสล่าสุด (44:41) ถึง 2-4 นาทีภายใน ~7 สัปดาห์ — โหดมาก ระวังอย่ากดดันตัวเองจนบาดเจ็บ แนะนำยึดเพซตามฟอร์มจริง (43:30-44:30) เป็นหลัก แล้วถ้าวันนั้นฟอร์ม/อากาศเป็นใจค่อยไล่เป้าที่สูงกว่า กลยุทธ์: 2-3กม.แรกอย่าออกเร็วเกิน กลางคุมตามความรู้สึก ดันสุดใน 2กม.สุดท้ายถ้าไหว | หลังแข่งเสร็จ นำเวลาจริงไปอัปเดตที่แท็บ Overview & VCR ช่อง B11 \"ผลทดสอบ 10 กม. ล่าสุด\" เพซของ Threshold/MP intervals ทุกสัปดาห์ถัดไปจะปรับให้อัตโนมัติตามฟอร์มใหม่ทันที", "act_dist": 10.28, "act_hr": 166, "rpe": 10, "gymimpact": null, "group_filled": "Wk5: Base 4 | เป้าหมาย: ปิดท้าย Base phase + มี 10K tune-up race ปลายสัปดาห์เพื่อทดสอบฟอร์มและอัปเดต VCR", "phase": "Base", "act_dist_f": 10.28}]}, {"idx": 9, "monday": "2026-09-07", "phase": "Specific", "label": "Wk6: Specific 1", "plan_km": 57, "actual_km": 26.8, "days": [{"date": "2026-09-07", "day": "จ.", "group": "Wk6: Specific 1 | เป้าหมาย: เริ่มเฟส Specific — ใส่ Threshold/MP intervals เจาะจงเป้าหมายมาราธอนมากขึ้น", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk6: Specific 1 | เป้าหมาย: เริ่มเฟส Specific — ใส่ Threshold/MP intervals เจาะจงเป้าหมายมาราธอนมากขึ้น", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-08", "day": "อ.", "group": null, "type": "Run", "desc": "Threshold 3x2กม. @FCR/EXT105 (พัก 90วิ)", "dist": 9, "zone": "Threshold เป้า 5:00 น./กม. (ช่วง 4:54-5:06)", "note": "WU/CD รวมในระยะ | ถ้ายังล้าจากแข่ง 10K วันอาทิตย์ เลื่อนงานนี้ไปวันพุธ-พฤหัสแทนได้ หรือสลับเป็น Easy run ก่อน", "act_dist": 9.8, "act_hr": 165, "rpe": 8, "gymimpact": null, "group_filled": "Wk6: Specific 1 | เป้าหมาย: เริ่มเฟส Specific — ใส่ Threshold/MP intervals เจาะจงเป้าหมายมาราธอนมากขึ้น", "phase": "Specific", "act_dist_f": 9.8}, {"date": "2026-09-09", "day": "พ.", "group": null, "type": "Run", "desc": "Easy/medium run", "dist": 6, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": 8, "act_hr": 148, "rpe": 5, "gymimpact": null, "group_filled": "Wk6: Specific 1 | เป้าหมาย: เริ่มเฟส Specific — ใส่ Threshold/MP intervals เจาะจงเป้าหมายมาราธอนมากขึ้น", "phase": "Specific", "act_dist_f": 8.0}, {"date": "2026-09-10", "day": "พฤ.", "group": null, "type": "Run", "desc": "MP intervals 3x3กม. @MP (พัก 2นาที)", "dist": 10, "zone": "MP: 5:20 (เป้า 3:35) หรือ 5:27 (เป้า 3:40) น./กม.", "note": "เริ่มจับเวลาที่ MP เป้าหมายให้ชิน", "act_dist": 9, "act_hr": 169, "rpe": 9, "gymimpact": null, "group_filled": "Wk6: Specific 1 | เป้าหมาย: เริ่มเฟส Specific — ใส่ Threshold/MP intervals เจาะจงเป้าหมายมาราธอนมากขึ้น", "phase": "Specific", "act_dist_f": 9.0}, {"date": "2026-09-11", "day": "ศ.", "group": null, "type": "Gym", "desc": "Max Strength B", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk6: Specific 1 | เป้าหมาย: เริ่มเฟส Specific — ใส่ Threshold/MP intervals เจาะจงเป้าหมายมาราธอนมากขึ้น", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-12", "day": "ส.", "group": null, "type": "Run", "desc": "Easy/medium run", "dist": 6, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk6: Specific 1 | เป้าหมาย: เริ่มเฟส Specific — ใส่ Threshold/MP intervals เจาะจงเป้าหมายมาราธอนมากขึ้น", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-13", "day": "อา.", "group": null, "type": "Run", "desc": "Long run 26กม. (21 easy + 5 @MP ท้าย)", "dist": 26, "zone": "ช่วงต้น (SCR) เป้า 6:27 น./กม. / ช่วงท้าย (MP) 5:20(เป้า3:35) หรือ 5:27(เป้า3:40)", "note": "ซ้อมเจล/น้ำเหมือนแผนวันแข่ง", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk6: Specific 1 | เป้าหมาย: เริ่มเฟส Specific — ใส่ Threshold/MP intervals เจาะจงเป้าหมายมาราธอนมากขึ้น", "phase": "Specific", "act_dist_f": null}]}, {"idx": 10, "monday": "2026-09-14", "phase": "Specific", "label": "Wk7: Specific 2", "plan_km": 63, "actual_km": 0, "days": [{"date": "2026-09-14", "day": "จ.", "group": "Wk7: Specific 2 | เป้าหมาย: เพิ่มความหนัก Threshold/MP ต่อเนื่อง เจาะจงระบบพลังงานที่ใช้แข่งจริง", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk7: Specific 2 | เป้าหมาย: เพิ่มความหนัก Threshold/MP ต่อเนื่อง เจาะจงระบบพลังงานที่ใช้แข่งจริง", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-15", "day": "อ.", "group": null, "type": "Run", "desc": "Threshold 4x2กม. @FCR/EXT105 (พัก 90วิ)", "dist": 10, "zone": "Threshold เป้า 5:00 น./กม. (ช่วง 4:54-5:06)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk7: Specific 2 | เป้าหมาย: เพิ่มความหนัก Threshold/MP ต่อเนื่อง เจาะจงระบบพลังงานที่ใช้แข่งจริง", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-16", "day": "พ.", "group": "Wk7: Specific 2 | เป้าหมาย: เพิ่มความหนัก Threshold/MP ต่อเนื่อง เจาะจงระบบพลังงานที่ใช้แข่งจริง", "type": "Run", "desc": "Easy/medium run", "dist": 7, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk7: Specific 2 | เป้าหมาย: เพิ่มความหนัก Threshold/MP ต่อเนื่อง เจาะจงระบบพลังงานที่ใช้แข่งจริง", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-17", "day": "พฤ.", "group": null, "type": "Run", "desc": "MP intervals 4x3กม. @MP (พัก 2นาที)", "dist": 11, "zone": "MP: 5:20 (เป้า 3:35) หรือ 5:27 (เป้า 3:40) น./กม.", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk7: Specific 2 | เป้าหมาย: เพิ่มความหนัก Threshold/MP ต่อเนื่อง เจาะจงระบบพลังงานที่ใช้แข่งจริง", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-18", "day": "ศ.", "group": null, "type": "Gym", "desc": "Max Strength B", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk7: Specific 2 | เป้าหมาย: เพิ่มความหนัก Threshold/MP ต่อเนื่อง เจาะจงระบบพลังงานที่ใช้แข่งจริง", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-19", "day": "ส.", "group": null, "type": "Run", "desc": "Easy/medium run", "dist": 7, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk7: Specific 2 | เป้าหมาย: เพิ่มความหนัก Threshold/MP ต่อเนื่อง เจาะจงระบบพลังงานที่ใช้แข่งจริง", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-20", "day": "อา.", "group": null, "type": "Run", "desc": "Long run 28กม. (20 easy + 8 @MP ท้าย)", "dist": 28, "zone": "ช่วงต้น (SCR) เป้า 6:27 น./กม. / ช่วงท้าย (MP) 5:20(เป้า3:35) หรือ 5:27(เป้า3:40)", "note": "เริ่มรู้สึกความหนักสะสม — นอนให้พอ", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk7: Specific 2 | เป้าหมาย: เพิ่มความหนัก Threshold/MP ต่อเนื่อง เจาะจงระบบพลังงานที่ใช้แข่งจริง", "phase": "Specific", "act_dist_f": null}]}, {"idx": 11, "monday": "2026-09-21", "phase": "Specific", "label": "Wk8: Specific 3 (Down)", "plan_km": 49, "actual_km": 0, "days": [{"date": "2026-09-21", "day": "จ.", "group": "Wk8: Specific 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน — ลด volume ให้ฟื้นตัวจาก Specific 1-2 ก่อนเข้าสู่ช่วงหนักขึ้น", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk8: Specific 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน — ลด volume ให้ฟื้นตัวจาก Specific 1-2 ก่อนเข้าสู่ช่วงหนักขึ้น", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-22", "day": "อ.", "group": null, "type": "Run", "desc": "Threshold เบาลง 3x1.5กม. @EXT105", "dist": 8, "zone": "EXT105 เป้า 4:40 น./กม. (ช่วง 4:36-4:44)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk8: Specific 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน — ลด volume ให้ฟื้นตัวจาก Specific 1-2 ก่อนเข้าสู่ช่วงหนักขึ้น", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-23", "day": "พ.", "group": "Wk8: Specific 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน — ลด volume ให้ฟื้นตัวจาก Specific 1-2 ก่อนเข้าสู่ช่วงหนักขึ้น", "type": "Run", "desc": "Easy run", "dist": 7, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk8: Specific 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน — ลด volume ให้ฟื้นตัวจาก Specific 1-2 ก่อนเข้าสู่ช่วงหนักขึ้น", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-24", "day": "พฤ.", "group": null, "type": "Run", "desc": "Easy + strides 6x100m", "dist": 7, "zone": "SCR เป้า 6:03 น./กม. (ช่วง 5:54-6:12)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk8: Specific 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน — ลด volume ให้ฟื้นตัวจาก Specific 1-2 ก่อนเข้าสู่ช่วงหนักขึ้น", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-25", "day": "ศ.", "group": null, "type": "Gym", "desc": "Max Strength B (เบา)", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk8: Specific 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน — ลด volume ให้ฟื้นตัวจาก Specific 1-2 ก่อนเข้าสู่ช่วงหนักขึ้น", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-26", "day": "ส.", "group": null, "type": "Run", "desc": "Easy run", "dist": 7, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk8: Specific 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน — ลด volume ให้ฟื้นตัวจาก Specific 1-2 ก่อนเข้าสู่ช่วงหนักขึ้น", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-27", "day": "อา.", "group": null, "type": "Run", "desc": "Long run easy (ไม่มี MP) 20กม. (70/30: 14กม.@ARR + 6กม.@SCR)", "dist": 20, "zone": "ช่วงต้น-กลาง (14กม., 70%) @ARR เป้า 7:00 น./กม. (Zone1-2 ≤152bpm) / ช่วงท้าย (6กม., 30%) @SCR เป้า 6:08 น./กม. (Zone3 ~155-165bpm)", "note": "สัปดาห์พัก ก่อนเข้าช่วงหนักสุดของเฟส | โครงสร้าง 70/30 ARR/SCR — เพิ่ม Zone1-2 volume เพื่อสร้างฐานแอโรบิคแน่นขึ้น โดยใช้ session เดิมที่มีอยู่แล้ว ไม่เพิ่มวันซ้อมใหม่", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk8: Specific 3 (Down) | เป้าหมาย: สัปดาห์ผ่อน — ลด volume ให้ฟื้นตัวจาก Specific 1-2 ก่อนเข้าสู่ช่วงหนักขึ้น", "phase": "Specific", "act_dist_f": null}]}, {"idx": 12, "monday": "2026-09-28", "phase": "Specific", "label": "Wk9: Specific 4", "plan_km": 68, "actual_km": 0, "days": [{"date": "2026-09-28", "day": "จ.", "group": "Wk9: Specific 4 | เป้าหมาย: กลับมาเพิ่มความหนัก MP intervals ยาวขึ้น เตรียมเข้า Peak phase", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk9: Specific 4 | เป้าหมาย: กลับมาเพิ่มความหนัก MP intervals ยาวขึ้น เตรียมเข้า Peak phase", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-29", "day": "อ.", "group": null, "type": "Run", "desc": "VO2max 6x800m @EXT110 (พัก 2นาที jog)", "dist": 11, "zone": "EXT110 เป้า 4:27 น./กม. (ช่วง 4:24-4:31)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk9: Specific 4 | เป้าหมาย: กลับมาเพิ่มความหนัก MP intervals ยาวขึ้น เตรียมเข้า Peak phase", "phase": "Specific", "act_dist_f": null}, {"date": "2026-09-30", "day": "พ.", "group": "Wk9: Specific 4 | เป้าหมาย: กลับมาเพิ่มความหนัก MP intervals ยาวขึ้น เตรียมเข้า Peak phase", "type": "Run", "desc": "Easy/medium run", "dist": 8, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk9: Specific 4 | เป้าหมาย: กลับมาเพิ่มความหนัก MP intervals ยาวขึ้น เตรียมเข้า Peak phase", "phase": "Specific", "act_dist_f": null}, {"date": "2026-10-01", "day": "พฤ.", "group": null, "type": "Run", "desc": "MP intervals 2x6กม. @MP (พัก 3นาที)", "dist": 11, "zone": "MP: 5:20 (เป้า 3:35) หรือ 5:27 (เป้า 3:40) น./กม.", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk9: Specific 4 | เป้าหมาย: กลับมาเพิ่มความหนัก MP intervals ยาวขึ้น เตรียมเข้า Peak phase", "phase": "Specific", "act_dist_f": null}, {"date": "2026-10-02", "day": "ศ.", "group": null, "type": "Gym", "desc": "Max Strength B", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk9: Specific 4 | เป้าหมาย: กลับมาเพิ่มความหนัก MP intervals ยาวขึ้น เตรียมเข้า Peak phase", "phase": "Specific", "act_dist_f": null}, {"date": "2026-10-03", "day": "ส.", "group": null, "type": "Run", "desc": "Easy/medium run", "dist": 8, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk9: Specific 4 | เป้าหมาย: กลับมาเพิ่มความหนัก MP intervals ยาวขึ้น เตรียมเข้า Peak phase", "phase": "Specific", "act_dist_f": null}, {"date": "2026-10-04", "day": "อา.", "group": null, "type": "Run", "desc": "Long run 30กม. (MP 10กม. ช่วงกลาง-ท้าย)", "dist": 30, "zone": "ช่วงต้น (SCR) เป้า 6:27 น./กม. / ช่วงท้าย (MP) 5:20(เป้า3:45) หรือ 5:27(เป้า3:50)", "note": "ซ้อมเจล/น้ำเหมือนวันแข่งจริงเป๊ะๆ | เพิ่มความถี่เจล/คาร์บจากที่ใช้ตอนกำแพงแสน 50K — เป้าหมาย ~60-90g คาร์บ/ชม. เพื่อแก้จุดอ่อน muscular fatigue ที่เจอหลัง กม.33 ของอัลตร้า", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk9: Specific 4 | เป้าหมาย: กลับมาเพิ่มความหนัก MP intervals ยาวขึ้น เตรียมเข้า Peak phase", "phase": "Specific", "act_dist_f": null}]}, {"idx": 13, "monday": "2026-10-05", "phase": "Specific", "label": "Wk10: Specific 5", "plan_km": 72, "actual_km": 0, "days": [{"date": "2026-10-05", "day": "จ.", "group": "Wk10: Specific 5 | เป้าหมาย: MP tempo แบบ Progressive session แรกที่ยาวขึ้น ฝึกกดตัวเอง-ปล่อยตามกลยุทธ์วันแข่งจริง", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk10: Specific 5 | เป้าหมาย: MP tempo แบบ Progressive session แรกที่ยาวขึ้น ฝึกกดตัวเอง-ปล่อยตามกลยุทธ์วันแข่งจริง", "phase": "Specific", "act_dist_f": null}, {"date": "2026-10-06", "day": "อ.", "group": null, "type": "Run", "desc": "Threshold 5x1.5กม. @EXT105 (พัก 75วิ)", "dist": 11, "zone": "EXT105 เป้า 4:40 น./กม. (ช่วง 4:36-4:44)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk10: Specific 5 | เป้าหมาย: MP tempo แบบ Progressive session แรกที่ยาวขึ้น ฝึกกดตัวเอง-ปล่อยตามกลยุทธ์วันแข่งจริง", "phase": "Specific", "act_dist_f": null}, {"date": "2026-10-07", "day": "พ.", "group": "Wk10: Specific 5 | เป้าหมาย: MP tempo แบบ Progressive session แรกที่ยาวขึ้น ฝึกกดตัวเอง-ปล่อยตามกลยุทธ์วันแข่งจริง", "type": "Run", "desc": "Easy/medium run", "dist": 8, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk10: Specific 5 | เป้าหมาย: MP tempo แบบ Progressive session แรกที่ยาวขึ้น ฝึกกดตัวเอง-ปล่อยตามกลยุทธ์วันแข่งจริง", "phase": "Specific", "act_dist_f": null}, {"date": "2026-10-08", "day": "พฤ.", "group": null, "type": "Run", "desc": "MP tempo ต่อเนื่อง 12กม. @MP (Progressive: 5กม.@SCR-สูง+5กม.@MP+2กม.เร่งได้)", "dist": 14, "zone": "ช่วง 1 (5กม.) @SCR-สูง 85% เป้า 5:46 น./กม. (Zone2ปลาย-3ต้น ~150-158bpm) / ช่วง 2 (5กม.) @MP 90% เป้า 5:27 น./กม. (Zone3 ~158-165bpm) / ช่วง 3 (2กม.) เร่งได้ @FCR 94% เป้า 5:13 น./กม. เฉพาะถ้า HR ยังไม่เกิน Zone4 (166)", "note": "โครงสร้าง progressive จำลอง negative split วันแข่งจริง — ฝึกวินัยกดตัวเองช่วงแรกก่อนปล่อยช่วงหลัง ห้ามเริ่มเร็วกว่า SCR-สูงเด็ดขาด แม้รู้สึกไหว | ลองประเมิน VCR ใหม่ (Control Test) ปลายสัปดาห์นี้", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk10: Specific 5 | เป้าหมาย: MP tempo แบบ Progressive session แรกที่ยาวขึ้น ฝึกกดตัวเอง-ปล่อยตามกลยุทธ์วันแข่งจริง", "phase": "Specific", "act_dist_f": null}, {"date": "2026-10-09", "day": "ศ.", "group": null, "type": "Gym", "desc": "Max Strength B/Power", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk10: Specific 5 | เป้าหมาย: MP tempo แบบ Progressive session แรกที่ยาวขึ้น ฝึกกดตัวเอง-ปล่อยตามกลยุทธ์วันแข่งจริง", "phase": "Specific", "act_dist_f": null}, {"date": "2026-10-10", "day": "ส.", "group": null, "type": "Run", "desc": "Easy/medium run", "dist": 8, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk10: Specific 5 | เป้าหมาย: MP tempo แบบ Progressive session แรกที่ยาวขึ้น ฝึกกดตัวเอง-ปล่อยตามกลยุทธ์วันแข่งจริง", "phase": "Specific", "act_dist_f": null}, {"date": "2026-10-11", "day": "อา.", "group": null, "type": "Run", "desc": "Long run 31กม. (23 easy + 8 ปลาย Progressive: 4กม.@SCR-สูง+4กม.@MP)", "dist": 31, "zone": "ช่วงต้น 23กม. (SCR) เป้า 6:08 น./กม. (Zone2 ~140-152bpm) / ปลาย ช่วง 1 (4กม.) @SCR-สูง เป้า 5:46 น./กม. (Zone2ปลาย-3ต้น) / ปลาย ช่วง 2 (4กม.) @MP เป้า 5:27 น./กม. (Zone3 ~158-165bpm)", "note": "ฟอร์มควรขึ้นชัดเจนแล้วช่วงนี้ | เพิ่มความถี่เจล/คาร์บจากที่ใช้ตอนกำแพงแสน 50K — เป้าหมาย ~60-90g คาร์บ/ชม. เพื่อแก้จุดอ่อน muscular fatigue ที่เจอหลัง กม.33 ของอัลตร้า | ปลายแบบ progressive ฝึกกดตัวเองก่อนปล่อย เหมือนกลยุทธ์วันแข่งจริง", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk10: Specific 5 | เป้าหมาย: MP tempo แบบ Progressive session แรกที่ยาวขึ้น ฝึกกดตัวเอง-ปล่อยตามกลยุทธ์วันแข่งจริง", "phase": "Specific", "act_dist_f": null}]}, {"idx": 14, "monday": "2026-10-12", "phase": "Peak", "label": "Wk11: Peak 1 (จุดสูงสุด)", "plan_km": 78, "actual_km": 0, "days": [{"date": "2026-10-12", "day": "จ.", "group": "Wk11: Peak 1 (จุดสูงสุด) | เป้าหมาย: จุดสูงสุดของ volume+intensity ทั้งแผน — MP tempo หนักที่สุด (14กม.) ต้องฟังร่างกายใกล้ชิด", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk11: Peak 1 (จุดสูงสุด) | เป้าหมาย: จุดสูงสุดของ volume+intensity ทั้งแผน — MP tempo หนักที่สุด (14กม.) ต้องฟังร่างกายใกล้ชิด", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-13", "day": "อ.", "group": null, "type": "Run", "desc": "VO2max 5x1000m @EXT110 (พัก 3นาที)", "dist": 12, "zone": "EXT110 เป้า 4:27 น./กม. (ช่วง 4:24-4:31)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk11: Peak 1 (จุดสูงสุด) | เป้าหมาย: จุดสูงสุดของ volume+intensity ทั้งแผน — MP tempo หนักที่สุด (14กม.) ต้องฟังร่างกายใกล้ชิด", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-14", "day": "พ.", "group": "Wk11: Peak 1 (จุดสูงสุด) | เป้าหมาย: จุดสูงสุดของ volume+intensity ทั้งแผน — MP tempo หนักที่สุด (14กม.) ต้องฟังร่างกายใกล้ชิด", "type": "Run", "desc": "Easy/medium run", "dist": 9, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk11: Peak 1 (จุดสูงสุด) | เป้าหมาย: จุดสูงสุดของ volume+intensity ทั้งแผน — MP tempo หนักที่สุด (14กม.) ต้องฟังร่างกายใกล้ชิด", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-15", "day": "พฤ.", "group": null, "type": "Run", "desc": "MP tempo ต่อเนื่อง 14กม. @MP (Progressive: 6กม.@SCR-สูง+6กม.@MP+2กม.เร่งได้)", "dist": 16, "zone": "ช่วง 1 (6กม.) @SCR-สูง 85% เป้า 5:46 น./กม. (Zone2ปลาย-3ต้น ~150-158bpm) / ช่วง 2 (6กม.) @MP 90% เป้า 5:27 น./กม. (Zone3 ~158-165bpm) / ช่วง 3 (2กม.) เร่งได้ @FCR 94% เป้า 5:13 น./กม. เฉพาะถ้า HR ยังไม่เกิน Zone4 (166)", "note": "session หนักสุดของทั้งแผน — ยิ่งต้องคุมช่วงแรกให้ต่ำจริง ถ้า HR ขึ้น Zone3บน (160+) ตั้งแต่ช่วง 1 ให้ชะลอทันที เพราะเป้าคือฝึกกล้ามเนื้อความจำสำหรับ 42K ไม่ใช่ทดสอบ limit", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk11: Peak 1 (จุดสูงสุด) | เป้าหมาย: จุดสูงสุดของ volume+intensity ทั้งแผน — MP tempo หนักที่สุด (14กม.) ต้องฟังร่างกายใกล้ชิด", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-16", "day": "ศ.", "group": null, "type": "Gym", "desc": "Power/Plyo เบา", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk11: Peak 1 (จุดสูงสุด) | เป้าหมาย: จุดสูงสุดของ volume+intensity ทั้งแผน — MP tempo หนักที่สุด (14กม.) ต้องฟังร่างกายใกล้ชิด", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-17", "day": "ส.", "group": null, "type": "Run", "desc": "Easy/medium run", "dist": 9, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk11: Peak 1 (จุดสูงสุด) | เป้าหมาย: จุดสูงสุดของ volume+intensity ทั้งแผน — MP tempo หนักที่สุด (14กม.) ต้องฟังร่างกายใกล้ชิด", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-18", "day": "อา.", "group": null, "type": "Run", "desc": "Long run 32กม. (18 easy + 14 ปลาย Progressive: 6กม.@SCR-สูง+6กม.@MP+2กม.เร่งได้)", "dist": 32, "zone": "ช่วงต้น 18กม. (SCR) เป้า 6:08 น./กม. (Zone2 ~140-152bpm) / ปลาย ช่วง 1 (6กม.) @SCR-สูง เป้า 5:46 น./กม. (Zone2ปลาย-3ต้น) / ปลาย ช่วง 2 (6กม.) @MP เป้า 5:27 น./กม. (Zone3 ~158-165bpm) / ปลาย ช่วง 3 (2กม.) เร่งได้ @FCR เป้า 5:13 น./กม. เฉพาะถ้า HR ยังไม่เกิน Zone4 (166)", "note": "สัปดาห์หนักที่สุด — หลังจากนี้ปริมาณลดลงต่อเนื่อง | เพิ่มความถี่เจล/คาร์บจากที่ใช้ตอนกำแพงแสน 50K — เป้าหมาย ~60-90g คาร์บ/ชม. เพื่อแก้จุดอ่อน muscular fatigue ที่เจอหลัง กม.33 ของอัลตร้า | ปลาย 14กม.นี้คือซ้อมจำลอง 3 ช่วงของวันแข่งจริงแบบย่อ (คุม→รักษา→ปล่อยถ้าไหว)", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk11: Peak 1 (จุดสูงสุด) | เป้าหมาย: จุดสูงสุดของ volume+intensity ทั้งแผน — MP tempo หนักที่สุด (14กม.) ต้องฟังร่างกายใกล้ชิด", "phase": "Peak", "act_dist_f": null}]}, {"idx": 15, "monday": "2026-10-19", "phase": "Peak", "label": "Wk12: Peak 2 (Down)", "plan_km": 57, "actual_km": 0, "days": [{"date": "2026-10-19", "day": "จ.", "group": "Wk12: Peak 2 (Down) | เป้าหมาย: สัปดาห์ผ่อนหลังจุดพีค — ให้ร่างกายฟื้นก่อนเข้า Dress Rehearsal", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk12: Peak 2 (Down) | เป้าหมาย: สัปดาห์ผ่อนหลังจุดพีค — ให้ร่างกายฟื้นก่อนเข้า Dress Rehearsal", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-20", "day": "อ.", "group": null, "type": "Run", "desc": "Threshold เบา 3x2กม. @EXT105", "dist": 10, "zone": "EXT105 เป้า 4:40 น./กม. (ช่วง 4:36-4:44)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk12: Peak 2 (Down) | เป้าหมาย: สัปดาห์ผ่อนหลังจุดพีค — ให้ร่างกายฟื้นก่อนเข้า Dress Rehearsal", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-21", "day": "พ.", "group": "Wk12: Peak 2 (Down) | เป้าหมาย: สัปดาห์ผ่อนหลังจุดพีค — ให้ร่างกายฟื้นก่อนเข้า Dress Rehearsal", "type": "Run", "desc": "Easy run", "dist": 7, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk12: Peak 2 (Down) | เป้าหมาย: สัปดาห์ผ่อนหลังจุดพีค — ให้ร่างกายฟื้นก่อนเข้า Dress Rehearsal", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-22", "day": "พฤ.", "group": null, "type": "Run", "desc": "CT — Control Test: วอร์มอัพ 15 นาที แล้ววิ่ง 10 กม. จับเวลาเต็มที่ (ควบคุมได้ ไม่ต้องเจ็บตัว)", "dist": 11, "zone": "วิ่งเทสเต็มที่ 10 กม. (ไม่ใช่โซนฝึกปกติ)", "note": "จบแล้วนำเวลาไปใส่ในเซลล์ B11 แท็บ \"Overview & VCR\" ทันที — เพซทั้งไฟล์จะปรับตามอัตโนมัติ (~6.5 สัปดาห์หลัง 10K race 6 ก.ย. ก่อนเข้า Dress Rehearsal 1 พ.ย.)", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk12: Peak 2 (Down) | เป้าหมาย: สัปดาห์ผ่อนหลังจุดพีค — ให้ร่างกายฟื้นก่อนเข้า Dress Rehearsal", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-23", "day": "ศ.", "group": null, "type": "Gym", "desc": "Power/Plyo เบามาก", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk12: Peak 2 (Down) | เป้าหมาย: สัปดาห์ผ่อนหลังจุดพีค — ให้ร่างกายฟื้นก่อนเข้า Dress Rehearsal", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-24", "day": "ส.", "group": null, "type": "Run", "desc": "Easy run", "dist": 7, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk12: Peak 2 (Down) | เป้าหมาย: สัปดาห์ผ่อนหลังจุดพีค — ให้ร่างกายฟื้นก่อนเข้า Dress Rehearsal", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-25", "day": "อา.", "group": null, "type": "Run", "desc": "Long run easy (ไม่มี MP หนัก) 22กม. (70/30: 15กม.@ARR + 7กม.@SCR)", "dist": 22, "zone": "ช่วงต้น-กลาง (15กม., 70%) @ARR เป้า 7:00 น./กม. (Zone1-2 ≤152bpm) / ช่วงท้าย (7กม., 30%) @SCR เป้า 6:08 น./กม. (Zone3 ~155-165bpm)", "note": "พักให้พร้อมสำหรับ dress rehearsal สัปดาห์หน้า | โครงสร้าง 70/30 ARR/SCR — เพิ่ม Zone1-2 volume เพื่อสร้างฐานแอโรบิคแน่นขึ้น โดยใช้ session เดิมที่มีอยู่แล้ว ไม่เพิ่มวันซ้อมใหม่", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk12: Peak 2 (Down) | เป้าหมาย: สัปดาห์ผ่อนหลังจุดพีค — ให้ร่างกายฟื้นก่อนเข้า Dress Rehearsal", "phase": "Peak", "act_dist_f": null}]}, {"idx": 16, "monday": "2026-10-26", "phase": "Peak", "label": "Wk13: Peak 3 — Dress Rehearsal", "plan_km": 57, "actual_km": 0, "days": [{"date": "2026-10-26", "day": "จ.", "group": "Wk13: Peak 3 — Dress Rehearsal | เป้าหมาย: จำลองวันแข่งจริงเต็มรูปแบบ (34กม. MP progressive) — เทสรองเท้า/เจล/กลยุทธ์ทั้งหมด", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk13: Peak 3 — Dress Rehearsal | เป้าหมาย: จำลองวันแข่งจริงเต็มรูปแบบ (34กม. MP progressive) — เทสรองเท้า/เจล/กลยุทธ์ทั้งหมด", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-27", "day": "อ.", "group": null, "type": "Run", "desc": "Easy shakeout + strides 6x80m", "dist": 8, "zone": "SCR เป้า 6:03 น./กม. (ช่วง 5:54-6:12)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk13: Peak 3 — Dress Rehearsal | เป้าหมาย: จำลองวันแข่งจริงเต็มรูปแบบ (34กม. MP progressive) — เทสรองเท้า/เจล/กลยุทธ์ทั้งหมด", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-28", "day": "พ.", "group": "Wk13: Peak 3 — Dress Rehearsal | เป้าหมาย: จำลองวันแข่งจริงเต็มรูปแบบ (34กม. MP progressive) — เทสรองเท้า/เจล/กลยุทธ์ทั้งหมด", "type": "Run", "desc": "Easy run สั้นๆ", "dist": 5, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk13: Peak 3 — Dress Rehearsal | เป้าหมาย: จำลองวันแข่งจริงเต็มรูปแบบ (34กม. MP progressive) — เทสรองเท้า/เจล/กลยุทธ์ทั้งหมด", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-29", "day": "พฤ.", "group": null, "type": "Run", "desc": "MP tempo 8กม. @MP เบาๆ (Progressive: 4กม.@SCR-สูง+4กม.@MP ไม่เร่งท้าย)", "dist": 10, "zone": "ช่วง 1 (4กม.) @SCR-สูง 85% เป้า 5:46 น./กม. (Zone2ปลาย-3ต้น ~150-158bpm) / ช่วง 2 (4กม.) @MP 90% เป้า 5:27 น./กม. (Zone3 ~158-165bpm) — ไม่ต้องเร่งช่วง 3", "note": "ไม่ต้องหนัก เก็บแรงไว้วันอาทิตย์ — งดช่วงเร่ง FCR ของ session นี้เพราะใกล้ dress rehearsal แล้ว", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk13: Peak 3 — Dress Rehearsal | เป้าหมาย: จำลองวันแข่งจริงเต็มรูปแบบ (34กม. MP progressive) — เทสรองเท้า/เจล/กลยุทธ์ทั้งหมด", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-30", "day": "ศ.", "group": null, "type": "Gym", "desc": "พัก หรือ mobility เบามาก", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk13: Peak 3 — Dress Rehearsal | เป้าหมาย: จำลองวันแข่งจริงเต็มรูปแบบ (34กม. MP progressive) — เทสรองเท้า/เจล/กลยุทธ์ทั้งหมด", "phase": "Peak", "act_dist_f": null}, {"date": "2026-10-31", "day": "ส.", "group": null, "type": "Rest", "desc": "พักเต็มวัน — เก็บแรงไว้สำหรับ Long run วันอาทิตย์", "dist": null, "zone": null, "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk13: Peak 3 — Dress Rehearsal | เป้าหมาย: จำลองวันแข่งจริงเต็มรูปแบบ (34กม. MP progressive) — เทสรองเท้า/เจล/กลยุทธ์ทั้งหมด", "phase": "Peak", "act_dist_f": null}, {"date": "2026-11-01", "day": "อา.", "group": null, "type": "Run", "desc": "DRESS REHEARSAL: Long run 34กม. (12 easy + 20-22 Progressive: 8กม.@SCR-สูง+8กม.@MP+4-6กม.เร่งได้)", "dist": 34, "zone": "ช่วงต้น 12กม. (SCR) เป้า 6:08 น./กม. (Zone2 ~140-152bpm) / MP-block ช่วง 1 (8กม.) @SCR-สูง เป้า 5:46 น./กม. (Zone2ปลาย-3ต้น ~150-158bpm) / MP-block ช่วง 2 (8กม.) @MP เป้า 5:27 น./กม. (Zone3 ~158-165bpm) / MP-block ช่วง 3 (4-6กม.) เร่งได้ @MP-FCR เป้า 5:27-5:13 น./กม. เฉพาะถ้า HR ยังไม่เกิน Zone4 (166) — จำลอง 10กม.สุดท้ายวันแข่งจริง", "note": "ใส่รองเท้า/เจล/ชุดที่จะใช้จริงวันแข่งทั้งหมด | เพิ่มความถี่เจล/คาร์บจากที่ใช้ตอนกำแพงแสน 50K — เป้าหมาย ~60-90g คาร์บ/ชม. เพื่อแก้จุดอ่อน muscular fatigue ที่เจอหลัง กม.33 ของอัลตร้า — ครั้งนี้คือจุดทดสอบสุดท้ายก่อนแข่งจริง โครงสร้าง 3 ช่วงนี้คือแบบเดียวกับกลยุทธ์วันแข่ง ATM เป๊ะๆ (คุมช้ากว่าเป้าต้น-กลาง รักษาจังหวะถึง 30กม. แล้วดัน 10กม.สุดท้ายถ้าร่างกายพร้อม) — ให้ยึด protocol ที่ผลดีที่สุดจากซ้อมชุดนี้ไปใช้วันแข่งจริง", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk13: Peak 3 — Dress Rehearsal | เป้าหมาย: จำลองวันแข่งจริงเต็มรูปแบบ (34กม. MP progressive) — เทสรองเท้า/เจล/กลยุทธ์ทั้งหมด", "phase": "Peak", "act_dist_f": null}]}, {"idx": 17, "monday": "2026-11-02", "phase": "Taper", "label": "Wk14: Peak 4 / เริ่ม Taper", "plan_km": 52, "actual_km": 0, "days": [{"date": "2026-11-02", "day": "จ.", "group": "Wk14: Peak 4 / เริ่ม Taper | เป้าหมาย: เริ่มลดโหลดเข้า taper หลัง Dress Rehearsal — คง intensity ลด volume", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk14: Peak 4 / เริ่ม Taper | เป้าหมาย: เริ่มลดโหลดเข้า taper หลัง Dress Rehearsal — คง intensity ลด volume", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-03", "day": "อ.", "group": null, "type": "Run", "desc": "Threshold 3x1.5กม. @EXT105", "dist": 8, "zone": "EXT105 เป้า 4:40 น./กม. (ช่วง 4:36-4:44)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk14: Peak 4 / เริ่ม Taper | เป้าหมาย: เริ่มลดโหลดเข้า taper หลัง Dress Rehearsal — คง intensity ลด volume", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-04", "day": "พ.", "group": "Wk14: Peak 4 / เริ่ม Taper | เป้าหมาย: เริ่มลดโหลดเข้า taper หลัง Dress Rehearsal — คง intensity ลด volume", "type": "Run", "desc": "Easy run", "dist": 6, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk14: Peak 4 / เริ่ม Taper | เป้าหมาย: เริ่มลดโหลดเข้า taper หลัง Dress Rehearsal — คง intensity ลด volume", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-05", "day": "พฤ.", "group": null, "type": "Run", "desc": "MP 6กม. @MP", "dist": 8, "zone": "MP: 5:20 (เป้า 3:45) หรือ 5:27 (เป้า 3:50) น./กม.", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk14: Peak 4 / เริ่ม Taper | เป้าหมาย: เริ่มลดโหลดเข้า taper หลัง Dress Rehearsal — คง intensity ลด volume", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-06", "day": "ศ.", "group": null, "type": "Gym", "desc": "Strength เบามาก", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk14: Peak 4 / เริ่ม Taper | เป้าหมาย: เริ่มลดโหลดเข้า taper หลัง Dress Rehearsal — คง intensity ลด volume", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-07", "day": "ส.", "group": null, "type": "Run", "desc": "Easy run", "dist": 6, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk14: Peak 4 / เริ่ม Taper | เป้าหมาย: เริ่มลดโหลดเข้า taper หลัง Dress Rehearsal — คง intensity ลด volume", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-08", "day": "อา.", "group": null, "type": "Run", "desc": "Long run 24กม. (18 easy + 6 @MP ปลาย)", "dist": 24, "zone": "ช่วงต้น (SCR) เป้า 6:27 น./กม. / ช่วงท้าย (MP) 5:20(เป้า3:45) หรือ 5:27(เป้า3:50)", "note": "เริ่มรู้สึกขาเบาลง ปริมาณลดต่อเนื่องถึงวันแข่ง", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk14: Peak 4 / เริ่ม Taper | เป้าหมาย: เริ่มลดโหลดเข้า taper หลัง Dress Rehearsal — คง intensity ลด volume", "phase": "Taper", "act_dist_f": null}]}, {"idx": 18, "monday": "2026-11-09", "phase": "Taper", "label": "Wk15: Taper 1", "plan_km": 36, "actual_km": 0, "days": [{"date": "2026-11-09", "day": "จ.", "group": "Wk15: Taper 1 | เป้าหมาย: ลด volume ต่อเนื่อง คงความคมของ intensity สั้นๆ", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk15: Taper 1 | เป้าหมาย: ลด volume ต่อเนื่อง คงความคมของ intensity สั้นๆ", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-10", "day": "อ.", "group": null, "type": "Run", "desc": "Threshold สั้น 4x1กม. @EXT105", "dist": 6, "zone": "EXT105 เป้า 4:40 น./กม. (ช่วง 4:36-4:44)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk15: Taper 1 | เป้าหมาย: ลด volume ต่อเนื่อง คงความคมของ intensity สั้นๆ", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-11", "day": "พ.", "group": "Wk15: Taper 1 | เป้าหมาย: ลด volume ต่อเนื่อง คงความคมของ intensity สั้นๆ", "type": "Run", "desc": "Easy run", "dist": 5, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk15: Taper 1 | เป้าหมาย: ลด volume ต่อเนื่อง คงความคมของ intensity สั้นๆ", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-12", "day": "พฤ.", "group": null, "type": "Run", "desc": "MP 4กม. @MP + strides", "dist": 7, "zone": "MP: 5:20 (เป้า 3:45) หรือ 5:27 (เป้า 3:50) น./กม.", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk15: Taper 1 | เป้าหมาย: ลด volume ต่อเนื่อง คงความคมของ intensity สั้นๆ", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-13", "day": "ศ.", "group": null, "type": "Gym", "desc": "พัก", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk15: Taper 1 | เป้าหมาย: ลด volume ต่อเนื่อง คงความคมของ intensity สั้นๆ", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-14", "day": "ส.", "group": null, "type": "Rest", "desc": "พักเต็มวัน — เก็บแรงไว้สำหรับ Long run วันอาทิตย์", "dist": null, "zone": null, "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk15: Taper 1 | เป้าหมาย: ลด volume ต่อเนื่อง คงความคมของ intensity สั้นๆ", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-15", "day": "อา.", "group": null, "type": "Run", "desc": "Long run easy 18กม. (70/30: 13กม.@ARR + 5กม.@SCR)", "dist": 18, "zone": "ช่วงต้น-กลาง (13กม., 70%) @ARR เป้า 7:00 น./กม. (Zone1-2 ≤152bpm) / ช่วงท้าย (5กม., 30%) @SCR เป้า 6:08 น./กม. (Zone3 ~155-165bpm)", "note": "เน้นนอนพักผ่อน เริ่มปรับเพิ่มคาร์บเล็กน้อยปลายสัปดาห์ | โครงสร้าง 70/30 ARR/SCR — เพิ่ม Zone1-2 volume เพื่อสร้างฐานแอโรบิคแน่นขึ้น โดยใช้ session เดิมที่มีอยู่แล้ว ไม่เพิ่มวันซ้อมใหม่", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk15: Taper 1 | เป้าหมาย: ลด volume ต่อเนื่อง คงความคมของ intensity สั้นๆ", "phase": "Taper", "act_dist_f": null}]}, {"idx": 19, "monday": "2026-11-16", "phase": "Taper", "label": "Wk16: Taper 2", "plan_km": 26, "actual_km": 0, "days": [{"date": "2026-11-16", "day": "จ.", "group": "Wk16: Taper 2 | เป้าหมาย: ลด volume มากขึ้น เตรียมร่างกาย/จิตใจให้พร้อมสุดสำหรับวันแข่ง ATM", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk16: Taper 2 | เป้าหมาย: ลด volume มากขึ้น เตรียมร่างกาย/จิตใจให้พร้อมสุดสำหรับวันแข่ง ATM", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-17", "day": "อ.", "group": null, "type": "Run", "desc": "Strides 6x100m + easy", "dist": 4, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk16: Taper 2 | เป้าหมาย: ลด volume มากขึ้น เตรียมร่างกาย/จิตใจให้พร้อมสุดสำหรับวันแข่ง ATM", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-18", "day": "พ.", "group": "Wk16: Taper 2 | เป้าหมาย: ลด volume มากขึ้น เตรียมร่างกาย/จิตใจให้พร้อมสุดสำหรับวันแข่ง ATM", "type": "Run", "desc": "Easy run สั้นๆ", "dist": 3, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk16: Taper 2 | เป้าหมาย: ลด volume มากขึ้น เตรียมร่างกาย/จิตใจให้พร้อมสุดสำหรับวันแข่ง ATM", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-19", "day": "พฤ.", "group": null, "type": "Run", "desc": "MP touch 3กม. @MP", "dist": 5, "zone": "MP: 5:20 (เป้า 3:45) หรือ 5:27 (เป้า 3:50) น./กม.", "note": "สั้นๆแค่ให้ขาจำจังหวะ", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk16: Taper 2 | เป้าหมาย: ลด volume มากขึ้น เตรียมร่างกาย/จิตใจให้พร้อมสุดสำหรับวันแข่ง ATM", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-20", "day": "ศ.", "group": null, "type": "Gym", "desc": "พัก", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk16: Taper 2 | เป้าหมาย: ลด volume มากขึ้น เตรียมร่างกาย/จิตใจให้พร้อมสุดสำหรับวันแข่ง ATM", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-21", "day": "ส.", "group": null, "type": "Rest", "desc": "พักเต็มวัน — เก็บแรงไว้สำหรับ Long run วันอาทิตย์", "dist": null, "zone": null, "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk16: Taper 2 | เป้าหมาย: ลด volume มากขึ้น เตรียมร่างกาย/จิตใจให้พร้อมสุดสำหรับวันแข่ง ATM", "phase": "Taper", "act_dist_f": null}, {"date": "2026-11-22", "day": "อา.", "group": null, "type": "Run", "desc": "Long run easy (สั้น) 14กม. (70/30: 10กม.@ARR + 4กม.@SCR)", "dist": 14, "zone": "ช่วงต้น-กลาง (10กม., 70%) @ARR เป้า 7:00 น./กม. (Zone1-2 ≤152bpm) / ช่วงท้าย (4กม., 30%) @SCR เป้า 6:08 น./กม. (Zone3 ~155-165bpm)", "note": "ขาควรรู้สึกสดและกระชับ อย่าซ้อมเพิ่มเพราะกลัวไม่ฟิต | โครงสร้าง 70/30 ARR/SCR — เพิ่ม Zone1-2 volume เพื่อสร้างฐานแอโรบิคแน่นขึ้น โดยใช้ session เดิมที่มีอยู่แล้ว ไม่เพิ่มวันซ้อมใหม่", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk16: Taper 2 | เป้าหมาย: ลด volume มากขึ้น เตรียมร่างกาย/จิตใจให้พร้อมสุดสำหรับวันแข่ง ATM", "phase": "Taper", "act_dist_f": null}]}, {"idx": 20, "monday": "2026-11-23", "phase": "Race", "label": "Wk17: Race Week", "plan_km": 3, "actual_km": 0, "days": [{"date": "2026-11-23", "day": "จ.", "group": "Wk17: Race Week | เป้าหมาย: สัปดาห์แข่งจริง ATM Marathon — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "type": "Rest", "desc": "พักเต็มวัน — ฟื้นตัวจาก Long run เมื่อวาน + เตรียมพร้อมสำหรับ Quality session วันอังคาร", "dist": null, "zone": null, "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk17: Race Week | เป้าหมาย: สัปดาห์แข่งจริง ATM Marathon — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "phase": "Race", "act_dist_f": null}, {"date": "2026-11-24", "day": "อ.", "group": null, "type": "Run", "desc": "พัก หรือเดินเบาๆ", "dist": null, "zone": "-", "note": "เริ่มลดกิจกรรม เพิ่ม carb-load", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk17: Race Week | เป้าหมาย: สัปดาห์แข่งจริง ATM Marathon — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "phase": "Race", "act_dist_f": null}, {"date": "2026-11-25", "day": "พ.", "group": "Wk17: Race Week | เป้าหมาย: สัปดาห์แข่งจริง ATM Marathon — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "type": "Gym", "desc": "พักเต็มที่", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk17: Race Week | เป้าหมาย: สัปดาห์แข่งจริง ATM Marathon — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "phase": "Race", "act_dist_f": null}, {"date": "2026-11-26", "day": "พฤ.", "group": null, "type": "Run", "desc": "Shakeout 20 นาที + strides 4x80m", "dist": 3, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "เช็คอุปกรณ์/เบอร์วิ่ง/GPS watch", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk17: Race Week | เป้าหมาย: สัปดาห์แข่งจริง ATM Marathon — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "phase": "Race", "act_dist_f": null}, {"date": "2026-11-27", "day": "ศ.", "group": null, "type": "Gym", "desc": "งด", "dist": null, "zone": "-", "note": "carb-load เต็มที่", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk17: Race Week | เป้าหมาย: สัปดาห์แข่งจริง ATM Marathon — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "phase": "Race", "act_dist_f": null}, {"date": "2026-11-28", "day": "ส.", "group": null, "type": "Run", "desc": "พักเต็มวัน", "dist": null, "zone": "-", "note": "เตรียมกระเป๋า/อุปกรณ์คืนนี้ให้พร้อม นอนเร็ว", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk17: Race Week | เป้าหมาย: สัปดาห์แข่งจริง ATM Marathon — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "phase": "Race", "act_dist_f": null}, {"date": "2026-11-29", "day": "อา.", "group": null, "type": "Race", "desc": "RACE DAY: ATM Amazing Thailand Marathon Bangkok — Full Marathon 42.195กม.", "dist": 42.195, "zone": "ดูกลยุทธ์ในแท็บ Race Day & Notes", "note": "สตาร์ท 02:00 น. สนามหลวง — เริ่มช้ากว่าที่รู้สึกว่าไหวเสมอ", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk17: Race Week | เป้าหมาย: สัปดาห์แข่งจริง ATM Marathon — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "phase": "Race", "act_dist_f": null}]}, {"idx": 21, "monday": "2026-11-30", "phase": "Recovery", "label": "Recovery (หลัง ATM Marathon)", "plan_km": 19, "actual_km": 0, "days": [{"date": "2026-11-30", "day": "จ.", "group": "Recovery (หลัง ATM Marathon) | เป้าหมาย: ฟื้นตัวเต็มที่หลังมาราธอนเต็ม — volume ต่ำ ฟังร่างกายเป็นหลัก", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Recovery (หลัง ATM Marathon) | เป้าหมาย: ฟื้นตัวเต็มที่หลังมาราธอนเต็ม — volume ต่ำ ฟังร่างกายเป็นหลัก", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-12-01", "day": "อ.", "group": null, "type": "Run", "desc": "ARR วิ่งฟื้นฟูเบามาก", "dist": 3, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "ถ้ายังปวดขา/เมื่อยล้า ให้เดินแทนได้เลย", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Recovery (หลัง ATM Marathon) | เป้าหมาย: ฟื้นตัวเต็มที่หลังมาราธอนเต็ม — volume ต่ำ ฟังร่างกายเป็นหลัก", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-12-02", "day": "พ.", "group": "Recovery (หลัง ATM Marathon) | เป้าหมาย: ฟื้นตัวเต็มที่หลังมาราธอนเต็ม — volume ต่ำ ฟังร่างกายเป็นหลัก", "type": "Run", "desc": "ARR วิ่งเบา", "dist": 5, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "ถ้ารู้สึกดีค่อยเพิ่มระยะสัปดาห์หน้า", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Recovery (หลัง ATM Marathon) | เป้าหมาย: ฟื้นตัวเต็มที่หลังมาราธอนเต็ม — volume ต่ำ ฟังร่างกายเป็นหลัก", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-12-03", "day": "พฤ.", "group": null, "type": "Run", "desc": "ARR วิ่งฟื้นฟูเบามาก", "dist": 4, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "สังเกตอาการปวด/บวมที่ขา", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Recovery (หลัง ATM Marathon) | เป้าหมาย: ฟื้นตัวเต็มที่หลังมาราธอนเต็ม — volume ต่ำ ฟังร่างกายเป็นหลัก", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-12-04", "day": "ศ.", "group": null, "type": "Gym", "desc": "พัก", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Recovery (หลัง ATM Marathon) | เป้าหมาย: ฟื้นตัวเต็มที่หลังมาราธอนเต็ม — volume ต่ำ ฟังร่างกายเป็นหลัก", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-12-05", "day": "ส.", "group": null, "type": "Rest", "desc": "พักเต็มวัน — เก็บแรงไว้สำหรับ Long run วันอาทิตย์", "dist": null, "zone": null, "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Recovery (หลัง ATM Marathon) | เป้าหมาย: ฟื้นตัวเต็มที่หลังมาราธอนเต็ม — volume ต่ำ ฟังร่างกายเป็นหลัก", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-12-06", "day": "อา.", "group": null, "type": "Run", "desc": "ARR วิ่งเบาสบายๆ ปิดสัปดาห์ฟื้นฟู", "dist": 7, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "เตรียมกลับมาซ้อมจริงสัปดาห์หน้า (เข้าสู่ช่วง Sharpen เตรียม 21K เชียงใหม่)", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Recovery (หลัง ATM Marathon) | เป้าหมาย: ฟื้นตัวเต็มที่หลังมาราธอนเต็ม — volume ต่ำ ฟังร่างกายเป็นหลัก", "phase": "Recovery", "act_dist_f": null}]}, {"idx": 22, "monday": "2026-12-07", "phase": "Sharpen", "label": "Wk18: Sharpen (ครึ่งมาราธอน)", "plan_km": 39, "actual_km": 0, "days": [{"date": "2026-12-07", "day": "จ.", "group": "Wk18: Sharpen (ครึ่งมาราธอน) | เป้าหมาย: ปรับความเร็วเฉพาะสำหรับ 21K — เน้น pace เร็วกว่า MP มากขึ้น ระยะสั้นลง", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk18: Sharpen (ครึ่งมาราธอน) | เป้าหมาย: ปรับความเร็วเฉพาะสำหรับ 21K — เน้น pace เร็วกว่า MP มากขึ้น ระยะสั้นลง", "phase": "Sharpen", "act_dist_f": null}, {"date": "2026-12-08", "day": "อ.", "group": null, "type": "Run", "desc": "WU 10นาที + Fartlek 6x2นาที @MCR สลับจ๊อกฟื้นตัว 2นาที @ARR + CD 10นาที", "dist": 8, "zone": "MCR เป้า 5:27 น./กม. (ช่วง 5:21-5:32)", "note": "จุดประสงค์คือกระตุ้นระบบให้ตื่นตัว ไม่ใช่ฝึกหนัก", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk18: Sharpen (ครึ่งมาราธอน) | เป้าหมาย: ปรับความเร็วเฉพาะสำหรับ 21K — เน้น pace เร็วกว่า MP มากขึ้น ระยะสั้นลง", "phase": "Sharpen", "act_dist_f": null}, {"date": "2026-12-09", "day": "พ.", "group": "Wk18: Sharpen (ครึ่งมาราธอน) | เป้าหมาย: ปรับความเร็วเฉพาะสำหรับ 21K — เน้น pace เร็วกว่า MP มากขึ้น ระยะสั้นลง", "type": "Run", "desc": "Easy run", "dist": 6, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk18: Sharpen (ครึ่งมาราธอน) | เป้าหมาย: ปรับความเร็วเฉพาะสำหรับ 21K — เน้น pace เร็วกว่า MP มากขึ้น ระยะสั้นลง", "phase": "Sharpen", "act_dist_f": null}, {"date": "2026-12-10", "day": "พฤ.", "group": null, "type": "Run", "desc": "Tempo ต่อเนื่อง 20 นาที @FCR (โซนใกล้เคียงเพซแข่ง 21K)", "dist": 9, "zone": "FCR เป้า 5:13 น./กม. (ช่วง 5:08-5:18)", "note": "นี่คือเพซใกล้เคียงเป้าฮาล์ฟที่ 4:24-4:38/กม. | [Decoupling Check] แบ่งช่วงนี้เป็น 2 ครึ่งเท่ากัน วิ่งเพซคงที่ตลอด (ห้ามเร่ง/ชะลอ) จดบันทึก HR เฉลี่ยครึ่งแรก vs ครึ่งหลังแยกกัน (จาก Garmin auto-lap หรือดูกราฟ HR หลังวิ่ง) แล้วกรอกลงตาราง Decoupling Tracker ในแท็บ Weekly Progress & Suggestions", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk18: Sharpen (ครึ่งมาราธอน) | เป้าหมาย: ปรับความเร็วเฉพาะสำหรับ 21K — เน้น pace เร็วกว่า MP มากขึ้น ระยะสั้นลง", "phase": "Sharpen", "act_dist_f": null}, {"date": "2026-12-11", "day": "ศ.", "group": null, "type": "Gym", "desc": "General Strength A (เบา)", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk18: Sharpen (ครึ่งมาราธอน) | เป้าหมาย: ปรับความเร็วเฉพาะสำหรับ 21K — เน้น pace เร็วกว่า MP มากขึ้น ระยะสั้นลง", "phase": "Sharpen", "act_dist_f": null}, {"date": "2026-12-12", "day": "ส.", "group": null, "type": "Rest", "desc": "พักเต็มวัน — เก็บแรงไว้สำหรับ Long run วันอาทิตย์", "dist": null, "zone": null, "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk18: Sharpen (ครึ่งมาราธอน) | เป้าหมาย: ปรับความเร็วเฉพาะสำหรับ 21K — เน้น pace เร็วกว่า MP มากขึ้น ระยะสั้นลง", "phase": "Sharpen", "act_dist_f": null}, {"date": "2026-12-13", "day": "อา.", "group": null, "type": "Run", "desc": "Long run + HP finish: 11กม. easy + 5กม. @HP", "dist": 16, "zone": "ช่วงต้น (SCR) เป้า 6:17 น./กม. / ช่วงท้าย (HP) 4:30(เป้า1:35) หรือ 4:44(เป้า1:40)", "note": "ซ้อมสัมผัสเพซ half marathon จริงก่อนลงแข่ง 1 สัปดาห์", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk18: Sharpen (ครึ่งมาราธอน) | เป้าหมาย: ปรับความเร็วเฉพาะสำหรับ 21K — เน้น pace เร็วกว่า MP มากขึ้น ระยะสั้นลง", "phase": "Sharpen", "act_dist_f": null}]}, {"idx": 23, "monday": "2026-12-14", "phase": "Taper", "label": "Taper (21K เชียงใหม่)", "plan_km": 8, "actual_km": 0, "days": [{"date": "2026-12-14", "day": "จ.", "group": "Taper (21K เชียงใหม่) | เป้าหมาย: ลดโหลดก่อนแข่ง 21K — คง intensity สั้นๆ เก็บแรง", "type": "Rest", "desc": "พักเต็มวัน — ฟื้นตัวจาก Long run เมื่อวาน + เตรียมพร้อมสำหรับ Quality session วันอังคาร", "dist": null, "zone": null, "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper (21K เชียงใหม่) | เป้าหมาย: ลดโหลดก่อนแข่ง 21K — คง intensity สั้นๆ เก็บแรง", "phase": "Taper", "act_dist_f": null}, {"date": "2026-12-15", "day": "อ.", "group": null, "type": "Run", "desc": "Strides 6x100m + easy", "dist": 4, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": "เร็วสั้นๆ ไม่เหนื่อย เน้นฟอร์ม", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Taper (21K เชียงใหม่) | เป้าหมาย: ลดโหลดก่อนแข่ง 21K — คง intensity สั้นๆ เก็บแรง", "phase": "Taper", "act_dist_f": null}, {"date": "2026-12-16", "day": "พ.", "group": "Taper (21K เชียงใหม่) | เป้าหมาย: ลดโหลดก่อนแข่ง 21K — คง intensity สั้นๆ เก็บแรง", "type": "Gym", "desc": "Mobility เบามาก (งดยกหนัก)", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper (21K เชียงใหม่) | เป้าหมาย: ลดโหลดก่อนแข่ง 21K — คง intensity สั้นๆ เก็บแรง", "phase": "Taper", "act_dist_f": null}, {"date": "2026-12-17", "day": "พฤ.", "group": null, "type": "Run", "desc": "HP touch 3กม. @HP + strides 4x80m", "dist": 4, "zone": "HP: 4:30 (เป้า 1:35) หรือ 4:44 (เป้า 1:40) น./กม.", "note": "สัมผัสเพซแข่งสั้นๆ ไม่ล้า", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Taper (21K เชียงใหม่) | เป้าหมาย: ลดโหลดก่อนแข่ง 21K — คง intensity สั้นๆ เก็บแรง", "phase": "Taper", "act_dist_f": null}, {"date": "2026-12-18", "day": "ศ.", "group": null, "type": "Gym", "desc": "งด", "dist": null, "zone": "-", "note": "carb-load เริ่มปรับเพิ่มเล็กน้อย", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper (21K เชียงใหม่) | เป้าหมาย: ลดโหลดก่อนแข่ง 21K — คง intensity สั้นๆ เก็บแรง", "phase": "Taper", "act_dist_f": null}, {"date": "2026-12-19", "day": "ส.", "group": null, "type": "Run", "desc": "พักเต็มวัน หรือเดินเบาๆ", "dist": null, "zone": "-", "note": "เตรียมของ/เดินทางไปเชียงใหม่ นอนให้พอ", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper (21K เชียงใหม่) | เป้าหมาย: ลดโหลดก่อนแข่ง 21K — คง intensity สั้นๆ เก็บแรง", "phase": "Taper", "act_dist_f": null}, {"date": "2026-12-20", "day": "อา.", "group": null, "type": "Race", "desc": "RACE DAY: Chiang Mai Marathon — Half Marathon 21.0975กม.", "dist": 21.0975, "zone": "ดูกลยุทธ์ในแท็บ Race Day & Notes", "note": "สตาร์ทที่ประตูท่าแพ กลางเมืองเชียงใหม่ — เช็คเวลาสตาร์ทที่ยืนยันจากผู้จัดอีกครั้งใกล้วันแข่ง", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Taper (21K เชียงใหม่) | เป้าหมาย: ลดโหลดก่อนแข่ง 21K — คง intensity สั้นๆ เก็บแรง", "phase": "Taper", "act_dist_f": null}]}, {"idx": 24, "monday": "2026-12-21", "phase": "Recovery", "label": "Recovery (หลัง 21K เชียงใหม่)", "plan_km": 31, "actual_km": 0, "days": [{"date": "2026-12-21", "day": "จ.", "group": "Recovery (หลัง 21K เชียงใหม่) | เป้าหมาย: ฟื้นตัวหลัง 21K ก่อนเข้ารอบสุดท้ายเตรียมบุรีรัมย์", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Recovery (หลัง 21K เชียงใหม่) | เป้าหมาย: ฟื้นตัวหลัง 21K ก่อนเข้ารอบสุดท้ายเตรียมบุรีรัมย์", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-12-22", "day": "อ.", "group": null, "type": "Run", "desc": "ARR วิ่งฟื้นฟูเบามาก", "dist": 4, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Recovery (หลัง 21K เชียงใหม่) | เป้าหมาย: ฟื้นตัวหลัง 21K ก่อนเข้ารอบสุดท้ายเตรียมบุรีรัมย์", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-12-23", "day": "พ.", "group": "Recovery (หลัง 21K เชียงใหม่) | เป้าหมาย: ฟื้นตัวหลัง 21K ก่อนเข้ารอบสุดท้ายเตรียมบุรีรัมย์", "type": "Run", "desc": "ARR วิ่งเบา", "dist": 6, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Recovery (หลัง 21K เชียงใหม่) | เป้าหมาย: ฟื้นตัวหลัง 21K ก่อนเข้ารอบสุดท้ายเตรียมบุรีรัมย์", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-12-24", "day": "พฤ.", "group": null, "type": "Run", "desc": "ARR วิ่งฟื้นฟูเบามาก", "dist": 5, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "วันคริสต์มาสอีฟ พักผ่อน/สังสรรค์ได้ตามปกติ ไม่ต้องกดดันเรื่องซ้อม", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Recovery (หลัง 21K เชียงใหม่) | เป้าหมาย: ฟื้นตัวหลัง 21K ก่อนเข้ารอบสุดท้ายเตรียมบุรีรัมย์", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-12-25", "day": "ศ.", "group": null, "type": "Gym", "desc": "พัก", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Recovery (หลัง 21K เชียงใหม่) | เป้าหมาย: ฟื้นตัวหลัง 21K ก่อนเข้ารอบสุดท้ายเตรียมบุรีรัมย์", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-12-26", "day": "ส.", "group": null, "type": "Run", "desc": "ARR วิ่งเบา", "dist": 6, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Recovery (หลัง 21K เชียงใหม่) | เป้าหมาย: ฟื้นตัวหลัง 21K ก่อนเข้ารอบสุดท้ายเตรียมบุรีรัมย์", "phase": "Recovery", "act_dist_f": null}, {"date": "2026-12-27", "day": "อา.", "group": null, "type": "Run", "desc": "Easy long เบาๆ ปิดสัปดาห์ฟื้นฟู", "dist": 10, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": "เตรียมกลับมาฝึกมาราธอนบุรีรัมย์เต็มรูปแบบสัปดาห์หน้า", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Recovery (หลัง 21K เชียงใหม่) | เป้าหมาย: ฟื้นตัวหลัง 21K ก่อนเข้ารอบสุดท้ายเตรียมบุรีรัมย์", "phase": "Recovery", "act_dist_f": null}]}, {"idx": 25, "monday": "2026-12-28", "phase": "Rebuild", "label": "Wk19: Rebuild (มาราธอนบุรีรัมย์)", "plan_km": 52, "actual_km": 0, "days": [{"date": "2026-12-28", "day": "จ.", "group": "Wk19: Rebuild (มาราธอนบุรีรัมย์) | เป้าหมาย: เริ่มสร้างฟอร์มกลับสู่ระยะมาราธอนเต็มอีกครั้งหลังพัก 2 สนามก่อนหน้า", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk19: Rebuild (มาราธอนบุรีรัมย์) | เป้าหมาย: เริ่มสร้างฟอร์มกลับสู่ระยะมาราธอนเต็มอีกครั้งหลังพัก 2 สนามก่อนหน้า", "phase": "Rebuild", "act_dist_f": null}, {"date": "2026-12-29", "day": "อ.", "group": null, "type": "Run", "desc": "Threshold 4x1.5กม. @FCR (พัก 2นาที)", "dist": 10, "zone": "FCR เป้า 5:13 น./กม. (ช่วง 5:08-5:18)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk19: Rebuild (มาราธอนบุรีรัมย์) | เป้าหมาย: เริ่มสร้างฟอร์มกลับสู่ระยะมาราธอนเต็มอีกครั้งหลังพัก 2 สนามก่อนหน้า", "phase": "Rebuild", "act_dist_f": null}, {"date": "2026-12-30", "day": "พ.", "group": "Wk19: Rebuild (มาราธอนบุรีรัมย์) | เป้าหมาย: เริ่มสร้างฟอร์มกลับสู่ระยะมาราธอนเต็มอีกครั้งหลังพัก 2 สนามก่อนหน้า", "type": "Run", "desc": "Easy run", "dist": 8, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk19: Rebuild (มาราธอนบุรีรัมย์) | เป้าหมาย: เริ่มสร้างฟอร์มกลับสู่ระยะมาราธอนเต็มอีกครั้งหลังพัก 2 สนามก่อนหน้า", "phase": "Rebuild", "act_dist_f": null}, {"date": "2026-12-31", "day": "พฤ.", "group": null, "type": "Run", "desc": "MP tempo ต่อเนื่อง 8กม. @MP", "dist": 10, "zone": "MP: 5:20 (เป้า 3:45) หรือ 5:27 (เป้า 3:50) น./กม.", "note": "ส่งท้ายปี — ถ้าคืนนี้สังสรรค์ปีใหม่ ปรับเวลาซ้อมเป็นเช้าแทนได้ | [Decoupling Check] แบ่งช่วงนี้เป็น 2 ครึ่งเท่ากัน วิ่งเพซคงที่ตลอด (ห้ามเร่ง/ชะลอ) จดบันทึก HR เฉลี่ยครึ่งแรก vs ครึ่งหลังแยกกัน (จาก Garmin auto-lap หรือดูกราฟ HR หลังวิ่ง) แล้วกรอกลงตาราง Decoupling Tracker ในแท็บ Weekly Progress & Suggestions", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk19: Rebuild (มาราธอนบุรีรัมย์) | เป้าหมาย: เริ่มสร้างฟอร์มกลับสู่ระยะมาราธอนเต็มอีกครั้งหลังพัก 2 สนามก่อนหน้า", "phase": "Rebuild", "act_dist_f": null}, {"date": "2027-01-01", "day": "ศ.", "group": null, "type": "Gym", "desc": "งด (วันหยุดปีใหม่)", "dist": null, "zone": "-", "note": "เดิน/mobility เบาๆ แทนได้ถ้าอยากขยับตัว", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk19: Rebuild (มาราธอนบุรีรัมย์) | เป้าหมาย: เริ่มสร้างฟอร์มกลับสู่ระยะมาราธอนเต็มอีกครั้งหลังพัก 2 สนามก่อนหน้า", "phase": "Rebuild", "act_dist_f": null}, {"date": "2027-01-02", "day": "ส.", "group": null, "type": "Rest", "desc": "พักเต็มวัน — เก็บแรงไว้สำหรับ Long run วันอาทิตย์", "dist": null, "zone": null, "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk19: Rebuild (มาราธอนบุรีรัมย์) | เป้าหมาย: เริ่มสร้างฟอร์มกลับสู่ระยะมาราธอนเต็มอีกครั้งหลังพัก 2 สนามก่อนหน้า", "phase": "Rebuild", "act_dist_f": null}, {"date": "2027-01-03", "day": "อา.", "group": null, "type": "Run", "desc": "Long run 24กม. (18 easy + 6 @MP ปลาย)", "dist": 24, "zone": "ช่วงต้น (SCR) เป้า 6:27 น./กม. / ช่วงท้าย (MP) 5:20(เป้า3:45) หรือ 5:27(เป้า3:50)", "note": "ปริมาณใกล้เคียงช่วง Peak ของบล็อกมาราธอนที่แล้ว ร่างกายเคยชินอยู่แล้ว", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk19: Rebuild (มาราธอนบุรีรัมย์) | เป้าหมาย: เริ่มสร้างฟอร์มกลับสู่ระยะมาราธอนเต็มอีกครั้งหลังพัก 2 สนามก่อนหน้า", "phase": "Rebuild", "act_dist_f": null}]}, {"idx": 26, "monday": "2027-01-04", "phase": "Peak", "label": "Wk20: Peak (มาราธอนบุรีรัมย์)", "plan_km": 62, "actual_km": 0, "days": [{"date": "2027-01-04", "day": "จ.", "group": "Wk20: Peak (มาราธอนบุรีรัมย์) | เป้าหมาย: จุดสูงสุดรอบสุดท้ายก่อนบุรีรัมย์ — MP tempo หนักสุดของ block นี้", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk20: Peak (มาราธอนบุรีรัมย์) | เป้าหมาย: จุดสูงสุดรอบสุดท้ายก่อนบุรีรัมย์ — MP tempo หนักสุดของ block นี้", "phase": "Peak", "act_dist_f": null}, {"date": "2027-01-05", "day": "อ.", "group": null, "type": "Run", "desc": "VO2max 4x1000m @EXT105 (พัก 3นาที)", "dist": 10, "zone": "EXT105 เป้า 4:40 น./กม. (ช่วง 4:36-4:44)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk20: Peak (มาราธอนบุรีรัมย์) | เป้าหมาย: จุดสูงสุดรอบสุดท้ายก่อนบุรีรัมย์ — MP tempo หนักสุดของ block นี้", "phase": "Peak", "act_dist_f": null}, {"date": "2027-01-06", "day": "พ.", "group": "Wk20: Peak (มาราธอนบุรีรัมย์) | เป้าหมาย: จุดสูงสุดรอบสุดท้ายก่อนบุรีรัมย์ — MP tempo หนักสุดของ block นี้", "type": "Run", "desc": "Easy/medium run", "dist": 8, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk20: Peak (มาราธอนบุรีรัมย์) | เป้าหมาย: จุดสูงสุดรอบสุดท้ายก่อนบุรีรัมย์ — MP tempo หนักสุดของ block นี้", "phase": "Peak", "act_dist_f": null}, {"date": "2027-01-07", "day": "พฤ.", "group": null, "type": "Run", "desc": "MP tempo ต่อเนื่อง 12กม. @MP", "dist": 14, "zone": "MP: 5:20 (เป้า 3:45) หรือ 5:27 (เป้า 3:50) น./กม.", "note": "session หนักสุดของบล็อกนี้ | [Decoupling Check] แบ่งช่วงนี้เป็น 2 ครึ่งเท่ากัน วิ่งเพซคงที่ตลอด (ห้ามเร่ง/ชะลอ) จดบันทึก HR เฉลี่ยครึ่งแรก vs ครึ่งหลังแยกกัน (จาก Garmin auto-lap หรือดูกราฟ HR หลังวิ่ง) แล้วกรอกลงตาราง Decoupling Tracker ในแท็บ Weekly Progress & Suggestions", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk20: Peak (มาราธอนบุรีรัมย์) | เป้าหมาย: จุดสูงสุดรอบสุดท้ายก่อนบุรีรัมย์ — MP tempo หนักสุดของ block นี้", "phase": "Peak", "act_dist_f": null}, {"date": "2027-01-08", "day": "ศ.", "group": null, "type": "Gym", "desc": "Power/Plyo เบามาก", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Wk20: Peak (มาราธอนบุรีรัมย์) | เป้าหมาย: จุดสูงสุดรอบสุดท้ายก่อนบุรีรัมย์ — MP tempo หนักสุดของ block นี้", "phase": "Peak", "act_dist_f": null}, {"date": "2027-01-09", "day": "ส.", "group": null, "type": "Rest", "desc": "พักเต็มวัน — เก็บแรงไว้สำหรับ Long run วันอาทิตย์", "dist": null, "zone": null, "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk20: Peak (มาราธอนบุรีรัมย์) | เป้าหมาย: จุดสูงสุดรอบสุดท้ายก่อนบุรีรัมย์ — MP tempo หนักสุดของ block นี้", "phase": "Peak", "act_dist_f": null}, {"date": "2027-01-10", "day": "อา.", "group": null, "type": "Run", "desc": "Long run 30กม. (18 easy + 12 @MP ปลาย)", "dist": 30, "zone": "ช่วงต้น (SCR) เป้า 6:27 น./กม. / ช่วงท้าย (MP) 5:20(เป้า3:45) หรือ 5:27(เป้า3:50)", "note": "Long run สำคัญที่สุดของบล็อกนี้ — ซ้อมกิน/ดื่มเหมือนวันแข่งจริง", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Wk20: Peak (มาราธอนบุรีรัมย์) | เป้าหมาย: จุดสูงสุดรอบสุดท้ายก่อนบุรีรัมย์ — MP tempo หนักสุดของ block นี้", "phase": "Peak", "act_dist_f": null}]}, {"idx": 27, "monday": "2027-01-11", "phase": "Taper", "label": "Taper 1 (บุรีรัมย์)", "plan_km": 37, "actual_km": 0, "days": [{"date": "2027-01-11", "day": "จ.", "group": "Taper 1 (บุรีรัมย์) | เป้าหมาย: เริ่มลดโหลดเข้า taper สุดท้ายก่อนปิดท้ายซีซั่นที่บุรีรัมย์", "type": "Gym", "desc": "General Strength - Upper Body (เบา, ไม่กระทบขา) — Band Pull-Apart 3x15-20, Push-up 3x10-15, Plank+Side Plank 3x30-45วิ, Farmer's Carry เบา 2x30ม.", "dist": null, "zone": "-", "note": "เวทบนเบาๆ ไม่แตะกล้ามเนื้อขา — เตรียมพร้อมสำหรับ Quality session วันอังคาร โดยไม่เสี่ยงล้าขาซ้ำรอยกำแพงแสน", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper 1 (บุรีรัมย์) | เป้าหมาย: เริ่มลดโหลดเข้า taper สุดท้ายก่อนปิดท้ายซีซั่นที่บุรีรัมย์", "phase": "Taper", "act_dist_f": null}, {"date": "2027-01-12", "day": "อ.", "group": null, "type": "Run", "desc": "Threshold สั้น 3x1กม. @FCR + strides", "dist": 7, "zone": "FCR เป้า 5:13 น./กม. (ช่วง 5:08-5:18)", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Taper 1 (บุรีรัมย์) | เป้าหมาย: เริ่มลดโหลดเข้า taper สุดท้ายก่อนปิดท้ายซีซั่นที่บุรีรัมย์", "phase": "Taper", "act_dist_f": null}, {"date": "2027-01-13", "day": "พ.", "group": "Taper 1 (บุรีรัมย์) | เป้าหมาย: เริ่มลดโหลดเข้า taper สุดท้ายก่อนปิดท้ายซีซั่นที่บุรีรัมย์", "type": "Run", "desc": "Easy run", "dist": 6, "zone": "SCR เป้า 6:08 น./กม. (ช่วง 5:59-6:17)", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper 1 (บุรีรัมย์) | เป้าหมาย: เริ่มลดโหลดเข้า taper สุดท้ายก่อนปิดท้ายซีซั่นที่บุรีรัมย์", "phase": "Taper", "act_dist_f": null}, {"date": "2027-01-14", "day": "พฤ.", "group": null, "type": "Run", "desc": "MP touch 6กม. @MP", "dist": 8, "zone": "MP: 5:20 (เป้า 3:45) หรือ 5:27 (เป้า 3:50) น./กม.", "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Taper 1 (บุรีรัมย์) | เป้าหมาย: เริ่มลดโหลดเข้า taper สุดท้ายก่อนปิดท้ายซีซั่นที่บุรีรัมย์", "phase": "Taper", "act_dist_f": null}, {"date": "2027-01-15", "day": "ศ.", "group": null, "type": "Gym", "desc": "Mobility เบามาก (หรืองด)", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper 1 (บุรีรัมย์) | เป้าหมาย: เริ่มลดโหลดเข้า taper สุดท้ายก่อนปิดท้ายซีซั่นที่บุรีรัมย์", "phase": "Taper", "act_dist_f": null}, {"date": "2027-01-16", "day": "ส.", "group": null, "type": "Rest", "desc": "พักเต็มวัน — เก็บแรงไว้สำหรับ Long run วันอาทิตย์", "dist": null, "zone": null, "note": null, "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Taper 1 (บุรีรัมย์) | เป้าหมาย: เริ่มลดโหลดเข้า taper สุดท้ายก่อนปิดท้ายซีซั่นที่บุรีรัมย์", "phase": "Taper", "act_dist_f": null}, {"date": "2027-01-17", "day": "อา.", "group": null, "type": "Run", "desc": "Long run easy (สั้น) 16กม. (70/30: 11กม.@ARR + 5กม.@SCR)", "dist": 16, "zone": "ช่วงต้น-กลาง (11กม., 70%) @ARR เป้า 7:00 น./กม. (Zone1-2 ≤152bpm) / ช่วงท้าย (5กม., 30%) @SCR เป้า 6:08 น./กม. (Zone3 ~155-165bpm)", "note": "ขาควรรู้สึกสดและกระชับ | โครงสร้าง 70/30 ARR/SCR — เพิ่ม Zone1-2 volume เพื่อสร้างฐานแอโรบิคแน่นขึ้น โดยใช้ session เดิมที่มีอยู่แล้ว ไม่เพิ่มวันซ้อมใหม่", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Taper 1 (บุรีรัมย์) | เป้าหมาย: เริ่มลดโหลดเข้า taper สุดท้ายก่อนปิดท้ายซีซั่นที่บุรีรัมย์", "phase": "Taper", "act_dist_f": null}]}, {"idx": 28, "monday": "2027-01-18", "phase": "Taper", "label": "Taper 2 (บุรีรัมย์)", "plan_km": 3, "actual_km": 0, "days": [{"date": "2027-01-18", "day": "จ.", "group": "Taper 2 (บุรีรัมย์) | เป้าหมาย: สัปดาห์สุดท้ายก่อนแข่งจริง — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "type": "Rest", "desc": "พักเต็มวัน — ฟื้นตัวจาก Long run เมื่อวาน + เตรียมพร้อมสำหรับ Quality session วันอังคาร", "dist": null, "zone": null, "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper 2 (บุรีรัมย์) | เป้าหมาย: สัปดาห์สุดท้ายก่อนแข่งจริง — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "phase": "Taper", "act_dist_f": null}, {"date": "2027-01-19", "day": "อ.", "group": null, "type": "Run", "desc": "พัก หรือเดินเบาๆ", "dist": null, "zone": "-", "note": "เริ่มลดกิจกรรม เพิ่ม carb-load", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper 2 (บุรีรัมย์) | เป้าหมาย: สัปดาห์สุดท้ายก่อนแข่งจริง — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "phase": "Taper", "act_dist_f": null}, {"date": "2027-01-20", "day": "พ.", "group": "Taper 2 (บุรีรัมย์) | เป้าหมาย: สัปดาห์สุดท้ายก่อนแข่งจริง — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "type": "Gym", "desc": "พักเต็มที่", "dist": null, "zone": "-", "note": null, "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper 2 (บุรีรัมย์) | เป้าหมาย: สัปดาห์สุดท้ายก่อนแข่งจริง — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "phase": "Taper", "act_dist_f": null}, {"date": "2027-01-21", "day": "พฤ.", "group": null, "type": "Run", "desc": "Shakeout 20นาที + strides 4x80m", "dist": 3, "zone": "ARR เป้า 7:00 น./กม. (ช่วง 6:46-7:16)", "note": "เช็คอุปกรณ์/เบอร์วิ่ง/GPS watch", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Taper 2 (บุรีรัมย์) | เป้าหมาย: สัปดาห์สุดท้ายก่อนแข่งจริง — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "phase": "Taper", "act_dist_f": null}, {"date": "2027-01-22", "day": "ศ.", "group": null, "type": "Gym", "desc": "งด", "dist": null, "zone": "-", "note": "carb-load เต็มที่ + เดินทางไปบุรีรัมย์", "act_dist": "-", "act_hr": "-", "rpe": "-", "gymimpact": null, "group_filled": "Taper 2 (บุรีรัมย์) | เป้าหมาย: สัปดาห์สุดท้ายก่อนแข่งจริง — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "phase": "Taper", "act_dist_f": null}, {"date": "2027-01-23", "day": "ส.", "group": null, "type": "Race", "desc": "RACE DAY: Buriram Marathon — Full Marathon 42.195กม.", "dist": 42.195, "zone": "ดูกลยุทธ์ในแท็บ Race Day & Notes", "note": "สตาร์ทที่ Chang International Circuit ช่วงเย็น/ค่ำ (ธีม Beat the Night, Run the Light) — เช็คเวลาสตาร์ทที่ยืนยันจากผู้จัดอีกครั้งใกล้วันแข่ง", "act_dist": null, "act_hr": null, "rpe": null, "gymimpact": null, "group_filled": "Taper 2 (บุรีรัมย์) | เป้าหมาย: สัปดาห์สุดท้ายก่อนแข่งจริง — เบาที่สุด เก็บแรงทั้งหมดไว้วันแข่ง", "phase": "Taper", "act_dist_f": null}]}], "meta": {"total_actual_km": 351.4, "adherence": 66.0, "pb": "3:46:08", "goal_a": "3:45:00", "goal_a_pace": "5:20", "goal_b": "3:50:00", "goal_b_pace": "5:27", "today": "2026-10-04"}}</script>
+<script>
+(function(){
+  "use strict";
+  var raw = document.getElementById('plan-data').textContent;
+  var data = JSON.parse(raw);
+  var weeks = data.weeks, meta = data.meta;
+  var today = meta.today;
+
+  var PHASE_COLOR = {
+    Base:'var(--p-base)', Specific:'var(--p-specific)', Peak:'var(--p-peak)',
+    Taper:'var(--p-taper)', Recovery:'var(--p-recovery)', Race:'var(--p-race)',
+    Sharpen:'var(--p-sharpen)', Rebuild:'var(--p-rebuild)', PreTaper:'var(--p-pretaper)',
+    'อื่นๆ':'var(--p-other)'
+  };
+  var PHASE_TH = {
+    Base:'Base — สร้างฐาน aerobic', Specific:'Specific — เจาะจงเป้าหมาย',
+    Peak:'Peak — จุดสูงสุด', Taper:'Taper — ลดโหลดก่อนแข่ง',
+    Recovery:'Recovery — ฟื้นตัว', Race:'Race week — แข่งจริง',
+    Sharpen:'Sharpen — ปรับความเร็ว', Rebuild:'Rebuild — สร้างฟอร์มกลับ',
+    PreTaper:'ก่อนเริ่มแผน', 'อื่นๆ':'อื่นๆ'
+  };
+
+  function fmtDate(iso){
+    var d = new Date(iso+'T00:00:00');
+    var days=['อา','จ','อ','พ','พฤ','ศ','ส'];
+    return days[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+  }
+  function fmtDateLong(iso){
+    var months=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    var d = new Date(iso+'T00:00:00');
+    return d.getDate()+' '+months[d.getMonth()]+' '+(d.getFullYear()+543);
+  }
+  function pad2(n){ return String(n).padStart(2,'0'); }
+
+  // ---- stat tiles ----
+  document.getElementById('stat-goal').textContent = meta.goal_a+' / '+meta.goal_b;
+  document.getElementById('stat-goal-pace').textContent = meta.goal_a_pace+'-'+meta.goal_b_pace+' น./กม.';
+  document.getElementById('stat-adh').innerHTML = meta.adherence.toFixed(0)+'<span>%</span>';
+  document.getElementById('stat-km').innerHTML = meta.total_actual_km.toLocaleString('th-TH',{maximumFractionDigits:1})+'<span>กม.</span>';
+  document.getElementById('stat-pb').textContent = meta.pb;
+
+  var raceDate = new Date('2026-11-29T00:00:00');
+  var todayDate = new Date(today+'T00:00:00');
+  var daysLeft = Math.round((raceDate-todayDate)/86400000);
+  document.getElementById('countdown-num').textContent = daysLeft;
+
+  // ---- phase timeline ----
+  var tlbar = document.getElementById('tlbar');
+  weeks.forEach(function(w){
+    var i = document.createElement('i');
+    i.style.background = PHASE_COLOR[w.phase] || PHASE_COLOR['อื่นๆ'];
+    var isCurrent = w.days.some(function(d){return d.date===today;});
+    if(isCurrent){ i.classList.add('today'); document.getElementById('tl-current').textContent = 'สัปดาห์ '+w.idx+' · '+w.label; }
+    i.title = 'สัปดาห์ '+w.idx+': '+w.label;
+    tlbar.appendChild(i);
+  });
+
+  var legend = document.getElementById('legend');
+  var order = ['Base','Specific','Peak','Taper','Recovery','Sharpen','Rebuild','Race'];
+  order.forEach(function(p){
+    if(!weeks.some(function(w){return w.phase===p;})) return;
+    var span = document.createElement('span');
+    span.innerHTML = '<i style="background:'+PHASE_COLOR[p]+'"></i>'+PHASE_TH[p];
+    legend.appendChild(span);
+  });
+
+  // =====================================================================
+  // db wiring — logged actual results live in the `actuals` collection,
+  // keyed by date (YYYY-MM-DD). Falls back to read-only data baked in
+  // from the Excel plan (data.weeks[].days[].act_dist/act_hr) when a
+  // date has no db entry yet.
+  // =====================================================================
+  var dbNS = null, actualsCol = null;
+  var actualsCache = {}; // date -> {dist,h,m,s,hr,note}
+  var dbHint = document.getElementById('db-hint');
+
+  function findDay(dateStr){
+    for(var i=0;i<weeks.length;i++){
+      for(var j=0;j<weeks[i].days.length;j++){
+        if(weeks[i].days[j].date===dateStr) return weeks[i].days[j];
+      }
+    }
+    return null;
+  }
+
+  function effectiveActual(d){
+    var a = actualsCache[d.date];
+    if(a) return {dist:a.dist, hr:a.hr, source:'db'};
+    if(d.act_dist) return {dist:d.act_dist, hr:d.act_hr, source:'xlsx'};
+    return null;
+  }
+
+  function initDb(){
+    if(!window.claude || !window.claude.use){ dbHint.textContent=''; return; }
+    window.claude.use('db').then(function(ns){
+      dbNS = ns;
+      if(!ns){ dbHint.textContent=''; return; }
+      actualsCol = ns.collection('actuals');
+      dbHint.textContent = 'กำลังโหลดผลที่บันทึกไว้…';
+      return actualsCol.limit(1000).get().then(function(snap){
+        snap.docs.forEach(function(doc){ actualsCache[doc.id] = doc.data(); });
+        dbHint.textContent = '';
+        render();
+      });
+    }).catch(function(){ dbHint.textContent=''; });
+  }
+
+  // ---- weekly cards ----
+  var weeksEl = document.getElementById('weeks');
+  var showPast = false;
+  var todayIdx = weeks.findIndex(function(w){ return w.days.some(function(d){return d.date===today;}); });
+
+  // gym routines, pulled from the xlsx "Gym Program" sheet
+  var GYM_ROUTINES = {
+    upper: {
+      title:'General Strength — Upper Body (เบา)',
+      note:'เบา ไม่กระทบขา — เตรียมพร้อมสำหรับวัน Quality ถัดไปโดยไม่เสี่ยงล้าขาซ้ำ',
+      ex:[
+        ['Band Pull-Apart','3×15-20'],
+        ['Push-up','3×10-15'],
+        ['Plank + Side Plank','3×30-45วิ'],
+        ["Farmer's Carry เบา",'2×30ม.']
+      ]
+    },
+    genA: {
+      title:'General Strength A',
+      note:'ช่วง Base — เป้าหมาย: สร้างความมั่นคง/ป้องกันบาดเจ็บ · 12-15 ครั้ง/เซ็ต, 3 เซ็ต, พัก 45-60 วิ',
+      ex:[
+        ['Goblet Squat','3×12-15'],
+        ['Romanian Deadlift','3×12'],
+        ['Bulgarian Split Squat','3×10 ต่อข้าง'],
+        ['Step-up','3×10 ต่อข้าง'],
+        ['Glute Bridge / Hip Thrust','3×12'],
+        ['Standing Hip Abduction / Monster Walk','3×12-15 ต่อข้าง'],
+        ['Side-lying Leg Raise / Clamshell','3×12-15 ต่อข้าง'],
+        ['Eccentric Single-leg Calf Raise','3×12-15 ต่อข้าง'],
+        ['Band Pull-Apart','3×15-20'],
+        ['Plank + Side Plank','3×30-45วิ']
+      ]
+    },
+    maxb: {
+      title:'Max Strength B',
+      note:'ช่วง Build/Specific — เป้าหมาย: เพิ่มแรง/ความแข็งแรงสูงสุด · 4-6 ครั้ง/เซ็ต, 3-4 เซ็ต, พัก 2-3 นาที',
+      ex:[
+        ['Pogo jumps / Box jump ต่ำ','3×8-10'],
+        ['Back Squat / Trap Bar Deadlift','4×5'],
+        ['Hip Thrust บาร์เบล','4×6'],
+        ['Bulgarian Split Squat หนัก','3×6 ต่อข้าง'],
+        ['Walking Lunge ถือน้ำหนัก','3×10 ต่อข้าง'],
+        ['Single-leg RDL','3×8 ต่อข้าง']
+      ]
+    },
+    power: {
+      title:'Power / Plyo',
+      note:'ช่วง Peak — เป้าหมาย: คงความแข็งแรง ลด volume · 2-3 ครั้ง/เซ็ต (explosive), 2-3 เซ็ต',
+      ex:[
+        ['Squat Jump','3×5'],
+        ['Single-leg step-down','2×8 ต่อข้าง'],
+        ['Hip Thrust คงน้ำหนักเดิม','3×6'],
+        ['Isometric Calf Raise Hold','2×20-30วิ'],
+        ['Split Squat Hold','2×20-30วิ ต่อข้าง'],
+        ['Pallof Press','3×10 ต่อข้าง']
+      ]
+    },
+    taper: {
+      title:'Taper — ลดโหลด',
+      note:'เป้าหมาย: รักษาความรู้สึก ไม่สร้างความล้าใหม่ — เน้น Isometric Hold เบา',
+      ex:[
+        ['Mobility / Activation เบามาก','10-15 นาที'],
+        ['Isometric Calf Raise Hold','3×30-45วิ'],
+        ['Split Squat Hold','3×30-45วิ ต่อข้าง'],
+        ['Plank สั้นๆ','2×20-30วิ']
+      ]
+    }
+  };
+  function gymRoutineKey(desc){
+    if(!desc) return null;
+    if(/Upper Body/i.test(desc)) return 'upper';
+    if(/Max Strength B/i.test(desc)) return 'maxb';
+    if(/Power\s*\/\s*Plyo/i.test(desc)) return 'power';
+    if(/General Strength A/i.test(desc)) return 'genA';
+    if(/Taper/i.test(desc) && /เวท|[Mm]obility/.test(desc)) return 'taper';
+    return null;
+  }
+
+  function dayTypeLabel(d){
+    if(d.type==='Rest') return 'พัก';
+    if(d.type==='Race') return 'วันแข่ง';
+    if(d.type==='Gym') return 'เวท';
+    return (d.desc||'').split('(')[0].trim() || d.type;
+  }
+
+  function renderDay(d){
+    var isToday = d.date===today;
+    var gymKey = d.type==='Gym' ? gymRoutineKey(d.desc) : null;
+    var isClickable = (d.type==='Run' || d.type==='Race' || (d.type==='Gym' && gymKey));
+    var cls = 'day'+(isToday?' today':'')+(d.type==='Rest'?' rest':'')+(isClickable?' clickable':'');
+    var actual = (d.type==='Run'||d.type==='Race') ? effectiveActual(d) : null;
+    var html = '<div class="'+cls+'" data-date="'+d.date+'">';
+    if(isClickable) html += '<span class="editicon">'+(d.type==='Gym'?'ดูท่า':'แก้ไข')+' ✎</span>';
+    html += '<div class="ddate">'+fmtDate(d.date)+(isToday?'<span class="today-tag">วันนี้</span>':'')+'</div>';
+    html += '<div class="dtype">'+dayTypeLabel(d)+'</div>';
+    if(d.type==='Run'){
+      html += '<div class="ddesc">'+(d.dist? d.dist+' กม. · ':'')+(d.desc||'')+'</div>';
+      if(d.zone && d.zone!=='-') html += '<div class="dzone">'+d.zone+'</div>';
+      if(actual){
+        html += '<div class="dactual">✓ จริง '+actual.dist+' กม.'+(actual.hr? ' · '+actual.hr+' bpm':'')+'</div>';
+      } else if(new Date(d.date+'T00:00:00') < todayDate){
+        html += '<div class="dactual miss">— ยังไม่ได้บันทึกผล</div>';
+      }
+    } else if(d.type==='Gym'){
+      html += '<div class="ddesc">'+(d.desc||'')+'</div>';
+    } else if(d.type==='Race'){
+      html += '<div class="ddesc">'+(d.desc||'')+'</div>';
+      if(actual) html += '<div class="dactual">✓ จริง '+actual.dist+' กม.'+(actual.hr? ' · '+actual.hr+' bpm':'')+'</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderWeek(w, isPast){
+    var chipColor = PHASE_COLOR[w.phase] || PHASE_COLOR['อื่นๆ'];
+    var el = document.createElement('div');
+    el.className = 'week'+(isPast?' past':'');
+    var head = '<div class="whead">'+
+      '<span class="chip" style="background:'+chipColor+'">'+w.phase+'</span>'+
+      '<span class="wname">สัปดาห์ '+w.idx+' · '+w.label+'</span>'+
+      '<span class="wmeta"><span>แผน <b>'+w.plan_km+'</b> กม.</span><span>จริง <b>'+w.actual_km+'</b> กม.</span></span>'+
+      '</div>';
+    var days = '<div class="days">'+w.days.map(renderDay).join('')+'</div>';
+    el.innerHTML = head+days;
+    return el;
+  }
+
+  function render(){
+    weeksEl.innerHTML='';
+    weeks.forEach(function(w,i){
+      var isPast = i < todayIdx;
+      if(isPast && !showPast) return;
+      weeksEl.appendChild(renderWeek(w, isPast));
+    });
+  }
+  render();
+  initDb();
+
+  document.getElementById('toggle-past').addEventListener('click', function(){
+    showPast = !showPast;
+    this.textContent = showPast ? 'ซ่อนสัปดาห์ที่ผ่านมา' : 'แสดงสัปดาห์ที่ผ่านมา';
+    render();
+  });
+
+  // =====================================================================
+  // modal — log/edit/delete an actual result
+  // =====================================================================
+  var overlay = document.getElementById('overlay');
+  var fDist = document.getElementById('f-dist'), fH = document.getElementById('f-h'),
+      fM = document.getElementById('f-m'), fS = document.getElementById('f-s'),
+      fHr = document.getElementById('f-hr'), fNote = document.getElementById('f-note'),
+      derived = document.getElementById('m-derived'), saveState = document.getElementById('m-savestate'),
+      btnDelete = document.getElementById('f-delete'), btnSave = document.getElementById('f-save'),
+      btnCancel = document.getElementById('f-cancel'),
+      runFields = document.getElementById('run-fields'), exlistEl = document.getElementById('exlist');
+  var currentDate = null;
+
+  function renderExlist(routine){
+    var html = '';
+    if(routine.note) html += '<div class="mplan">'+routine.note+'</div>';
+    routine.ex.forEach(function(row){
+      html += '<div class="exrow"><span class="exname">'+row[0]+'</span><span class="exsets">'+row[1]+'</span></div>';
+    });
+    exlistEl.innerHTML = html;
+  }
+
+  function openModal(dateStr){
+    var d = findDay(dateStr);
+    if(!d) return;
+    currentDate = dateStr;
+    var gymKey = d.type==='Gym' ? gymRoutineKey(d.desc) : null;
+    var routine = gymKey ? GYM_ROUTINES[gymKey] : null;
+
+    if(routine){
+      // gym day — show the exercise list, hide the run-logging form entirely
+      document.getElementById('m-title').textContent = routine.title;
+      document.getElementById('m-sub').textContent = fmtDateLong(dateStr);
+      document.getElementById('m-plan').textContent = '';
+      renderExlist(routine);
+      exlistEl.hidden = false;
+      runFields.hidden = true;
+      saveState.textContent = '';
+      btnDelete.hidden = true;
+      btnSave.hidden = true;
+      btnCancel.textContent = 'ปิด';
+    } else {
+      // run / race day — show the logging form as before
+      document.getElementById('m-title').textContent = dayTypeLabel(d);
+      document.getElementById('m-sub').textContent = fmtDateLong(dateStr)+(d.dist? ' · เป้า '+d.dist+' กม.':'');
+      var planText = (d.desc||'');
+      if(d.zone && d.zone!=='-') planText += '\n'+d.zone;
+      document.getElementById('m-plan').textContent = planText;
+      exlistEl.hidden = true;
+      exlistEl.innerHTML = '';
+      runFields.hidden = false;
+      btnSave.hidden = false;
+      btnCancel.textContent = 'ยกเลิก';
+
+      var a = actualsCache[dateStr] || (d.act_dist ? {dist:d.act_dist, h:0, m:0, s:0, hr:d.act_hr, note:''} : null);
+      fDist.value = a ? a.dist : '';
+      fH.value = a && a.h ? a.h : '';
+      fM.value = a && a.m ? a.m : '';
+      fS.value = a && a.s ? a.s : '';
+      fHr.value = a && a.hr ? a.hr : '';
+      fNote.value = a && a.note ? a.note : '';
+      btnDelete.hidden = !actualsCache[dateStr];
+      saveState.textContent = dbNS ? '' : 'โหมดนี้ยังไม่เชื่อมระบบบันทึก — เปิดผ่านลิงก์ artifact เพื่อบันทึกผลได้';
+      updateDerived();
+    }
+    overlay.hidden = false;
+  }
+  function closeModal(){ overlay.hidden = true; currentDate = null; }
+
+  function updateDerived(){
+    var dist = parseFloat(fDist.value);
+    var h = parseInt(fH.value||'0',10), m = parseInt(fM.value||'0',10), s = parseInt(fS.value||'0',10);
+    var totalSec = h*3600+m*60+s;
+    if(dist>0 && totalSec>0){
+      var paceSec = totalSec/dist;
+      var pm = Math.floor(paceSec/60), ps = Math.round(paceSec%60);
+      if(ps===60){pm++;ps=0;}
+      derived.textContent = 'เพซเฉลี่ย '+pm+':'+pad2(ps)+' น./กม. · เวลารวม '+h+'ชม. '+m+'น. '+s+'วิ.';
+    } else {
+      derived.textContent = '';
+    }
+  }
+  [fDist,fH,fM,fS].forEach(function(el){ el.addEventListener('input', updateDerived); });
+
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('f-cancel').addEventListener('click', closeModal);
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) closeModal(); });
+
+  weeksEl.addEventListener('click', function(e){
+    var card = e.target.closest('.day.clickable');
+    if(card) openModal(card.getAttribute('data-date'));
+  });
+
+  document.getElementById('f-save').addEventListener('click', function(){
+    var dist = parseFloat(fDist.value);
+    if(!(dist>0)){ saveState.textContent='ใส่ระยะจริง (กม.) ก่อนบันทึก'; return; }
+    var body = {
+      dist: dist,
+      h: parseInt(fH.value||'0',10), m: parseInt(fM.value||'0',10), s: parseInt(fS.value||'0',10),
+      hr: fHr.value ? parseInt(fHr.value,10) : null,
+      note: fNote.value || '',
+      updatedAt: new Date().toISOString()
+    };
+    if(!dbNS || !actualsCol){
+      saveState.textContent = 'บันทึกไม่ได้ — ต้องเปิดหน้านี้ผ่านลิงก์ artifact';
+      return;
+    }
+    saveState.textContent = 'กำลังบันทึก…';
+    actualsCol.doc(currentDate).set(body).then(function(){
+      actualsCache[currentDate] = body;
+      saveState.textContent = 'บันทึกแล้ว';
+      render();
+      setTimeout(closeModal, 350);
+    }).catch(function(err){
+      saveState.textContent = 'บันทึกไม่สำเร็จ ('+(err&&err.code||'error')+')';
+    });
+  });
+
+  btnDelete.addEventListener('click', function(){
+    if(!dbNS || !actualsCol || !currentDate) return;
+    saveState.textContent = 'กำลังลบ…';
+    actualsCol.doc(currentDate).delete().then(function(){
+      delete actualsCache[currentDate];
+      render();
+      closeModal();
+    }).catch(function(err){
+      saveState.textContent = 'ลบไม่สำเร็จ ('+(err&&err.code||'error')+')';
+    });
+  });
+
+  // =====================================================================
+  // tabs
+  // =====================================================================
+  var VIEWS = ['home','profile','principles'];
+  document.getElementById('navtabs').addEventListener('click', function(e){
+    var btn = e.target.closest('.navtab');
+    if(!btn) return;
+    var view = btn.getAttribute('data-view');
+    VIEWS.forEach(function(v){
+      document.getElementById('view-'+v).hidden = (v!==view);
+    });
+    document.querySelectorAll('.navtab').forEach(function(t){ t.classList.toggle('active', t===btn); });
+    window.scrollTo(0,0);
+  });
+
+  // =====================================================================
+  // profile — Resting/Max HR, age, PB times — persisted to db:profile/me
+  // =====================================================================
+  var PROFILE_DEFAULT = {
+    rhr:53, mhr:195, age:43,
+    pb5k:{h:0,m:0,s:0}, pb10k:{h:0,m:48,s:7}, pb21k:{h:0,m:0,s:0}, pb42k:{h:3,m:46,s:8}
+  };
+  var profileDoc = null, profileData = null;
+
+  var ZONES = [
+    {name:'Z1 · Recovery', lo:.50, hi:.60, color:'#4f8fe0'},
+    {name:'Z2 · Aerobic',  lo:.60, hi:.70, color:'#6fd17a'},
+    {name:'Z3 · Tempo',    lo:.70, hi:.80, color:'#e8c84a'},
+    {name:'Z4 · Threshold',lo:.80, hi:.90, color:'#ef8e5b'},
+    {name:'Z5 · VO2max',   lo:.90, hi:1.0, color:'#ef5b6e'}
+  ];
+
+  function renderZoneTable(){
+    var rhr = parseInt(document.getElementById('p-rhr').value,10) || PROFILE_DEFAULT.rhr;
+    var mhr = parseInt(document.getElementById('p-mhr').value,10) || PROFILE_DEFAULT.mhr;
+    var hrr = mhr - rhr;
+    var tbody = document.getElementById('zonetable-body');
+    if(!tbody) return;
+    tbody.innerHTML = ZONES.map(function(z){
+      var lo = Math.round(rhr + z.lo*hrr), hi = Math.round(rhr + z.hi*hrr);
+      return '<tr><td class="z"><i style="background:'+z.color+'"></i>'+z.name+'</td>'+
+        '<td>'+Math.round(z.lo*100)+'–'+Math.round(z.hi*100)+'%</td>'+
+        '<td class="bpm">'+lo+'–'+hi+'</td></tr>';
+    }).join('');
+  }
+
+  function fillProfileForm(p){
+    document.getElementById('p-rhr').value = p.rhr || '';
+    document.getElementById('p-mhr').value = p.mhr || '';
+    document.getElementById('p-age').value = p.age || '';
+    ['5k','10k','21k','42k'].forEach(function(k){
+      var pb = p['pb'+k] || {h:0,m:0,s:0};
+      document.getElementById('pb-'+k+'-h').value = pb.h || '';
+      document.getElementById('pb-'+k+'-m').value = pb.m || '';
+      document.getElementById('pb-'+k+'-s').value = pb.s || '';
+    });
+    renderZoneTable();
+  }
+
+  fillProfileForm(PROFILE_DEFAULT);
+  ['p-rhr','p-mhr'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', renderZoneTable);
+  });
+
+  function initProfileDb(){
+    if(!window.claude || !window.claude.use) return;
+    window.claude.use('db').then(function(ns){
+      if(!ns) return;
+      profileDoc = ns.doc('profile/me');
+      return profileDoc.get().then(function(snap){
+        if(snap.exists()){
+          profileData = snap.data();
+          fillProfileForm(profileData);
+        }
+      });
+    }).catch(function(){});
+  }
+  initProfileDb();
+
+  document.getElementById('p-save').addEventListener('click', function(){
+    var body = {
+      rhr: parseInt(document.getElementById('p-rhr').value,10) || null,
+      mhr: parseInt(document.getElementById('p-mhr').value,10) || null,
+      age: parseInt(document.getElementById('p-age').value,10) || null
+    };
+    ['5k','10k','21k','42k'].forEach(function(k){
+      body['pb'+k] = {
+        h: parseInt(document.getElementById('pb-'+k+'-h').value,10) || 0,
+        m: parseInt(document.getElementById('pb-'+k+'-m').value,10) || 0,
+        s: parseInt(document.getElementById('pb-'+k+'-s').value,10) || 0
+      };
+    });
+    var st = document.getElementById('p-savestate');
+    if(!profileDoc){ st.textContent = 'บันทึกไม่ได้ — ต้องเปิดหน้านี้ผ่านลิงก์ artifact'; return; }
+    st.textContent = 'กำลังบันทึก…';
+    profileDoc.set(body).then(function(){
+      profileData = body;
+      st.textContent = 'บันทึกแล้ว';
+      setTimeout(function(){ st.textContent=''; }, 1500);
+    }).catch(function(err){
+      st.textContent = 'บันทึกไม่สำเร็จ ('+(err&&err.code||'error')+')';
+    });
+  });
+})();
+</script>
