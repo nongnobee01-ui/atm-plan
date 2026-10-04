@@ -1,7 +1,7 @@
 <title>แผนซ้อม ATM 42</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* Layout concept: a trail-map spine (vertical phase timeline) running down the page,
    weekly panels read like elevation-profile segments along that spine, each day a
@@ -49,14 +49,14 @@ body{
     radial-gradient(ellipse 700px 500px at 110% 10%, color-mix(in srgb, var(--p-specific) 10%, transparent), transparent 60%),
     var(--bg);
   color:var(--fg);
-  font-family:"IBM Plex Sans Thai","IBM Plex Sans",system-ui,sans-serif;
+  font-family:"Noto Sans Thai","IBM Plex Sans Thai","IBM Plex Sans",system-ui,sans-serif;
   padding-inline:16px;
   padding-block:20px 48px;
   -webkit-font-smoothing:antialiased;
   overflow-x:hidden;
 }
 .wrap{max-width:1180px;margin:0 auto;min-width:0}
-h1,h2,h3{font-family:"Chakra Petch","IBM Plex Sans Thai",sans-serif;text-wrap:balance;margin:0}
+h1,h2,h3{font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-weight:700;text-wrap:balance;margin:0}
 .tnum{font-variant-numeric:tabular-nums}
 button{font-family:inherit}
 
@@ -80,7 +80,7 @@ button{font-family:inherit}
   display:flex;align-items:center;gap:10px;background:color-mix(in srgb, var(--surface) 60%, transparent);
   backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:999px;padding:9px 18px;font-size:13px;color:var(--fg-dim);
 }
-.racepill b{color:var(--fg);font-family:"Chakra Petch";font-size:19px}
+.racepill b{color:var(--fg);font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-size:19px}
 .racepill .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent)}
 
 /* ---------- stat tiles ---------- */
@@ -88,7 +88,7 @@ button{font-family:inherit}
 @media (max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:15px 16px;min-width:0;box-shadow:var(--shadow)}
 .stat .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-faint);margin-bottom:7px}
-.stat .v{font-family:"Chakra Petch";font-size:25px;font-weight:600;color:var(--fg)}
+.stat .v{font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-size:25px;font-weight:600;color:var(--fg)}
 .stat .v span{font-size:14px;color:var(--fg-dim);font-weight:500;font-family:"IBM Plex Sans Thai"}
 .stat .d{font-size:11.5px;color:var(--fg-dim);margin-top:4px}
 
@@ -129,7 +129,7 @@ button{font-family:inherit}
 .week .whead .chip{
   font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px;color:#06140f;letter-spacing:.03em;
 }
-.week .whead .wname{font-family:"Chakra Petch";font-size:15px;font-weight:600;color:var(--fg)}
+.week .whead .wname{font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-size:15px;font-weight:600;color:var(--fg)}
 .week .whead .wmeta{margin-left:auto;font-size:12px;color:var(--fg-dim);display:flex;gap:14px}
 .week .whead .wmeta b{color:var(--fg);font-weight:600}
 
@@ -178,7 +178,7 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-faint);text-align:center}
 .exlist{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:6px}
 .exlist .exrow{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);padding:11px 13px;font-size:13px}
 .exlist .exrow .exname{color:var(--fg)}
-.exlist .exrow .exsets{color:var(--fg-dim);font-family:"Chakra Petch";font-variant-numeric:tabular-nums;white-space:nowrap}
+.exlist .exrow .exsets{color:var(--fg-dim);font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
 .modal label{display:block;font-size:11.5px;color:var(--fg-faint);margin-bottom:5px;margin-top:12px;letter-spacing:.02em}
 .modal label:first-of-type{margin-top:0}
 .modal input{
@@ -208,7 +208,7 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-faint);text-align:center}
   background:color-mix(in srgb, var(--surface) 88%, transparent);backdrop-filter:blur(10px);
   border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow);
 }
-.topnav .brand{font-family:"Chakra Petch";font-weight:700;font-size:15px;color:var(--fg);padding:0 10px 0 6px;white-space:nowrap}
+.topnav .brand{font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-weight:700;font-size:15px;color:var(--fg);padding:0 10px 0 6px;white-space:nowrap}
 .topnav .tabs{display:flex;gap:2px;flex:1;overflow-x:auto}
 .navtab{
   border:none;background:transparent;color:var(--fg-dim);font-size:13px;font-weight:600;
@@ -223,16 +223,16 @@ section[hidden]{display:none}
 @media (max-width:600px){.pgrid{grid-template-columns:1fr}}
 .field{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow)}
 .field label{display:block;font-size:11.5px;color:var(--fg-faint);margin-bottom:7px}
-.field input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--fg);border-radius:8px;padding:9px 10px;font-size:15px;font-family:"Chakra Petch"}
+.field input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--fg);border-radius:8px;padding:9px 10px;font-size:15px;font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif}
 .field input:focus{outline:2px solid var(--accent-dim);border-color:var(--accent)}
 .pbgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
 @media (max-width:700px){.pbgrid{grid-template-columns:repeat(2,1fr)}}
 .pbfield{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow)}
 .pbfield .pblabel{font-size:11.5px;color:var(--fg-faint);margin-bottom:8px}
 .pbtime{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
-.pbtime input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--fg);border-radius:7px;padding:7px 6px;font-size:13px;text-align:center;font-family:"Chakra Petch"}
+.pbtime input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--fg);border-radius:7px;padding:7px 6px;font-size:13px;text-align:center;font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif}
 .pbtime span{display:block;font-size:9.5px;color:var(--fg-faint);text-align:center;margin-top:3px}
-.sectitle{font-size:16px;font-family:"Chakra Petch";font-weight:600;margin:22px 0 10px}
+.sectitle{font-size:16px;font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-weight:600;margin:22px 0 10px}
 .sectitle.first{margin-top:4px}
 .zonetable{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
 .zonetable th,.zonetable td{padding:11px 14px;text-align:left;font-size:13px;border-bottom:1px solid var(--border-soft)}
@@ -240,7 +240,7 @@ section[hidden]{display:none}
 .zonetable tr:last-child td{border-bottom:none}
 .zonetable td.z{display:flex;align-items:center;gap:9px;font-weight:600}
 .zonetable td.z i{width:9px;height:9px;border-radius:3px;display:inline-block}
-.zonetable td.bpm{font-family:"Chakra Petch";font-variant-numeric:tabular-nums}
+.zonetable td.bpm{font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-variant-numeric:tabular-nums}
 .profilebtns{display:flex;gap:10px;margin-top:18px;align-items:center}
 .profilebtns .btn{flex:0 0 auto;padding:10px 22px}
 .profilebtns .savestate{margin-top:0}
