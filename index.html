@@ -154,12 +154,12 @@ button{font-family:inherit}
 @media (max-width:480px){.days{grid-template-columns:1fr}}
 .day{
   border-right:1px solid var(--border-soft);border-top:1px solid var(--border-soft);
-  padding:12px 13px;min-width:0;position:relative;min-height:112px;
+  border-left:3px solid var(--accent-day, transparent);
+  padding:12px 13px 12px 11px;min-width:0;position:relative;min-height:112px;
   transition:background .12s;
 }
 .days .day:nth-child(7n){border-right:none}
 @media (max-width:900px){.days .day{border-right:1px solid var(--border-soft)}.days .day:nth-child(2n){border-right:none}}
-@media (max-width:480px){.days .day{border-right:none!important}}
 .day.today{background:color-mix(in srgb, var(--accent) 9%, transparent)}
 .day.clickable{cursor:pointer}
 .day.clickable:hover{background:var(--surface2)}
@@ -282,14 +282,23 @@ section[hidden]{display:none}
   .legend{font-size:12.5px}
   .note .t{font-size:12px}
   .note p{font-size:14px}
-  .week .whead .wname{font-size:15.5px}
-  .week .whead .wmeta{font-size:12.5px}
-  .day{min-height:0;padding:13px 14px}
-  .day .ddate{font-size:12px}
-  .day .dtype{font-size:13.5px}
-  .day .ddesc{font-size:13px}
+  .week{background:transparent;border:none;box-shadow:none;border-radius:0;margin-bottom:22px}
+  .week .whead{background:transparent;border:none;padding:2px 2px 12px;border-radius:0}
+  .week .whead .wname{font-size:16.5px}
+  .week .whead .wmeta{font-size:12.5px;width:100%;margin-left:0;justify-content:space-between;padding-top:4px}
+  .days{display:flex;flex-direction:column;gap:11px}
+  .day{
+    min-height:0;padding:15px 16px 14px;
+    border:1px solid var(--border);border-top:1px solid var(--border);
+    border-left:4px solid var(--accent-day, var(--border-soft));
+    border-radius:14px;background:var(--surface);box-shadow:var(--shadow);
+  }
+  .day.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent), var(--shadow)}
+  .day .ddate{font-size:12.5px}
+  .day .dtype{font-size:17px;font-weight:700;margin-bottom:5px}
+  .day .ddesc{font-size:13.5px}
   .day .dzone{font-size:12.5px}
-  .day .dactual{font-size:12.5px}
+  .day .dactual{font-size:13px}
   .day .editicon{opacity:.55}
   .modal .msub{font-size:12.5px}
   .modal .mplan{font-size:13.5px}
@@ -725,13 +734,26 @@ section[hidden]{display:none}
     return (d.desc||'').split('(')[0].trim() || d.type;
   }
 
-  function renderDay(d){
+  // left-edge accent color per day card — mirrors PaceDee's easy/quality color coding,
+  // falls back to the week's phase color when the workout type can't be classified
+  function dayAccent(d, phaseColor){
+    if(d.type==='Rest') return 'var(--fg-faint)';
+    if(d.type==='Race') return 'var(--p-race)';
+    if(d.type==='Gym') return 'var(--p-specific)';
+    var t = ((d.desc||'')+' '+(d.zone||'')).toLowerCase();
+    if(/tempo|threshold|interval|vo2|repetition|progression|race ?pace|speed|สปีด|แข่งขัน|quality|ext\d|z4|z5/.test(t)) return 'var(--warn)';
+    if(/easy|recovery|aerobic|long|arr|z1|z2|ฟื้นฟู|ยาว/.test(t)) return 'var(--good)';
+    return phaseColor || 'var(--border-soft)';
+  }
+
+  function renderDay(d, phaseColor){
     var isToday = d.date===today;
     var gymKey = d.type==='Gym' ? gymRoutineKey(d.desc) : null;
     var isClickable = (d.type==='Run' || d.type==='Race' || (d.type==='Gym' && gymKey));
     var cls = 'day'+(isToday?' today':'')+(d.type==='Rest'?' rest':'')+(isClickable?' clickable':'');
     var actual = (d.type==='Run'||d.type==='Race') ? effectiveActual(d) : null;
-    var html = '<div class="'+cls+'" data-date="'+d.date+'">';
+    var accent = dayAccent(d, phaseColor);
+    var html = '<div class="'+cls+'" data-date="'+d.date+'" style="--accent-day:'+accent+'">';
     if(isClickable) html += '<span class="editicon">'+(d.type==='Gym'?'ดูท่า':'แก้ไข')+' ✎</span>';
     html += '<div class="ddate">'+fmtDate(d.date)+(isToday?'<span class="today-tag">วันนี้</span>':'')+'</div>';
     html += '<div class="dtype">'+dayTypeLabel(d)+'</div>';
@@ -762,7 +784,7 @@ section[hidden]{display:none}
       '<span class="wname">สัปดาห์ '+w.idx+' · '+w.label+'</span>'+
       '<span class="wmeta"><span>แผน <b>'+w.plan_km+'</b> กม.</span><span>จริง <b>'+w.actual_km+'</b> กม.</span></span>'+
       '</div>';
-    var days = '<div class="days">'+w.days.map(renderDay).join('')+'</div>';
+    var days = '<div class="days">'+w.days.map(function(d){ return renderDay(d, chipColor); }).join('')+'</div>';
     el.innerHTML = head+days;
     return el;
   }
