@@ -38,7 +38,7 @@
 @media (prefers-color-scheme: light){
   :root:not([data-theme="dark"]){
     --bg:#f2f6f3; --bg2:#eaf1ec; --surface:#ffffff; --surface2:#eef3ef; --surface3:#e3ece5;
-    --border:#d7e2db; --border-soft:#e4ecе6;
+    --border:#d7e2db; --border-soft:#e4ece6;
     --fg:#0f201a; --fg-dim:#4d6359; --fg-faint:#87988f;
     --accent:#0e9a6e; --accent-strong:#0b8961; --accent-dim:#cdeee1;
     --warn:#a8720d; --good:#0e9a6e;
@@ -69,8 +69,9 @@ body{
   padding-inline:16px;
   padding-block:20px 48px;
   -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
 }
-.wrap{max-width:1180px;margin:0 auto}
+.wrap{max-width:1180px;margin:0 auto;min-width:0}
 h1,h2,h3{font-family:"Chakra Petch","IBM Plex Sans Thai",sans-serif;text-wrap:balance;margin:0}
 .tnum{font-variant-numeric:tabular-nums}
 button{font-family:inherit}
@@ -87,9 +88,10 @@ button{font-family:inherit}
 
 /* ---------- header ---------- */
 .hero{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
-.hero .eyebrow{font-size:11.5px;letter-spacing:.09em;color:var(--fg-dim);text-transform:uppercase;margin-bottom:8px;opacity:.9}
-.hero h1{font-size:clamp(28px,5vw,42px);font-weight:700;color:var(--fg);letter-spacing:.01em}
-.hero .sub{color:var(--fg-dim);font-size:14px;margin-top:7px}
+.hero>div{min-width:0;flex:1 1 220px}
+.hero .eyebrow{font-size:11.5px;letter-spacing:.09em;color:var(--fg-dim);text-transform:uppercase;margin-bottom:8px;opacity:.9;overflow-wrap:break-word;word-break:break-word}
+.hero h1{font-size:clamp(28px,5vw,42px);font-weight:700;color:var(--fg);letter-spacing:.01em;overflow-wrap:break-word}
+.hero .sub{color:var(--fg-dim);font-size:14px;margin-top:7px;overflow-wrap:break-word;word-break:break-word}
 .racepill{
   display:flex;align-items:center;gap:10px;background:color-mix(in srgb, var(--surface) 60%, transparent);
   backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:999px;padding:9px 18px;font-size:13px;color:var(--fg-dim);
@@ -266,6 +268,48 @@ section[hidden]{display:none}
 .pcard p:last-child{margin-bottom:0}
 .pcard ul{margin:0 0 10px;padding-left:20px;font-size:13.5px;line-height:1.75;color:var(--fg-dim)}
 .pcard b{color:var(--fg)}
+
+/* ---------- mobile readability: bigger type, no stray horizontal scroll ---------- */
+@media (max-width:640px){
+  .hero .eyebrow{font-size:12.5px}
+  .hero .sub{font-size:14.5px}
+  .racepill{font-size:13.5px;flex-wrap:wrap;overflow-wrap:break-word}
+  .racepill b{font-size:20px}
+  .stat .k{font-size:11.5px}
+  .stat .v{font-size:23px}
+  .stat .d{font-size:12.5px}
+  .timeline .lbl{font-size:12.5px}
+  .legend{font-size:12.5px}
+  .note .t{font-size:12px}
+  .note p{font-size:14px}
+  .week .whead .wname{font-size:15.5px}
+  .week .whead .wmeta{font-size:12.5px}
+  .day{min-height:0;padding:13px 14px}
+  .day .ddate{font-size:12px}
+  .day .dtype{font-size:13.5px}
+  .day .ddesc{font-size:13px}
+  .day .dzone{font-size:12.5px}
+  .day .dactual{font-size:12.5px}
+  .day .editicon{opacity:.55}
+  .modal .msub{font-size:12.5px}
+  .modal .mplan{font-size:13.5px}
+  .exlist .exrow{font-size:14px;padding:12px 14px}
+  .modal label{font-size:12.5px}
+  .modal input{font-size:16px}
+  .timegrid span{font-size:11px}
+  .modal .derived{font-size:13px}
+  .savestate{font-size:12.5px}
+  .field label{font-size:12.5px}
+  .field input{font-size:16px}
+  .pbfield .pblabel{font-size:12.5px}
+  .pbtime input{font-size:14px}
+  .pbtime span{font-size:10.5px}
+  .zonetable th,.zonetable td{font-size:14px;padding:10px 10px}
+  .zonetable th{font-size:11.5px}
+  .pcard h3{font-size:16px}
+  .pcard p,.pcard ul{font-size:14.5px}
+  footer{font-size:12.5px}
+}
 </style>
 
 <div class="wrap">
