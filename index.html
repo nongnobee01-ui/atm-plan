@@ -625,11 +625,23 @@ section[hidden]{display:none}
     return null;
   }
 
+  // fallback: when the artifact db is unavailable (e.g. GitHub Pages), keep data in this browser
+  var localMode = false;
+  function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch(e){ return null; } }
+  function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } }
+  function enableLocal(){
+    localMode = true;
+    var a = lsGet('atm_actuals_v1') || {};
+    Object.keys(a).forEach(function(k){ actualsCache[k]=a[k]; });
+    dbHint.textContent = 'บันทึกในเบราว์เซอร์เครื่องนี้';
+    render();
+  }
+
   function initDb(){
-    if(!window.claude || !window.claude.use){ dbHint.textContent=''; return; }
+    if(!window.claude || !window.claude.use){ enableLocal(); return; }
     window.claude.use('db').then(function(ns){
       dbNS = ns;
-      if(!ns){ dbHint.textContent=''; return; }
+      if(!ns){ enableLocal(); return; }
       actualsCol = ns.collection('actuals');
       dbHint.textContent = 'กำลังโหลดผลที่บันทึกไว้…';
       return actualsCol.limit(1000).get().then(function(snap){
@@ -637,7 +649,7 @@ section[hidden]{display:none}
         dbHint.textContent = '';
         render();
       });
-    }).catch(function(){ dbHint.textContent=''; });
+    }).catch(function(){ enableLocal(); });
   }
 
   // ---- weekly cards ----
@@ -900,8 +912,18 @@ section[hidden]{display:none}
       note: fNote.value || '',
       updatedAt: new Date().toISOString()
     };
+    if(localMode && (!dbNS || !actualsCol)){
+      var all = lsGet('atm_actuals_v1') || {};
+      all[currentDate] = body;
+      if(!lsSet('atm_actuals_v1', all)){ saveState.textContent='บันทึกไม่ได้ — เบราว์เซอร์บล็อกที่เก็บข้อมูล'; return; }
+      actualsCache[currentDate] = body;
+      saveState.textContent = 'บันทึกแล้ว (เครื่องนี้)';
+      render();
+      setTimeout(closeModal, 350);
+      return;
+    }
     if(!dbNS || !actualsCol){
-      saveState.textContent = 'บันทึกไม่ได้ — ต้องเปิดหน้านี้ผ่านลิงก์ artifact';
+      saveState.textContent = 'บันทึกไม่ได้ — ยังโหลดไม่เสร็จ ลองอีกครั้ง';
       return;
     }
     saveState.textContent = 'กำลังบันทึก…';
@@ -916,6 +938,11 @@ section[hidden]{display:none}
   });
 
   btnDelete.addEventListener('click', function(){
+    if(localMode && (!dbNS || !actualsCol) && currentDate){
+      var all2 = lsGet('atm_actuals_v1') || {};
+      delete all2[currentDate]; lsSet('atm_actuals_v1', all2);
+      delete actualsCache[currentDate]; render(); closeModal(); return;
+    }
     if(!dbNS || !actualsCol || !currentDate) return;
     saveState.textContent = 'กำลังลบ…';
     actualsCol.doc(currentDate).delete().then(function(){
@@ -991,10 +1018,14 @@ section[hidden]{display:none}
     document.getElementById(id).addEventListener('input', renderZoneTable);
   });
 
+  function loadLocalProfile(){
+    var p = lsGet('atm_profile_v1');
+    if(p){ profileData = p; fillProfileForm(p); }
+  }
   function initProfileDb(){
-    if(!window.claude || !window.claude.use) return;
+    if(!window.claude || !window.claude.use){ loadLocalProfile(); return; }
     window.claude.use('db').then(function(ns){
-      if(!ns) return;
+      if(!ns){ loadLocalProfile(); return; }
       profileDoc = ns.doc('profile/me');
       return profileDoc.get().then(function(snap){
         if(snap.exists()){
@@ -1020,7 +1051,11 @@ section[hidden]{display:none}
       };
     });
     var st = document.getElementById('p-savestate');
-    if(!profileDoc){ st.textContent = 'บันทึกไม่ได้ — ต้องเปิดหน้านี้ผ่านลิงก์ artifact'; return; }
+    if(!profileDoc){
+      if(lsSet('atm_profile_v1', body)){ profileData = body; st.textContent = 'บันทึกแล้ว (เครื่องนี้)'; setTimeout(function(){ st.textContent=''; }, 1500); }
+      else st.textContent = 'บันทึกไม่ได้ — เบราว์เซอร์บล็อกที่เก็บข้อมูล';
+      return;
+    }
     st.textContent = 'กำลังบันทึก…';
     profileDoc.set(body).then(function(){
       profileData = body;
