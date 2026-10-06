@@ -152,11 +152,19 @@ button{font-family:inherit}
 .day .ddate .today-tag{background:var(--accent);color:#06140f;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:999px}
 .day .dtype{font-size:12.5px;font-weight:600;color:var(--fg);margin-bottom:3px}
 .day .ddesc{font-size:11.5px;color:var(--fg-dim);line-height:1.42;margin-bottom:5px;word-break:break-word}
+.day .dchip b{font-weight:700}
+.day .dchip .hrt{font-size:1.05em}
+.day .dchip.z1{color:#8fb4d9}.day .dchip.z2{color:#4fe3ac}.day .dchip.z3{color:#e8d34a}.day .dchip.z4{color:#f0993c}.day .dchip.z5{color:#ef5b5b}
+.day .dchip{background:transparent;border:none;padding:0;margin-top:8px}
+.day .dgym{font-size:14px;color:var(--p-specific);font-weight:600;line-height:1.35}
+.day .dcheck{position:absolute;top:10px;right:12px;color:var(--good);font-size:15px;font-weight:700}
+.week .whead .thisweek{font-size:11.5px;padding:2px 9px;border-radius:8px;background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent)}
+.day .pc{white-space:nowrap}
 .day .ddist{font-size:13px;color:var(--fg-dim);line-height:1.3}
 .day .ddist b{font-size:20px;color:var(--fg);font-weight:700}
 .day .ddist small{font-size:11px;color:var(--fg-faint)}
 .day .dtime{font-size:12px;color:var(--fg-dim);margin-top:2px}
-.day .dchip{display:inline-block;margin-top:6px;font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--fg-dim);align-self:flex-start}
+.day .dchip{display:block;white-space:nowrap;margin-top:6px;border:none!important;background:transparent!important;padding:0!important;border-radius:0!important;font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--fg-dim);align-self:flex-start}
 .day .dzone{font-size:11px;color:var(--fg-faint);line-height:1.42}
 .day .dactual{margin-top:7px;font-size:11px;color:var(--good);display:flex;align-items:center;gap:4px;font-weight:600}
 .day .dactual.miss{color:var(--fg-faint);font-weight:400}
@@ -288,11 +296,15 @@ section[hidden]{display:none}
   .day .ddate{font-size:14px;margin-bottom:8px}
   .day .dtype{font-size:20px;font-weight:700;line-height:1.25;margin-bottom:7px}
   .day .ddesc{font-size:15px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-  .day .ddist{font-size:15px}
+  .day .ddist{font-size:14px}
+  .day .ddist b{font-size:23px}
   .day .ddist b{font-size:24px}
   .day .ddist small{font-size:12.5px}
   .day .dtime{font-size:14px;margin-top:3px}
-  .day .dchip{font-size:13px;padding:3px 10px;margin-top:8px}
+  .day .dchip{font-size:14px;margin-top:8px}
+  .day .dgym{font-size:15px}
+  .day .editicon{display:none}
+  .week .whead .wtotal{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 10px}
   .week .whead .wtotal b{font-size:22px}
   .day .dzone{font-size:13.5px;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .day .dactual{font-size:14.5px;line-height:1.35;border:1px solid var(--border);border-radius:8px;padding:6px 9px;background:var(--surface2)}
@@ -779,6 +791,21 @@ section[hidden]{display:none}
     var m=(z||'').match(/(\d{3})\s*[-–]\s*(\d{3})\s*bpm/);
     return m? m[1]+'-'+m[2] : null;
   }
+  function hrZone(z,d){
+    z=z||'';
+    var hr=z.match(/(\d{3})\s*[-–]\s*(\d{3})\s*bpm/);
+    var zn=z.match(/Zone\s*(\d)/i)||z.match(/\bZ(\d)\b/);
+    var n=zn? +zn[1] : null;
+    if(!n && hr){ var lo=+hr[1]; n = lo>=164?4 : lo>=152?3 : lo>=137?2 : 1; }
+    if(!n){
+      var t=((d&&d.desc)||'')+' '+z;
+      if(/threshold|vo2|interval|ext\d|tempo/i.test(t) && !/\bMP\b/.test(t)) return {n:4,bpm:'164–178'};
+      if(/\bMP\b|marathon/i.test(t)) return {n:3,bpm:'158–165'};
+      if(/easy|long|recovery|ฟื้น/i.test(t)) return {n:2,bpm:'138–150'};
+      return null;
+    }
+    return {n:n, bpm: hr? hr[1]+'–'+hr[2] : null};
+  }
   function fmtDur(sec){
     var h=Math.floor(sec/3600), mi=Math.round((sec%3600)/60);
     if(mi===60){h++;mi=0;}
@@ -805,18 +832,22 @@ section[hidden]{display:none}
     var actual = (d.type==='Run'||d.type==='Race') ? effectiveActual(d) : null;
     var accent = dayAccent(d, phaseColor);
     var html = '<div class="'+cls+'" data-date="'+d.date+'" style="--accent-day:'+accent+'">';
+    if(actual) html += '<span class="dcheck">✓</span>';
     if(isClickable) html += '<span class="editicon">'+(d.type==='Gym'?'ดูท่า':'แก้ไข')+' ✎</span>';
     html += '<div class="ddate">'+fmtDate(d.date)+(isToday?'<span class="today-tag">วันนี้</span>':'')+'</div>';
     html += '<div class="dtype">'+dayTypeLabel(d)+'</div>';
     if(d.type==='Run'){
       var pc=parsePace(d.zone), hr=parseHR(d.zone);
       if(pc && d.dist){
-        html += '<div class="ddist"><b>'+d.dist+'</b> กม. · '+pc.txt+'<small>/กม.</small></div>';
+        html += '<div class="ddist"><b>'+d.dist+'</b> กม. · <span class="pc">'+pc.txt+'<small>/กม.</small></span></div>';
         html += '<div class="dtime">⏱ ≈ '+fmtDur(d.dist*pc.mid)+'</div>';
-        if(hr) html += '<div class="dchip">♥ '+hr+' bpm</div>';
+        var hz=hrZone(d.zone,d);
+        if(hz) html += '<div class="dchip z'+hz.n+'"><span class="hrt">♥</span> <b>Z'+hz.n+'</b>'+(hz.bpm?' '+hz.bpm+' bpm':'')+'</div>';
       } else {
         html += '<div class="ddist"><b>'+(d.dist||'')+'</b>'+(d.dist?' กม.':'')+'</div>';
         if(d.zone && d.zone!=='-') html += '<div class="dzone">'+d.zone+'</div>';
+        var hz2=hrZone(d.zone,d);
+        if(hz2) html += '<div class="dchip z'+hz2.n+'"><span class="hrt">♥</span> <b>Z'+hz2.n+'</b>'+(hz2.bpm?' '+hz2.bpm+' bpm':'')+'</div>';
       }
       if(actual){
         html += '<div class="dactual">✓ จริง '+actual.dist+' กม.'+(actual.hr? ' · '+actual.hr+' bpm':'')+'</div>';
@@ -824,7 +855,7 @@ section[hidden]{display:none}
         html += '<div class="dactual miss">— ยังไม่ได้บันทึกผล</div>';
       }
     } else if(d.type==='Gym'){
-      html += '<div class="ddesc">'+(d.desc||'')+'</div>';
+      html += '<div class="dgym">+ '+(d.desc||'').split(' — ')[0].replace(/\s*\(.*$/,'').trim()+'</div>';
     } else if(d.type==='Race'){
       html += '<div class="ddesc">'+(d.desc||'')+'</div>';
       if(actual) html += '<div class="dactual">✓ จริง '+actual.dist+' กม.'+(actual.hr? ' · '+actual.hr+' bpm':'')+'</div>';
@@ -833,14 +864,22 @@ section[hidden]{display:none}
     return html;
   }
 
+  function wkSec(w){
+    var t=0; w.days.forEach(function(d){ if(d.type==='Run'||d.type==='Race'){ var p=parsePace(d.zone); if(p&&d.dist) t+=d.dist*p.mid; } });
+    return t;
+  }
+  function fmtDurLong(sec){
+    var h=Math.floor(sec/3600), m=Math.round((sec%3600)/60); if(m===60){h++;m=0;}
+    return h+' ชม. '+m+' น.';
+  }
   function renderWeek(w, isPast){
     var chipColor = PHASE_COLOR[w.phase] || PHASE_COLOR['อื่นๆ'];
     var el = document.createElement('div');
     el.className = 'week'+(isPast?' past':'');
     var head = '<div class="whead">'+
       '<span class="chip" style="background:'+chipColor+'">'+w.phase+'</span>'+
-      '<span class="wname">สัปดาห์ '+w.idx+' · '+w.label+'</span>'+
-      '<span class="wmeta"><span class="wtotal"><b>'+w.plan_km+'</b> กม.</span><span>จริง <b>'+w.actual_km+'</b> กม.</span></span>'+
+      '<span class="wname">สัปดาห์ '+w.idx+' · '+w.label+'</span>'+(w.days.some(function(d){return d.date===today;})?'<span class="thisweek">สัปดาห์นี้</span>':'')+
+      '<span class="wmeta"><span class="wtotal">รวม <b>'+w.plan_km+'</b> กม.'+(wkSec(w)?' · ~'+fmtDurLong(wkSec(w)):'')+'</span><span>จริง <b>'+w.actual_km+'</b> กม.</span></span>'+
       '</div>';
     var days = '<div class="days">'+w.days.map(function(d){ return renderDay(d, chipColor); }).join('')+'</div>';
     el.innerHTML = head+days;
