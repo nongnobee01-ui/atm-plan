@@ -558,7 +558,8 @@ section[hidden]{display:none}
   var raw = document.getElementById('plan-data').textContent;
   var data = JSON.parse(raw);
   var weeks = data.weeks, meta = data.meta;
-  var today = meta.today;
+  function localISO(){var n=new Date();return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2);}
+  var today = localISO();
 
   var PHASE_COLOR = {
     Base:'var(--p-base)', Specific:'var(--p-specific)', Peak:'var(--p-peak)',
@@ -896,6 +897,36 @@ section[hidden]{display:none}
   }
   render();
   initDb();
+
+  // auto-update: reload when the date rolls over or a newer version of this page is published
+  (function(){
+    var myBuild=(document.querySelector('meta[name="build"]')||{}).content;
+    var shownDay=today, busy=false;
+    function modalOpen(){var o=document.getElementById('overlay');return o && !o.hidden;}
+    function reloadSoon(){ if(modalOpen()){ showBanner(); } else { location.reload(); } }
+    function showBanner(){
+      if(document.getElementById('upd-banner')) return;
+      var b=document.createElement('div'); b.id='upd-banner';
+      b.style.cssText='position:fixed;left:12px;right:12px;bottom:14px;z-index:99;padding:12px 14px;border-radius:12px;background:var(--accent);color:#06251b;font-weight:700;text-align:center;cursor:pointer';
+      b.textContent='มีอัปเดตใหม่ — แตะเพื่อโหลด';
+      b.addEventListener('click',function(){location.reload();});
+      document.body.appendChild(b);
+    }
+    function check(){
+      if(busy) return; busy=true;
+      if(localISO()!==shownDay){ busy=false; return reloadSoon(); }
+      fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
+        var m=t.match(/name="build" content="(\d+)"/);
+        if(m && myBuild && m[1]!==myBuild) reloadSoon();
+      }).catch(function(){}).then(function(){busy=false;});
+    }
+    document.addEventListener('visibilitychange',function(){ if(!document.hidden) check(); });
+    window.addEventListener('focus',check);
+    window.addEventListener('pageshow',check);
+    setInterval(check,5*60*1000);
+    setTimeout(check,3000);
+  })();
+
 
   document.getElementById('toggle-past').addEventListener('click', function(){
     showPast = !showPast;
