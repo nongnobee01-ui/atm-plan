@@ -270,19 +270,20 @@ section[hidden]{display:none}
   .week .whead{background:transparent;border:none;padding:2px 2px 12px;border-radius:0}
   .week .whead .wname{font-size:16.5px}
   .week .whead .wmeta{font-size:12.5px;width:100%;margin-left:0;justify-content:space-between;padding-top:4px}
-  .days{display:flex;flex-direction:column;gap:11px}
+  .days{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .day{
-    min-height:0;padding:15px 16px 14px;
+    min-height:150px;padding:16px 15px 15px;
     border:1px solid var(--border);border-top:1px solid var(--border);
     border-left:4px solid var(--accent-day, var(--border-soft));
-    border-radius:14px;background:var(--surface);box-shadow:var(--shadow);
+    border-radius:16px;background:var(--surface);box-shadow:var(--shadow);
   }
+  .days .day,.days .day:nth-child(2n){border-right:1px solid var(--border)}
   .day.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent), var(--shadow)}
-  .day .ddate{font-size:12.5px}
-  .day .dtype{font-size:17px;font-weight:700;margin-bottom:5px}
-  .day .ddesc{font-size:13.5px}
-  .day .dzone{font-size:12.5px}
-  .day .dactual{font-size:13px}
+  .day .ddate{font-size:14px;margin-bottom:8px}
+  .day .dtype{font-size:20px;font-weight:700;line-height:1.25;margin-bottom:7px}
+  .day .ddesc{font-size:15px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .day .dzone{font-size:13.5px;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .day .dactual{font-size:14.5px;line-height:1.35;border:1px solid var(--border);border-radius:8px;padding:6px 9px;background:var(--surface2)}
   .day .editicon{opacity:.55}
   .modal .msub{font-size:12.5px}
   .modal .mplan{font-size:13.5px}
