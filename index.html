@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791341854">
+<meta name="build" content="1791342023">
 <title>แผนซ้อม ATM 42</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -474,7 +474,7 @@ section[hidden]{display:none}
         <input id="p-race" type="date">
       </div>
     </div>
-    <p class="pnote">เปลี่ยนวันแข่ง = เลื่อนทั้งแผนตามจำนวนวันที่ต่างไป · วันเริ่มซ้อม = ซ่อนสัปดาห์ก่อนหน้านั้น · เวลา 10K = สเกลเพซทั้งแผนเทียบฐาน 48:07 (VCR 4:54/กม.) · กดบันทึกแล้วหน้าจะโหลดใหม่เอง</p>
+    <p class="pnote">เปลี่ยนวันแข่ง = เลื่อนทั้งแผนตามจำนวนวันที่ต่างไป · วันเริ่มซ้อม = ซ่อนสัปดาห์ก่อนหน้านั้น · สถิติ (10K ก่อน ถ้าไม่มีใช้ 5K/21K/42K แปลงเป็น 10K) = สเกลเพซทั้งแผนเทียบฐาน 10K 48:07 (VCR 4:54/กม.) · กดบันทึกแล้วหน้าจะโหลดใหม่เอง</p>
 
     <div class="sectitle">สถิติส่วนตัว (Personal Best)</div>
     <div class="pbgrid">
@@ -517,7 +517,8 @@ section[hidden]{display:none}
       <span class="savestate" id="p-savestate"></span>
     </div>
 
-    <div class="sectitle">เพซซ้อมที่คำนวณ (จาก 10K ด้านบน)</div>
+    <div class="sectitle">เพซซ้อมที่คำนวณ (จากสถิติด้านบน)</div>
+    <p class="pnote" id="pace-eq"></p>
     <table class="zonetable">
       <thead><tr><th>โซน</th><th>%VCR</th><th>เพซ (น./กม.)</th></tr></thead>
       <tbody id="pacetable-body"></tbody>
@@ -621,10 +622,20 @@ section[hidden]{display:none}
       raceISO=p.raceDate;
       delta=Math.round((new Date(raceISO+'T00:00:00')-new Date(BASE_RACE+'T00:00:00'))/86400000);
     }
-    var t10=p.pb10k? ((p.pb10k.h||0)*3600+(p.pb10k.m||0)*60+(p.pb10k.s||0)) : 0;
+    var t10=eq10(p);
     var f=t10>0? Math.min(1.3,Math.max(0.8,t10/BASE_10K)) : 1;
     return {delta:delta, raceISO:raceISO, f:f, start:(p.startDate&&/^\d{4}-\d\d-\d\d$/.test(p.startDate))?p.startDate:null};
   })();
+  function eq10(pb){
+    pb=pb||{};
+    function sec(o){ return o? ((o.h||0)*3600+(o.m||0)*60+(o.s||0)) : 0; }
+    var t10=sec(pb.pb10k); if(t10>0) return t10;
+    var best=0;
+    [['pb5k',5],['pb21k',21.0975],['pb42k',42.195]].forEach(function(r){
+      var t=sec(pb[r[0]]); if(t>0){ var e=t*Math.pow(10/r[1],1.06); if(!best||e<best) best=e; }
+    });
+    return best;
+  }
   function addDaysISO(iso,n){
     var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n);
     return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
@@ -1237,7 +1248,9 @@ section[hidden]{display:none}
   function renderPaceTable(){
     var tb=document.getElementById('pacetable-body'); if(!tb) return;
     function g(id){ return parseInt(document.getElementById(id).value,10)||0; }
-    var t=g('pb-10k-h')*3600+g('pb-10k-m')*60+g('pb-10k-s');
+    var pbs={}; ['5k','10k','21k','42k'].forEach(function(k){ pbs['pb'+k]={h:g('pb-'+k+'-h'),m:g('pb-'+k+'-m'),s:g('pb-'+k+'-s')}; });
+    var t=eq10(pbs);
+    var eqEl=document.getElementById('pace-eq'); if(eqEl) eqEl.textContent = t>0 ? ('ใช้ 10K เทียบเท่า '+Math.floor(t/60)+':'+('0'+Math.round(t%60)).slice(-2)+' → VCR '+(function(){var v=Math.round(BASE_VCR*Math.min(1.3,Math.max(0.8,t/BASE_10K)));return Math.floor(v/60)+':'+('0'+(v%60)).slice(-2);})()+'/กม.') : 'ยังไม่ได้ใส่สถิติ — ใช้ค่าฐาน 10K 48:07';
     var f=t>0? Math.min(1.3,Math.max(0.8,t/BASE_10K)) : 1;
     var V=BASE_VCR*f;
     var rows=[['ARR ฟื้นฟู',.70],['SCR ช้าต่อเนื่อง',.80],['SCR-สูง',.85],['MP มาราธอน',.90],['FCR',.94],['VCR',1.0],['EXT105',1.05],['EXT110',1.10]];
@@ -1245,7 +1258,7 @@ section[hidden]{display:none}
   }
 
   fillProfileForm(PROFILE_DEFAULT);
-  ['pb-10k-h','pb-10k-m','pb-10k-s'].forEach(function(id){ document.getElementById(id).addEventListener('input', renderPaceTable); });
+  ['5k','10k','21k','42k'].forEach(function(k){ ['h','m','s'].forEach(function(u){ document.getElementById('pb-'+k+'-'+u).addEventListener('input', renderPaceTable); }); });
   ['p-rhr','p-mhr'].forEach(function(id){
     document.getElementById(id).addEventListener('input', renderZoneTable);
   });
