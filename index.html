@@ -1,6 +1,8 @@
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>แผนซ้อม ATM 42</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a1220">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -44,6 +46,8 @@
 :root[data-theme="dark"]{ color-scheme: dark; }
 
 *{box-sizing:border-box}
+.brand .blogo{width:24px;height:24px;border-radius:7px;vertical-align:-6px;margin-right:4px}
+body::after{content:"";position:fixed;right:-30px;bottom:-10px;width:min(300px,62vw);aspect-ratio:305/334;background:url(watermark.png) center/contain no-repeat;opacity:.04;pointer-events:none;z-index:1;-webkit-mask-image:linear-gradient(to top,transparent 0,#000 18%);mask-image:linear-gradient(to top,transparent 0,#000 18%)}
 body{
   margin:0;
   background:
@@ -175,17 +179,6 @@ button{font-family:inherit}
 .day .editicon{position:absolute;top:10px;right:11px;font-size:10px;color:var(--fg-faint);opacity:0;transition:opacity .12s}
 .day.clickable:hover .editicon{opacity:1}
 
-/* PaceDee-style weekly view */
-.pastbar{display:flex;justify-content:space-between;align-items:center;width:100%;margin:4px 0 18px;padding:16px 18px;
-  background:var(--surface2);border:1px solid var(--border);border-radius:14px;color:var(--fg-dim);font:inherit;font-size:15px;cursor:pointer;text-align:left}
-.pastbar:hover{color:var(--fg)}
-.pastbar i{font-style:normal;display:inline-block;transition:transform .15s}
-.pastbar.open i{transform:rotate(180deg)}
-.week .whead .wlabel{font-size:12.5px;color:var(--fg-dim)}
-.day .dactual{flex-direction:column;align-items:flex-start;gap:1px}
-.day .dactual .act2{color:var(--fg-dim);font-weight:500}
-.day .dactual.miss{flex-direction:row}
-
 footer{margin-top:28px;font-size:12px;color:var(--fg-faint);text-align:center}
 
 /* ---------- modal ---------- */
@@ -293,15 +286,8 @@ section[hidden]{display:none}
   .legend{font-size:12.5px}
   .note .t{font-size:12px}
   .note p{font-size:14px}
-  .week{background:transparent;border:none;box-shadow:none;border-radius:0;margin-bottom:26px;
-    border-left:4px solid var(--wrail,var(--accent));padding-left:12px;overflow:visible}
-  .week.past{opacity:.6}
+  .week{background:transparent;border:none;box-shadow:none;border-radius:0;margin-bottom:22px}
   .week .whead{background:transparent;border:none;padding:2px 2px 12px;border-radius:0}
-  .week .whead .chip{font-size:13px;padding:4px 12px;border-radius:7px}
-  .week .whead .thisweek{font-size:13px;padding:4px 10px}
-  .week .whead .wname{font-size:22px;font-weight:700}
-  .week .whead .wlabel{width:100%;font-size:13.5px;margin-top:-4px}
-  .pastbar{font-size:16px;padding:17px 18px}
   .week .whead .wname{font-size:16.5px}
   .week .whead .wmeta{font-size:12.5px;width:100%;margin-left:0;justify-content:space-between;padding-top:4px}
   .days{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -353,7 +339,7 @@ section[hidden]{display:none}
 <div class="wrap">
 
   <div class="topnav">
-    <span class="brand">🏃 แผนซ้อม Bee</span>
+    <span class="brand"><img class="blogo" src="icon-192.png" alt="" width="24" height="24"> แผนซ้อม Bee</span>
     <div class="tabs" id="navtabs">
       <button class="navtab active" data-view="home">หน้าแรก</button>
       <button class="navtab" data-view="profile">โปรไฟล์</button>
@@ -425,6 +411,7 @@ section[hidden]{display:none}
   <div class="weeksbar">
     <h2>ตารางซ้อมรายสัปดาห์</h2>
     <span class="hint" id="db-hint"></span>
+    <button class="toggle" id="toggle-past">แสดงสัปดาห์ที่ผ่านมา</button>
   </div>
 
   <div id="weeks"></div>
@@ -665,7 +652,7 @@ section[hidden]{display:none}
 
   function effectiveActual(d){
     var a = actualsCache[d.date];
-    if(a) return {dist:a.dist, hr:a.hr, sec:(a.h||0)*3600+(a.m||0)*60+(a.s||0), source:'db'};
+    if(a) return {dist:a.dist, hr:a.hr, source:'db'};
     if(isRealNum(d.act_dist)) return {dist:d.act_dist, hr:isRealNum(d.act_hr)?d.act_hr:null, source:'xlsx'};
     return null;
   }
@@ -844,17 +831,6 @@ section[hidden]{display:none}
     return phaseColor || 'var(--border-soft)';
   }
 
-  function clock(sec){
-    sec=Math.round(sec); var h=Math.floor(sec/3600), m=Math.floor(sec%3600/60), s2=sec%60;
-    return (h? h+':'+('0'+m).slice(-2) : m)+':'+('0'+s2).slice(-2);
-  }
-  function actualBlock(a){
-    var sub=[];
-    if(a.sec>0){ sub.push(clock(a.sec)); if(a.dist>0) sub.push(clock(a.sec/a.dist)+'/กม.'); }
-    if(a.hr) sub.push(a.hr+' bpm');
-    return '<div class="dactual"><span class="act1">✓ จริง '+a.dist+' กม.</span>'+(sub.length?'<span class="act2">'+sub.join(' · ')+'</span>':'')+'</div>';
-  }
-
   function renderDay(d, phaseColor){
     var isToday = d.date===today;
     var gymKey = d.type==='Gym' ? gymRoutineKey(d.desc) : null;
@@ -881,7 +857,7 @@ section[hidden]{display:none}
         if(hz2) html += '<div class="dchip z'+hz2.n+'"><span class="hrt">♥</span> <b>Z'+hz2.n+'</b>'+(hz2.bpm?' '+hz2.bpm+' bpm':'')+'</div>';
       }
       if(actual){
-        html += actualBlock(actual);
+        html += '<div class="dactual">✓ จริง '+actual.dist+' กม.'+(actual.hr? ' · '+actual.hr+' bpm':'')+'</div>';
       } else if(new Date(d.date+'T00:00:00') < todayDate){
         html += '<div class="dactual miss">— ยังไม่ได้บันทึกผล</div>';
       }
@@ -889,7 +865,7 @@ section[hidden]{display:none}
       html += '<div class="dgym">+ '+(d.desc||'').split(' — ')[0].replace(/\s*\(.*$/,'').trim()+'</div>';
     } else if(d.type==='Race'){
       html += '<div class="ddesc">'+(d.desc||'')+'</div>';
-      if(actual) html += actualBlock(actual);
+      if(actual) html += '<div class="dactual">✓ จริง '+actual.dist+' กม.'+(actual.hr? ' · '+actual.hr+' bpm':'')+'</div>';
     }
     html += '</div>';
     return html;
@@ -907,12 +883,9 @@ section[hidden]{display:none}
     var chipColor = PHASE_COLOR[w.phase] || PHASE_COLOR['อื่นๆ'];
     var el = document.createElement('div');
     el.className = 'week'+(isPast?' past':'');
-    el.style.setProperty('--wrail', chipColor);
     var head = '<div class="whead">'+
-      '<span class="wname">สัปดาห์ '+w.idx+'</span>'+
       '<span class="chip" style="background:'+chipColor+'">'+w.phase+'</span>'+
-      (w.days.some(function(d){return d.date===today;})?'<span class="thisweek">สัปดาห์นี้</span>':'')+
-      '<span class="wlabel">'+w.label+'</span>'+
+      '<span class="wname">สัปดาห์ '+w.idx+' · '+w.label+'</span>'+(w.days.some(function(d){return d.date===today;})?'<span class="thisweek">สัปดาห์นี้</span>':'')+
       '<span class="wmeta"><span class="wtotal">รวม <b>'+w.plan_km+'</b> กม.'+(wkSec(w)?' · ~'+fmtDurLong(wkSec(w)):'')+'</span><span>จริง <b>'+w.actual_km+'</b> กม.</span></span>'+
       '</div>';
     var days = '<div class="days">'+w.days.map(function(d){ return renderDay(d, chipColor); }).join('')+'</div>';
@@ -922,14 +895,6 @@ section[hidden]{display:none}
 
   function render(){
     weeksEl.innerHTML='';
-    var nPast = todayIdx>0 ? todayIdx : 0;
-    if(nPast){
-      var bar=document.createElement('button');
-      bar.className='pastbar'+(showPast?' open':'');
-      bar.innerHTML='<span>สัปดาห์ที่ผ่านมาแล้ว ('+nPast+' สัปดาห์)</span><span class="pb-act">'+(showPast?'ซ่อน':'แสดง')+' <i>▼</i></span>';
-      bar.addEventListener('click',function(){ showPast=!showPast; render(); });
-      weeksEl.appendChild(bar);
-    }
     weeks.forEach(function(w,i){
       var isPast = i < todayIdx;
       if(isPast && !showPast) return;
@@ -969,7 +934,11 @@ section[hidden]{display:none}
   })();
 
 
-
+  document.getElementById('toggle-past').addEventListener('click', function(){
+    showPast = !showPast;
+    this.textContent = showPast ? 'ซ่อนสัปดาห์ที่ผ่านมา' : 'แสดงสัปดาห์ที่ผ่านมา';
+    render();
+  });
 
   // =====================================================================
   // modal — log/edit/delete an actual result
