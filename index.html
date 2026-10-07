@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791342161">
+<meta name="build" content="1791342325">
 <title>แผนซ้อม ATM 42</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -264,6 +264,8 @@ section[hidden]{display:none}
 .zonetable td.z{display:flex;align-items:center;gap:9px;font-weight:600}
 .zonetable td.z i{width:9px;height:9px;border-radius:3px;display:inline-block}
 .zonetable td.bpm{font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto}
+.tablewrap .zonetable{min-width:520px}
 .pnote{font-size:12.5px;color:var(--fg-faint);line-height:1.55;margin:4px 0 0}
 .field input[type=date]{color-scheme:dark}
 .profilebtns{display:flex;gap:10px;margin-top:18px;align-items:center}
@@ -524,6 +526,16 @@ section[hidden]{display:none}
       <tbody id="pacetable-body"></tbody>
     </table>
 
+    <div class="sectitle">เป้าหมายวันแข่ง (กรอกเวลาเป้า แล้วคำนวณสปลิตให้)</div>
+    <div class="pgrid">
+      <div class="field"><label for="g-ma">มาราธอน เป้า A</label><input id="g-ma" type="text" inputmode="numeric" placeholder="3:45:00"></div>
+      <div class="field"><label for="g-mb">มาราธอน เป้า B</label><input id="g-mb" type="text" inputmode="numeric" placeholder="3:50:00"></div>
+      <div class="field"><label for="g-ha">ฮาล์ฟ เป้า A</label><input id="g-ha" type="text" inputmode="numeric" placeholder="1:35:00"></div>
+      <div class="field"><label for="g-hb">ฮาล์ฟ เป้า B</label><input id="g-hb" type="text" inputmode="numeric" placeholder="1:40:00"></div>
+    </div>
+    <div class="tablewrap"><table class="zonetable" id="racetable"><thead id="racetable-head"></thead><tbody id="racetable-body"></tbody></table></div>
+    <p class="pnote">5K แรกช้ากว่าเป้า ~8 วิ/กม. · ครึ่งทาง/30K ที่เพซเป้า · ท่อนท้าย (10K สุดท้ายมาราธอน, 6.1K สุดท้ายฮาล์ฟ) เร็วกว่าเป้า 5-6 วิ/กม. ถ้าไหว — ตามไฟล์ Excel</p>
+
     <div class="sectitle">โซนหัวใจ (Karvonen — คำนวณจาก Resting/Max HR ด้านบน)</div>
     <table class="zonetable">
       <thead><tr><th>โซน</th><th>%HRR</th><th>ช่วง bpm</th></tr></thead>
@@ -627,7 +639,7 @@ section[hidden]{display:none}
     }
     var t10=eq10(p);
     var f=BASE_KMH/vcrKmh(t10);
-    return {delta:delta, raceISO:raceISO, f:f, start:(p.startDate&&/^\d{4}-\d\d-\d\d$/.test(p.startDate))?p.startDate:null};
+    return {goals:(p.goals||null), delta:delta, raceISO:raceISO, f:f, start:(p.startDate&&/^\d{4}-\d\d-\d\d$/.test(p.startDate))?p.startDate:null};
   })();
   function eq10(pb){
     pb=pb||{};
@@ -639,6 +651,9 @@ section[hidden]{display:none}
     });
     return best;
   }
+  function parseHMS(t){ if(!t) return 0; var a=String(t).trim().split(':').map(Number); if(a.some(isNaN)) return 0; if(a.length===3) return a[0]*3600+a[1]*60+a[2]; if(a.length===2) return a[0]*60+a[1]; return 0; }
+  function fmtHMS(sec){ sec=Math.round(sec); var h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), x=sec%60; return h+':'+('0'+m).slice(-2)+':'+('0'+x).slice(-2); }
+  function fmtPaceS(sec){ sec=Math.round(sec); return Math.floor(sec/60)+':'+('0'+(sec%60)).slice(-2); }
   function addDaysISO(iso,n){
     var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n);
     return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
@@ -695,6 +710,11 @@ section[hidden]{display:none}
   // ---- stat tiles ----
   document.getElementById('stat-goal').textContent = meta.goal_a+' / '+meta.goal_b;
   document.getElementById('stat-goal-pace').textContent = meta.goal_a_pace+'-'+meta.goal_b_pace+' น./กม.';
+  if(PLAN.goals && parseHMS(PLAN.goals.ma) && parseHMS(PLAN.goals.mb)){
+    var gA=parseHMS(PLAN.goals.ma), gB=parseHMS(PLAN.goals.mb);
+    document.getElementById('stat-goal').textContent = fmtHMS(gA)+' / '+fmtHMS(gB);
+    document.getElementById('stat-goal-pace').textContent = fmtPaceS(gA/42.195)+'-'+fmtPaceS(gB/42.195)+' น./กม.';
+  }
   document.getElementById('stat-adh').innerHTML = meta.adherence.toFixed(0)+'<span>%</span>';
   document.getElementById('stat-km').innerHTML = meta.total_actual_km.toLocaleString('th-TH',{maximumFractionDigits:1})+'<span>กม.</span>';
   document.getElementById('stat-pb').textContent = meta.pb;
@@ -1206,7 +1226,7 @@ section[hidden]{display:none}
   // profile — Resting/Max HR, age, PB times — persisted to db:profile/me
   // =====================================================================
   var PROFILE_DEFAULT = {
-    rhr:53, mhr:195, age:43, startDate:'2026-07-13', raceDate:'2026-11-29',
+    rhr:53, mhr:195, age:43, startDate:'2026-07-13', raceDate:'2026-11-29', goals:{ma:'3:45:00',mb:'3:50:00',ha:'1:35:00',hb:'1:40:00'},
     pb5k:{h:0,m:0,s:0}, pb10k:{h:0,m:48,s:7}, pb21k:{h:0,m:0,s:0}, pb42k:{h:3,m:46,s:8}
   };
   var profileDoc = null, profileData = null;
@@ -1245,7 +1265,25 @@ section[hidden]{display:none}
       document.getElementById('pb-'+k+'-m').value = pb.m || '';
       document.getElementById('pb-'+k+'-s').value = pb.s || '';
     });
-    renderZoneTable(); renderPaceTable();
+    var gg=p.goals||PROFILE_DEFAULT.goals;
+    document.getElementById('g-ma').value=gg.ma||''; document.getElementById('g-mb').value=gg.mb||''; document.getElementById('g-ha').value=gg.ha||''; document.getElementById('g-hb').value=gg.hb||'';
+    renderZoneTable(); renderPaceTable(); renderRaceTable();
+  }
+
+
+  function renderRaceTable(){
+    var head=document.getElementById('racetable-head'), body=document.getElementById('racetable-body'); if(!head||!body) return;
+    function v(id){ return parseHMS(document.getElementById(id).value); }
+    var rows='';
+    var mar=[['มาราธอน A',v('g-ma')],['มาราธอน B',v('g-mb')]].filter(function(r){return r[1]>0;});
+    var hal=[['ฮาล์ฟ A',v('g-ha')],['ฮาล์ฟ B',v('g-hb')]].filter(function(r){return r[1]>0;});
+    var h='<tr><th>เป้า</th><th>เวลา</th><th>เพซ/กม.</th><th>ต้นทาง</th><th>กลาง</th><th>ปลาย</th><th>ท่อนท้าย</th></tr>';
+    head.innerHTML=h;
+    mar.forEach(function(r){ var p=r[1]/42.195;
+      rows+='<tr><td class="z">'+r[0]+'</td><td>'+fmtHMS(r[1])+'</td><td class="bpm">'+fmtPaceS(p)+'</td><td>5K '+fmtHMS(5*(p+8))+'</td><td>21.1K '+fmtHMS(21.1*p)+'</td><td>30K '+fmtHMS(30*p)+'</td><td>10K สุดท้าย '+fmtPaceS(p-5)+'</td></tr>'; });
+    hal.forEach(function(r){ var p=r[1]/21.0975;
+      rows+='<tr><td class="z">'+r[0]+'</td><td>'+fmtHMS(r[1])+'</td><td class="bpm">'+fmtPaceS(p)+'</td><td>5K '+fmtHMS(5*(p+8))+'</td><td>10K '+fmtHMS(10*p+38)+'</td><td>15K '+fmtHMS(15*p+35)+'</td><td>6.1K สุดท้าย '+fmtPaceS(p-6)+'</td></tr>'; });
+    body.innerHTML=rows||'<tr><td colspan="7" style="color:var(--fg-faint)">ยังไม่ได้กรอกเวลาเป้า</td></tr>';
   }
 
   function renderPaceTable(){
@@ -1267,6 +1305,7 @@ section[hidden]{display:none}
 
   fillProfileForm(PROFILE_DEFAULT);
   ['5k','10k','21k','42k'].forEach(function(k){ ['h','m','s'].forEach(function(u){ document.getElementById('pb-'+k+'-'+u).addEventListener('input', renderPaceTable); }); });
+  ['g-ma','g-mb','g-ha','g-hb'].forEach(function(id){ document.getElementById(id).addEventListener('input', renderRaceTable); });
   ['p-rhr','p-mhr'].forEach(function(id){
     document.getElementById(id).addEventListener('input', renderZoneTable);
   });
@@ -1296,7 +1335,8 @@ section[hidden]{display:none}
       mhr: parseInt(document.getElementById('p-mhr').value,10) || null,
       age: parseInt(document.getElementById('p-age').value,10) || null,
       startDate: document.getElementById('p-start').value || null,
-      raceDate: document.getElementById('p-race').value || null
+      raceDate: document.getElementById('p-race').value || null,
+      goals:{ma:document.getElementById('g-ma').value.trim(),mb:document.getElementById('g-mb').value.trim(),ha:document.getElementById('g-ha').value.trim(),hb:document.getElementById('g-hb').value.trim()}
     };
     ['5k','10k','21k','42k'].forEach(function(k){
       body['pb'+k] = {
