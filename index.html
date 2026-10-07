@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791341143">
+<meta name="build" content="1791341854">
 <title>แผนซ้อม ATM 42</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -264,6 +264,8 @@ section[hidden]{display:none}
 .zonetable td.z{display:flex;align-items:center;gap:9px;font-weight:600}
 .zonetable td.z i{width:9px;height:9px;border-radius:3px;display:inline-block}
 .zonetable td.bpm{font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-variant-numeric:tabular-nums}
+.pnote{font-size:12.5px;color:var(--fg-faint);line-height:1.55;margin:4px 0 0}
+.field input[type=date]{color-scheme:dark}
 .profilebtns{display:flex;gap:10px;margin-top:18px;align-items:center}
 .profilebtns .btn{flex:0 0 auto;padding:10px 22px}
 .profilebtns .savestate{margin-top:0}
@@ -463,7 +465,16 @@ section[hidden]{display:none}
         <label for="p-age">อายุ (ปี)</label>
         <input id="p-age" type="number" min="10" max="100">
       </div>
+      <div class="field">
+        <label for="p-start">วันเริ่มซ้อม</label>
+        <input id="p-start" type="date">
+      </div>
+      <div class="field">
+        <label for="p-race">วันแข่ง (รายการหลัก)</label>
+        <input id="p-race" type="date">
+      </div>
     </div>
+    <p class="pnote">เปลี่ยนวันแข่ง = เลื่อนทั้งแผนตามจำนวนวันที่ต่างไป · วันเริ่มซ้อม = ซ่อนสัปดาห์ก่อนหน้านั้น · เวลา 10K = สเกลเพซทั้งแผนเทียบฐาน 48:07 (VCR 4:54/กม.) · กดบันทึกแล้วหน้าจะโหลดใหม่เอง</p>
 
     <div class="sectitle">สถิติส่วนตัว (Personal Best)</div>
     <div class="pbgrid">
@@ -505,6 +516,12 @@ section[hidden]{display:none}
       <button class="btn btn-primary" id="p-save">บันทึกโปรไฟล์</button>
       <span class="savestate" id="p-savestate"></span>
     </div>
+
+    <div class="sectitle">เพซซ้อมที่คำนวณ (จาก 10K ด้านบน)</div>
+    <table class="zonetable">
+      <thead><tr><th>โซน</th><th>%VCR</th><th>เพซ (น./กม.)</th></tr></thead>
+      <tbody id="pacetable-body"></tbody>
+    </table>
 
     <div class="sectitle">โซนหัวใจ (Karvonen — คำนวณจาก Resting/Max HR ด้านบน)</div>
     <table class="zonetable">
@@ -593,6 +610,45 @@ section[hidden]{display:none}
   var raw = document.getElementById('plan-data').textContent;
   var data = JSON.parse(raw);
   var weeks = data.weeks, meta = data.meta;
+
+  // ---- profile-driven plan: race-date shift + pace scaling (10K vs plan baseline) ----
+  var BASE_RACE='2026-11-29', BASE_10K=2887, BASE_VCR=294;
+  var PLAN=(function(){
+    var p=null; try{ p=JSON.parse(localStorage.getItem('atm_profile_v1')||'null'); }catch(e){}
+    p=p||{};
+    var delta=0, raceISO=BASE_RACE;
+    if(p.raceDate && /^\d{4}-\d\d-\d\d$/.test(p.raceDate)){
+      raceISO=p.raceDate;
+      delta=Math.round((new Date(raceISO+'T00:00:00')-new Date(BASE_RACE+'T00:00:00'))/86400000);
+    }
+    var t10=p.pb10k? ((p.pb10k.h||0)*3600+(p.pb10k.m||0)*60+(p.pb10k.s||0)) : 0;
+    var f=t10>0? Math.min(1.3,Math.max(0.8,t10/BASE_10K)) : 1;
+    return {delta:delta, raceISO:raceISO, f:f, start:(p.startDate&&/^\d{4}-\d\d-\d\d$/.test(p.startDate))?p.startDate:null};
+  })();
+  function addDaysISO(iso,n){
+    var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n);
+    return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  }
+  function scalePaces(t){
+    if(!t || PLAN.f===1) return t;
+    return String(t).replace(/(\d):([0-5]\d)(?![\d:])/g,function(m,mm,ss,off,str){
+      if(str.slice(Math.max(0,off-4),off)==='เป้า ' && str.charAt(off+m.length)===')') return m;
+      var sec=Math.round((+mm*60+ +ss)*PLAN.f);
+      return Math.floor(sec/60)+':'+('0'+(sec%60)).slice(-2);
+    });
+  }
+  if(PLAN.delta!==0 || PLAN.f!==1){
+    weeks.forEach(function(w){
+      if(PLAN.delta!==0 && w.monday) w.monday=addDaysISO(w.monday,PLAN.delta);
+      w.days.forEach(function(d){
+        if(PLAN.delta!==0) d.date=addDaysISO(d.date,PLAN.delta);
+        if(PLAN.f!==1){ d.zone=scalePaces(d.zone); d.desc=scalePaces(d.desc); d.note=scalePaces(d.note); }
+      });
+    });
+  }
+  if(PLAN.start){
+    weeks = weeks.filter(function(w){ var last=w.days[w.days.length-1]; return !last || last.date>=PLAN.start; });
+  }
   function localISO(){var n=new Date();return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2);}
   var today = localISO();
 
@@ -629,10 +685,11 @@ section[hidden]{display:none}
   document.getElementById('stat-km').innerHTML = meta.total_actual_km.toLocaleString('th-TH',{maximumFractionDigits:1})+'<span>กม.</span>';
   document.getElementById('stat-pb').textContent = meta.pb;
 
-  var raceDate = new Date('2026-11-29T00:00:00');
+  var raceDate = new Date(PLAN.raceISO+'T00:00:00');
   var todayDate = new Date(today+'T00:00:00');
   var daysLeft = Math.round((raceDate-todayDate)/86400000);
   document.getElementById('countdown-num').textContent = daysLeft;
+  (function(){ var subs=document.querySelectorAll('.sub'); for(var i=0;i<subs.length;i++){ if(/วันแข่ง/.test(subs[i].textContent)){ subs[i].textContent='วันแข่ง '+fmtDateLong(PLAN.raceISO).replace(/^(\d+) /,'$1 ')+' · สนามหลวง · สตาร์ท 02:00 น.'; } } })();
 
   // ---- phase timeline ----
   var tlbar = document.getElementById('tlbar');
@@ -1135,7 +1192,7 @@ section[hidden]{display:none}
   // profile — Resting/Max HR, age, PB times — persisted to db:profile/me
   // =====================================================================
   var PROFILE_DEFAULT = {
-    rhr:53, mhr:195, age:43,
+    rhr:53, mhr:195, age:43, startDate:'2026-07-13', raceDate:'2026-11-29',
     pb5k:{h:0,m:0,s:0}, pb10k:{h:0,m:48,s:7}, pb21k:{h:0,m:0,s:0}, pb42k:{h:3,m:46,s:8}
   };
   var profileDoc = null, profileData = null;
@@ -1166,16 +1223,29 @@ section[hidden]{display:none}
     document.getElementById('p-rhr').value = p.rhr || '';
     document.getElementById('p-mhr').value = p.mhr || '';
     document.getElementById('p-age').value = p.age || '';
+    document.getElementById('p-start').value = p.startDate || PROFILE_DEFAULT.startDate;
+    document.getElementById('p-race').value = p.raceDate || PROFILE_DEFAULT.raceDate;
     ['5k','10k','21k','42k'].forEach(function(k){
       var pb = p['pb'+k] || {h:0,m:0,s:0};
       document.getElementById('pb-'+k+'-h').value = pb.h || '';
       document.getElementById('pb-'+k+'-m').value = pb.m || '';
       document.getElementById('pb-'+k+'-s').value = pb.s || '';
     });
-    renderZoneTable();
+    renderZoneTable(); renderPaceTable();
+  }
+
+  function renderPaceTable(){
+    var tb=document.getElementById('pacetable-body'); if(!tb) return;
+    function g(id){ return parseInt(document.getElementById(id).value,10)||0; }
+    var t=g('pb-10k-h')*3600+g('pb-10k-m')*60+g('pb-10k-s');
+    var f=t>0? Math.min(1.3,Math.max(0.8,t/BASE_10K)) : 1;
+    var V=BASE_VCR*f;
+    var rows=[['ARR ฟื้นฟู',.70],['SCR ช้าต่อเนื่อง',.80],['SCR-สูง',.85],['MP มาราธอน',.90],['FCR',.94],['VCR',1.0],['EXT105',1.05],['EXT110',1.10]];
+    tb.innerHTML=rows.map(function(r){ var sec=Math.round(V/r[1]); return '<tr><td class="z">'+r[0]+'</td><td>'+Math.round(r[1]*100)+'%</td><td class="bpm">'+Math.floor(sec/60)+':'+('0'+(sec%60)).slice(-2)+'</td></tr>'; }).join('');
   }
 
   fillProfileForm(PROFILE_DEFAULT);
+  ['pb-10k-h','pb-10k-m','pb-10k-s'].forEach(function(id){ document.getElementById(id).addEventListener('input', renderPaceTable); });
   ['p-rhr','p-mhr'].forEach(function(id){
     document.getElementById(id).addEventListener('input', renderZoneTable);
   });
@@ -1203,7 +1273,9 @@ section[hidden]{display:none}
     var body = {
       rhr: parseInt(document.getElementById('p-rhr').value,10) || null,
       mhr: parseInt(document.getElementById('p-mhr').value,10) || null,
-      age: parseInt(document.getElementById('p-age').value,10) || null
+      age: parseInt(document.getElementById('p-age').value,10) || null,
+      startDate: document.getElementById('p-start').value || null,
+      raceDate: document.getElementById('p-race').value || null
     };
     ['5k','10k','21k','42k'].forEach(function(k){
       body['pb'+k] = {
@@ -1214,7 +1286,7 @@ section[hidden]{display:none}
     });
     var st = document.getElementById('p-savestate');
     if(!profileDoc){
-      if(lsSet('atm_profile_v1', body)){ profileData = body; st.textContent = 'บันทึกแล้ว (เครื่องนี้)'; setTimeout(function(){ st.textContent=''; }, 1500); }
+      if(lsSet('atm_profile_v1', body)){ profileData = body; st.textContent = 'บันทึกแล้ว — กำลังคำนวณแผนใหม่…'; setTimeout(function(){ location.replace(location.pathname+'?v='+Date.now()); }, 700); }
       else st.textContent = 'บันทึกไม่ได้ — เบราว์เซอร์บล็อกที่เก็บข้อมูล';
       return;
     }
