@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791343173">
+<meta name="build" content="1791343591">
 <title>สร้างแผนซ้อมของฉัน</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -53,7 +53,7 @@ a{color:var(--accent)}
     <div class="f full"><label for="name">ชื่อรายการ (ไม่บังคับ)</label><input id="name" placeholder="เช่น Bangkok Marathon"></div>
     <div class="f"><label for="dist">ระยะ</label><select id="dist"><option value="10">10K</option><option value="21.0975">ฮาล์ฟมาราธอน 21.1K</option><option value="42.195" selected>มาราธอน 42.2K</option><option value="50">อัลตรา 50K</option></select></div>
     <div class="f"><label for="rdate">วันแข่ง</label><input id="rdate" type="date" required></div>
-    <div class="f"><label for="ga">เป้าหมาย A (ชม:นาที:วินาที)</label><input id="ga" inputmode="numeric" placeholder="3:45:00" required></div>
+    <div class="f"><label for="ga">เป้าหมาย A (ไม่บังคับ)</label><input id="ga" inputmode="numeric" placeholder="เว้นว่าง = ให้แอปคำนวณจากผลวิ่ง"></div>
     <div class="f"><label for="gb">เป้าหมาย B (ไม่บังคับ)</label><input id="gb" inputmode="numeric" placeholder="3:50:00"></div>
     <div class="f full"><label for="sdate">วันเริ่มซ้อม</label><input id="sdate" type="date" required><span class="hint">แผนเริ่มต้นวันจันทร์ ถ้าเลือกวันอื่นจะขยับไปจันทร์ถัดไป</span></div>
   </div></div>
@@ -253,8 +253,13 @@ function generatePlan(o){
         testDist:+$('td').value,testTime:parseT($('tt').value),runs:+$('runs').value,longDay:$('long').value,curKm:+$('cur').value||20,maxKm:+$('max').value||0,gym:+$('gym').value,
         rhr:+$('rhr').value||0,mhr:+$('mhr').value||0,age:+$('age').value||0};
       if(!o.raceDate||!o.start) throw new Error('ใส่วันเริ่มซ้อมและวันแข่ง');
-      if(!o.goalA) throw new Error('ใส่เป้าหมาย A เป็นรูปแบบ ชม:นาที:วินาที เช่น 3:45:00');
+      if($('ga').value.trim()&&!o.goalA) throw new Error('เป้าหมาย A ใส่เป็นรูปแบบ ชม:นาที:วินาที เช่น 3:45:00 หรือเว้นว่างไว้');
       if(!o.testTime) throw new Error('ใส่ผลวิ่งล่าสุดเป็นรูปแบบ ชม:นาที:วินาที เช่น 0:50:00');
+      if(!o.goalA){
+        var t10=eq10(o.testTime,o.testDist); if(!(t10>0)) throw new Error('ต้องใส่ผลวิ่งล่าสุด');
+        var kmh0=Math.round(Math.floor(10000/t10*10)/10*3.6*100)/100;
+        o.goalA=Math.round((o.raceDist===42.195?42.195/(kmh0*0.9)*3600:t10*Math.pow(o.raceDist/10,1.06))/10)*10;
+      }
       if(o.goalB && o.goalB<o.goalA) throw new Error('เป้า B ควรช้ากว่าเป้า A');
       if(o.mhr && o.rhr && o.mhr<=o.rhr+40) throw new Error('Max HR ต้องสูงกว่า Resting HR อย่างน้อย 40');
       if(!o.maxKm) o.maxKm=0; if(!o.maxKm) delete o.maxKm;
