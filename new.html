@@ -1,0 +1,281 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="build" content="1791343173">
+<title>สร้างแผนซ้อมของฉัน</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0a1220">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a1220;--surface:#121e35;--surface2:#0f1a2e;--border:#233350;--fg:#e8eefb;--dim:#9fb0cc;--faint:#6b7d9e;--accent:#4fe3ac;--warn:#e8b34a;--bad:#ef6b6b;--base:#4f8fe0;--spec:#4fa8e0;--peak:#ef6b5b;--taper:#b98af0;--rec:#8a9bb0;--race:#e8c84a}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:"Noto Sans Thai",system-ui,sans-serif;line-height:1.55;-webkit-text-size-adjust:100%}
+.wrap{max-width:760px;margin:0 auto;padding:18px 16px 80px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.top img{width:30px;height:30px;border-radius:8px}
+h1{font-size:24px;margin:8px 0 4px}
+p.lead{color:var(--dim);margin:0 0 18px;font-size:15px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h2{font-size:16px;margin:0 0 12px;color:var(--accent);letter-spacing:.02em}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f.full{grid-column:1/-1}
+label{font-size:13px;color:var(--dim)}
+input,select{background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font:inherit;font-size:16px;padding:10px 11px;width:100%;min-width:0;color-scheme:dark}
+input:focus,select:focus{outline:2px solid color-mix(in srgb,var(--accent) 60%,transparent);border-color:var(--accent)}
+.hint{font-size:12px;color:var(--faint)}
+.btn{background:var(--accent);color:#06251b;border:none;border-radius:11px;font:inherit;font-weight:700;font-size:16px;padding:13px 20px;cursor:pointer;width:100%}
+.btn.sec{background:transparent;color:var(--fg);border:1px solid var(--border);margin-top:10px}
+.err{background:color-mix(in srgb,var(--bad) 16%,transparent);border:1px solid var(--bad);color:#ffd3d3;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px}
+.warn{background:color-mix(in srgb,var(--warn) 14%,transparent);border:1px solid var(--warn);color:#ffe6b0;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.sum div{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px}
+.sum b{display:block;font-size:19px}.sum span{font-size:12px;color:var(--faint)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--border)}
+th{color:var(--faint);font-weight:500;font-size:12px}
+.chip{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:999px;color:#06101e}
+.bar{height:8px;border-radius:4px;background:var(--base);min-width:2px}
+.tw{overflow-x:auto}
+[hidden]{display:none!important}
+.small{font-size:12.5px;color:var(--faint)}
+a{color:var(--accent)}
+@media(max-width:520px){.grid{grid-template-columns:1fr}.sum{grid-template-columns:1fr 1fr}}
+</style>
+<div class="wrap">
+  <div class="top"><img src="icon-192.png" alt=""><span style="color:var(--dim)">แผนซ้อม</span></div>
+  <h1>สร้างแผนซ้อมของฉัน</h1>
+  <p class="lead">ใส่วันแข่ง เป้าหมาย และผลวิ่งล่าสุด แอปคำนวณเพซทุกโซนด้วยวิธี VCR (Critical Velocity) แล้วสร้างตารางซ้อมรายวันให้ ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้ ไม่ส่งไปที่ไหน</p>
+
+  <form id="f" autocomplete="off">
+  <div class="card"><h2>1 · รายการแข่ง</h2><div class="grid">
+    <div class="f full"><label for="name">ชื่อรายการ (ไม่บังคับ)</label><input id="name" placeholder="เช่น Bangkok Marathon"></div>
+    <div class="f"><label for="dist">ระยะ</label><select id="dist"><option value="10">10K</option><option value="21.0975">ฮาล์ฟมาราธอน 21.1K</option><option value="42.195" selected>มาราธอน 42.2K</option><option value="50">อัลตรา 50K</option></select></div>
+    <div class="f"><label for="rdate">วันแข่ง</label><input id="rdate" type="date" required></div>
+    <div class="f"><label for="ga">เป้าหมาย A (ชม:นาที:วินาที)</label><input id="ga" inputmode="numeric" placeholder="3:45:00" required></div>
+    <div class="f"><label for="gb">เป้าหมาย B (ไม่บังคับ)</label><input id="gb" inputmode="numeric" placeholder="3:50:00"></div>
+    <div class="f full"><label for="sdate">วันเริ่มซ้อม</label><input id="sdate" type="date" required><span class="hint">แผนเริ่มต้นวันจันทร์ ถ้าเลือกวันอื่นจะขยับไปจันทร์ถัดไป</span></div>
+  </div></div>
+
+  <div class="card"><h2>2 · ฐานความฟิต</h2><div class="grid">
+    <div class="f"><label for="td">ผลวิ่งล่าสุด / PB ระยะ</label><select id="td"><option value="5">5K</option><option value="10" selected>10K</option><option value="21.0975">ฮาล์ฟ 21.1K</option><option value="42.195">มาราธอน</option></select></div>
+    <div class="f"><label for="tt">เวลา (ชม:นาที:วินาที)</label><input id="tt" inputmode="numeric" placeholder="0:50:00" required></div>
+    <div class="f full"><span class="hint">ใช้ผลแข่งหรือทดสอบเต็มแรงภายใน 8 สัปดาห์ล่าสุดจะแม่นที่สุด 10K ให้เพซโซนตรงที่สุด ระยะอื่นแปลงเป็น 10K เทียบเท่าให้</span></div>
+  </div></div>
+
+  <div class="card"><h2>3 · ตารางชีวิต</h2><div class="grid">
+    <div class="f"><label for="runs">วิ่งกี่วัน/สัปดาห์</label><select id="runs"><option>3</option><option>4</option><option selected>5</option><option>6</option></select></div>
+    <div class="f"><label for="long">Long run วัน</label><select id="long"><option value="sun" selected>อาทิตย์</option><option value="sat">เสาร์</option></select></div>
+    <div class="f"><label for="cur">ระยะวิ่งตอนนี้ (กม./สัปดาห์)</label><input id="cur" type="number" min="5" max="200" value="35" inputmode="decimal"></div>
+    <div class="f"><label for="max">สูงสุดที่ไหว (กม./สัปดาห์)</label><input id="max" type="number" min="10" max="200" inputmode="decimal" placeholder="เว้นว่าง = อัตโนมัติ"></div>
+    <div class="f"><label for="gym">เวท (วัน/สัปดาห์)</label><select id="gym"><option>0</option><option selected>1</option><option>2</option></select></div>
+  </div></div>
+
+  <div class="card"><h2>4 · ข้อมูลหัวใจ (ไม่บังคับ)</h2><div class="grid">
+    <div class="f"><label for="rhr">Resting HR</label><input id="rhr" type="number" min="30" max="100" inputmode="numeric" placeholder="55"></div>
+    <div class="f"><label for="mhr">Max HR</label><input id="mhr" type="number" min="130" max="230" inputmode="numeric" placeholder="190"></div>
+    <div class="f"><label for="age">อายุ</label><input id="age" type="number" min="10" max="100" inputmode="numeric"></div>
+  </div></div>
+
+  <div id="err" class="err" hidden></div>
+  <button class="btn" type="submit">สร้างแผน</button>
+  </form>
+
+  <div id="result" hidden>
+    <h1 style="margin-top:26px">แผนที่ได้</h1>
+    <div id="warn" class="warn" hidden></div>
+    <div class="sum" id="sum"></div>
+    <div class="card"><h2>เพซซ้อมของคุณ</h2><div class="tw"><table><thead><tr><th>โซน</th><th>%VCR</th><th>เพซ น./กม.</th></tr></thead><tbody id="zones"></tbody></table></div></div>
+    <div class="card"><h2>ภาพรวมรายสัปดาห์</h2><div class="tw"><table><thead><tr><th>สัปดาห์</th><th>เฟส</th><th>กม.</th><th style="width:34%"></th></tr></thead><tbody id="wk"></tbody></table></div></div>
+    <p class="small" id="existing" hidden>มีแผนที่สร้างไว้ก่อนแล้ว การใช้แผนนี้จะแทนที่แผนและผลวิ่งที่บันทึกไว้ในหน้า "แผนของฉัน" ทั้งหมด</p>
+    <button class="btn" id="use">ใช้แผนนี้ → เปิดแผนของฉัน</button>
+    <button class="btn sec" id="back" type="button">กลับไปแก้ค่า</button>
+  </div>
+  <p class="small" style="margin-top:22px">แผนนี้คำนวณจากสูตรทั่วไป ไม่ใช่คำแนะนำทางการแพทย์ ถ้ามีโรคประจำตัวหรืออาการบาดเจ็บ ปรึกษาแพทย์/โค้ชก่อนเริ่มซ้อม · <a href="index.html">กลับไปแผนของ Bee</a></p>
+</div>
+<script>
+/* VCR plan generator — same formulas as the ATM Excel plan */
+var DAYS_TH=['จ.','อ.','พ.','พฤ.','ศ.','ส.','อา.'];
+var MONTHS_TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function g_pad(n){return ('0'+n).slice(-2);}
+function g_iso(d){return d.getFullYear()+'-'+g_pad(d.getMonth()+1)+'-'+g_pad(d.getDate());}
+function g_parse(iso){var a=iso.split('-');return new Date(+a[0],+a[1]-1,+a[2]);}
+function g_add(iso,n){var d=g_parse(iso);d.setDate(d.getDate()+n);return g_iso(d);}
+function g_dow(iso){return (g_parse(iso).getDay()+6)%7;} /* Mon=0 */
+function g_diffDays(a,b){return Math.round((g_parse(b)-g_parse(a))/86400000);}
+function fmtP(sec){sec=Math.round(sec);return Math.floor(sec/60)+':'+g_pad(sec%60);}
+function fmtT(sec){sec=Math.round(sec);var h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;return h+':'+g_pad(m)+':'+g_pad(s);}
+function parseT(t){if(!t)return 0;var a=String(t).trim().split(':').map(Number);if(a.some(isNaN))return 0;if(a.length===3)return a[0]*3600+a[1]*60+a[2];if(a.length===2)return a[0]*60+a[1];return 0;}
+function eq10(sec,dist){return dist===10?sec:sec*Math.pow(10/dist,1.06);}
+function r5(x){return Math.round(x*2)/2;}
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+var DEF={10:{peak:50,lcap:16,taper:1,label:'10K'},21.0975:{peak:65,lcap:24,taper:2,label:'ฮาล์ฟมาราธอน 21.1K'},42.195:{peak:85,lcap:32,taper:3,label:'มาราธอน 42.2K'},50:{peak:90,lcap:36,taper:3,label:'อัลตรา 50K'}};
+
+function generatePlan(o){
+  var D=DEF[o.raceDist]; if(!D) throw new Error('ระยะแข่งไม่รองรับ');
+  var t10=eq10(o.testTime,o.testDist); if(!(t10>0)) throw new Error('ต้องใส่ผลวิ่งล่าสุดหรือ PB');
+  var kmh=Math.round(Math.floor(10000/t10*10)/10*3.6*100)/100;
+  function zp(pct){return 3600/(kmh*pct);}
+  var rhr=o.rhr||55, mhr=o.mhr||190, hrr=mhr-rhr;
+  function hrz(n){var lo=[.5,.6,.7,.8,.9][n-1],hi=[.6,.7,.8,.9,1][n-1];return [Math.round(rhr+lo*hrr),Math.round(rhr+hi*hrr)];}
+  function znum(pct){return pct<=.72?1:pct<=.82?2:pct<=.92?3:pct<=.99?4:5;}
+  function zt(name,pct,sec){var p=sec||zp(pct);if(sec)pct=3600/(kmh*sec);var n=znum(pct),h=hrz(n);return name+' เป้า '+fmtP(p)+' น./กม. (ช่วง '+fmtP(p-4)+'-'+fmtP(p+4)+') — Zone'+n+' ~'+h[0]+'-'+h[1]+'bpm';}
+  var goalP=o.goalA/o.raceDist, goalPB=(o.goalB||o.goalA)/o.raceDist, mp=(goalP+goalPB)/2;
+  var racePaceName=o.raceDist===42.195?'MP':o.raceDist===21.0975?'HMP':'Race pace';
+
+  /* calendar */
+  var start=o.start; while(g_dow(start)!==0) start=g_add(start,1);
+  var raceIdxDay=g_dow(o.raceDate), raceMon=g_add(o.raceDate,-raceIdxDay);
+  var W=g_diffDays(start,raceMon)/7+1;
+  if(W<6) throw new Error('ต้องมีเวลาอย่างน้อย 6 สัปดาห์ก่อนวันแข่ง (ตอนนี้ '+Math.max(0,W)+' สัปดาห์)');
+  if(W>40){start=g_add(raceMon,-39*7);W=40;}
+  var T=Math.min(D.taper,Math.floor(W/3)); var B=W-T;
+  var peakN=Math.max(2,Math.round(B*.22)), specN=Math.max(2,Math.round(B*.33)), baseN=B-peakN-specN;
+  if(baseN<1){baseN=1;specN=Math.max(1,B-peakN-baseN);}
+  function phaseOf(i){return i<baseN?'Base':i<baseN+specN?'Specific':'Peak';}
+  var isDown=[];for(var i=0;i<B;i++)isDown.push((i+1)%4===0 && i<B-2);
+  var cur=Math.max(o.curKm||20,12), peak=Math.max(Math.min(o.maxKm||D.peak,D.peak*1.3),cur);
+  var nb=[];for(i=0;i<B;i++)if(!isDown[i])nb.push(i);
+  var vol=[],prev=cur;
+  nb.forEach(function(wi,k){var tgt=nb.length>1?cur+(peak-cur)*k/(nb.length-1):peak;tgt=Math.min(tgt,prev*1.15);tgt=Math.max(tgt,prev);vol[wi]=tgt;prev=tgt;});
+  for(i=0;i<B;i++)if(isDown[i])vol[i]=Math.round((vol[i-1]||cur)*.75);
+  var tmul={1:[.5],2:[.7,.45],3:[.8,.62,.42]}[T]||[.6];
+  for(i=0;i<T;i++)vol[B+i]=Math.round(peak*tmul[i]);
+
+  var n=clamp(o.runs||4,3,6), longIdx=o.longDay==='sat'?5:6;
+  var runSlots={}; /* idx -> 'Q1'|'Q2'|'E'|'L' */
+  runSlots[longIdx]='L';
+  var tmpl={3:[[1,'Q1'],[3,'E']],4:[[1,'Q1'],[2,'E'],[3,'Q2']],5:[[1,'Q1'],[2,'E'],[3,'Q2'],[longIdx-1,'E']],6:[[1,'Q1'],[2,'E'],[3,'Q2'],[4,'E'],[longIdx===6?5:6,'E']]}[n];
+  tmpl.forEach(function(s){runSlots[s[0]]=s[1];});
+  var gymOrder=[0,2,4,5,1,3,6].filter(function(d){return runSlots[d]===undefined && d!==longIdx-1;});
+  var gymDays=gymOrder.slice(0,clamp(o.gym||0,0,2));
+  if(gymDays.length===2 && Math.abs(gymDays[0]-gymDays[1])<2) gymDays=[gymDays[0],gymOrder.filter(function(d){return Math.abs(d-gymDays[0])>=2})[0]].filter(function(x){return x!==undefined;});
+
+  var weeks=[],qIdx=0;
+  var LAB={Base:'Base',Specific:'Specific',Peak:'Peak',Recovery:'Down-week',Taper:'Taper',Race:'Race week'};
+  var GOALTXT={Base:'สร้างฐาน aerobic และความสม่ำเสมอ เพิ่ม volume ทีละน้อย',Specific:'เจาะเพซเป้าหมาย เพิ่มงาน Threshold และ '+racePaceName,Peak:'จุดสูงสุดของแผน ซ้อมเฉพาะวันแข่งและซ้อมใหญ่ครั้งสุดท้าย',Recovery:'ลด volume ราว 25% ให้ร่างกายดูดซับงาน',Taper:'ลดโหลด คงความเข้มสั้นๆ เก็บแรงไว้วันแข่ง','Race':'สัปดาห์แข่งจริง เบาที่สุด'};
+  var buildIdx=0, specIdx=0;
+  for(var wi=0;wi<W;wi++){
+    var mon=g_add(start,wi*7), isRaceWeek=(wi===W-1), isTaper=wi>=B&&!isRaceWeek;
+    var phase=isRaceWeek?'Race':isTaper?'Taper':isDown[wi]?'Recovery':phaseOf(wi);
+    var basePhase=wi<B?phaseOf(wi):'Peak';
+    var V=vol[wi]||peak*.4;
+    var days=[]; var wk={idx:wi+1,monday:mon,phase:phase};
+    var longKm=r5(Math.min(D.lcap*(phase==='Taper'?.7:1),V*.33)); if(isTaper&&T>1)longKm=r5(Math.min(longKm,D.lcap*(wi===B?.75:.5)));
+    var q1=clamp(Math.round(V*.15),6,o.raceDist>=42?18:14), q2=clamp(Math.round(V*(o.raceDist>=21?.2:.17)),7,o.raceDist>=42?20:15);
+    var nE=Math.max(0,n-3-(n===3?0:0));
+    var runsLeft=V-longKm-q1-q2;
+    var eKm=n>3?clamp(Math.round(runsLeft/(n-3)),4,13):0;
+    if(n===3){q2=0;} /* slot E handled below */
+    var qn=(phase==='Recovery'||isTaper)?0:buildIdx; if(phase!=='Recovery'&&!isTaper&&!isRaceWeek)buildIdx++;
+    for(var di=0;di<7;di++){
+      var date=g_add(mon,di), slot=runSlots[di], dd={date:date,day:DAYS_TH[di],group:null,type:'Rest',desc:'พัก',dist:null,zone:'-',note:null,act_dist:null,act_hr:null,rpe:null,gymimpact:null,phase:phase,act_dist_f:null};
+      if(isRaceWeek){
+        if(date===o.raceDate){dd.type='Race';dd.desc='RACE DAY: '+(o.raceName||'วันแข่ง')+' — '+D.label;dd.dist=o.raceDist;dd.zone='เป้า A '+fmtT(o.goalA)+' เพซ '+fmtP(goalP)+' น./กม.'+(o.goalB?(' · B '+fmtT(o.goalB)+' เพซ '+fmtP(goalPB)+' น./กม.'):'');dd.note='5 กม.แรกช้ากว่าเป้าเล็กน้อย คุมจังหวะ ไม่เร่งช่วงต้น กินน้ำ/เจลตามแผนที่ซ้อมมา';}
+        else if(date>o.raceDate){dd.desc='พักฟื้นหลังแข่ง';}
+        else{var back=g_diffDays(date,o.raceDate);
+          if(back===1){dd.type='Run';dd.desc='Shakeout + Strides 4x100ม.';dd.dist=3;dd.zone=zt('ARR',.70);dd.note='วิ่งเบามาก ขยับขา ไม่ล้า เตรียมอุปกรณ์ให้พร้อม';}
+          else if(back===3||(back===2&&o.raceDist<=21.0975)){dd.type='Run';dd.desc='Sharpener สั้น '+(o.raceDist>=42?'3':'2')+'กม. @'+racePaceName;dd.dist=o.raceDist>=42?7:6;dd.zone=zt(racePaceName,0,mp);dd.note='warm-up 2กม. + เพซแข่ง + cool-down 2กม. แค่ให้ร่างกายคุ้นเพซ';}
+          else if(back===4||back===5){dd.type='Run';dd.desc='Easy run สั้นๆ';dd.dist=5;dd.zone=zt('SCR',.80);}
+        }
+      } else if(slot){
+        dd.type='Run';
+        var ph=phase==='Recovery'?basePhase:phase;
+        if(slot==='L'){
+          var useMP=(o.raceDist>=21&&o.raceDist<50)&&(ph==='Specific'||ph==='Peak')&&longKm>=16&&(qn%2===1);
+          if(isTaper){dd.desc='Long run '+longKm+'กม. (Easy ลดโหลด)';dd.zone=zt('SCR',.80);dd.note='ลดระยะ คงจังหวะ ห้ามเร่ง';}
+          else if(useMP){var b=Math.min(Math.round(longKm*.4),o.raceDist>=42?16:8),a=r5(longKm-b);dd.desc='Long run '+longKm+'กม. (Easy '+a+' + '+racePaceName+' '+b+')';dd.zone=zt('SCR',.80)+' / '+racePaceName+' '+fmtP(mp)+' น./กม.';dd.note='ท่อนแรก Easy ล้วน ท่อนหลังเข้าเพซ '+racePaceName+' ซ้อมกินเจล 60-90 กรัม/ชม.';}
+          else{dd.desc='Long run '+longKm+'กม. (Easy ล้วน)';dd.zone=zt('SCR',.80);dd.note=o.raceDist>=50?'ซ้อมเดินสลับวิ่งตอนขึ้นเนิน และกินเจลทุก 30-40 นาที':'เพซสบาย คุยได้ ไม่เร่ง';}
+          dd.dist=longKm;
+        } else if(slot==='E'||(slot==='Q2'&&n===3)){dd.desc='Easy run';dd.dist=n===3?clamp(Math.round((V-longKm-q1)),4,12):eKm;dd.zone=zt('SCR',.80);dd.note='เพซสบาย ถ้า HR สูงให้ช้าลง';if(ph==='Base'&&qn%2===0&&!isTaper){dd.desc='Easy run + Strides 6x100ม.';}}
+        else if(slot==='Q1'){
+          var Q=q1;
+          if(isTaper){dd.desc='Threshold เบา 3x1.5กม. @FCR-บน';dd.dist=8.5;dd.zone=zt('FCR-บน',.97);dd.note='พัก 90 วินาที สั้นๆ คงความคม';}
+          else if(phase==='Recovery'){dd.desc='Tempo เบา '+Math.max(3,Q-6)+'กม. @FCR';dd.dist=Q-2;dd.zone=zt('FCR',.94);}
+          else if(ph==='Base'){
+            if(qn%2===0){var qv=Math.max(3,Q-4);dd.desc='Tempo ต่อเนื่อง '+qv+'กม. @FCR';dd.dist=qv+4;dd.zone=zt('FCR',.94);dd.note='warm-up 2กม. + tempo + cool-down 2กม.';}
+            else{dd.desc='Fartlek 10x(1 นาทีเร็ว / 1 นาทีช้า)';dd.dist=Q;dd.zone=zt('EXT105',1.05);dd.note='นาทีเร็วที่ EXT105 นาทีช้าจ็อกเบา warm-up/cool-down ท่อนละ 2กม.';}
+          } else if(ph==='Specific'){
+            if(qn%2===0){var r=clamp(Math.round((Q-4)/1.5),3,6);dd.desc='Threshold '+r+'x1.5กม. @FCR-บน';dd.dist=r*1.5+4;dd.zone=zt('FCR-บน',.97);dd.note='พัก 75-90 วินาที จ็อกเบา warm-up/cool-down ท่อนละ 2กม.';}
+            else{var r2=clamp(Math.round((Q-4)/2),2,4);dd.desc='Threshold '+r2+'x2กม. @FCR-บน';dd.dist=r2*2+4;dd.zone=zt('FCR-บน',.97);dd.note='พัก 90 วินาที';}
+          } else {
+            if(o.raceDist<=21.0975){var r3=clamp(Math.round(Q-4),4,7);dd.desc='VO2max '+r3+'x1000ม. @EXT105';dd.dist=r3+4;dd.zone=zt('EXT105',1.05);dd.note='พักจ็อก 2:30 นาที warm-up/cool-down ท่อนละ 2กม.';}
+            else{var r4=clamp(Math.round((Q-4)/2),2,4);dd.desc='Threshold '+r4+'x2กม. @FCR-บน';dd.dist=r4*2+4;dd.zone=zt('FCR-บน',.97);dd.note='พัก 90 วินาที';}
+          }
+        } else if(slot==='Q2'){
+          var Q2=q2;
+          if(isTaper||phase==='Recovery'||ph==='Base'){dd.desc='Easy + Strides 6x100ม.';dd.dist=Math.max(5,Q2-2);dd.zone=zt('SCR',.85);dd.note='เพซสบาย ปิดท้าย strides 6 เที่ยว';}
+          else if(o.raceDist>=21&&o.raceDist<50){var m=clamp(Math.round((Q2-4)*(ph==='Peak'?1:.85)),4,o.raceDist>=42?14:9);dd.desc=racePaceName+' tempo ต่อเนื่อง '+m+'กม. @'+racePaceName;dd.dist=m+4;dd.zone=zt(racePaceName,0,mp);dd.note='warm-up 2กม. + เพซแข่ง + cool-down 2กม. ซ้อมจังหวะและการกิน';}
+          else{var m2=clamp(Math.round((Q2-4)*.8),3,10);dd.desc='Tempo ต่อเนื่อง '+m2+'กม. @FCR';dd.dist=m2+4;dd.zone=zt('FCR',.94);}
+        }
+      } else if(gymDays.indexOf(di)>=0){
+        dd.type='Gym';
+        dd.desc=isTaper?'Taper — เวทเบา/Mobility':phase==='Recovery'?'General Strength A':ph0(basePhase)==='Base'?'General Strength A':ph0(basePhase)==='Specific'?'Max Strength B':'Power / Plyo เบา';
+      }
+      function ph0(x){return x;}
+      days.push(dd);
+    }
+    days[0].group=(LAB[phase]||phase)+' | เป้าหมาย: '+GOALTXT[phase];
+    days.forEach(function(d){d.group_filled=days[0].group;});
+    wk.label='Wk'+(wi+1)+': '+(LAB[phase]||phase);
+    wk.plan_km=Math.round(days.reduce(function(s,d){return s+((d.type==='Run'||d.type==='Race')&&d.dist?d.dist:0);},0)*10)/10;
+    wk.actual_km=0; wk.days=days; weeks.push(wk);
+  }
+  var predMar=42.195/(kmh*0.9)*3600;
+  var meta={total_actual_km:0,adherence:0,pb:fmtT(o.testTime),pb_label:'ผลล่าสุด',goal_a:fmtT(o.goalA),goal_a_pace:fmtP(goalP),goal_b:o.goalB?fmtT(o.goalB):'—',goal_b_pace:o.goalB?fmtP(goalPB):'—',
+    race_name:o.raceName||'วันแข่ง',race_label:D.label,race_date:o.raceDate,start:start,base_kmh:kmh,vcr_pace:fmtP(3600/kmh),
+    title:(o.raceName||D.label),eyebrow:'แผนซ้อมของฉัน · '+W+' สัปดาห์ → '+(o.raceName||D.label),
+    race_sub:'วันแข่ง '+g_parse(o.raceDate).getDate()+' '+MONTHS_TH[g_parse(o.raceDate).getMonth()]+' '+(g_parse(o.raceDate).getFullYear()+543)+' · '+D.label,
+    profile:{rhr:rhr,mhr:mhr,age:o.age||null,startDate:start,raceDate:o.raceDate},
+    test:{dist:o.testDist,time:o.testTime},
+    notes:[{t:'แผนนี้ · VCR '+fmtP(3600/kmh)+'/กม.',p:'คำนวณจากผล '+(o.testDist===10?'10K':o.testDist+'K')+' '+fmtT(o.testTime)+' (10K เทียบเท่า '+fmtT(t10)+') ด้วยสูตร VCR เดียวกับแผน ATM · '+W+' สัปดาห์ วิ่ง '+n+' วัน/สัปดาห์ · สัปดาห์สูงสุด ~'+Math.round(Math.max.apply(null,weeks.map(function(w){return w.plan_km;})))+' กม.'},
+           {t:'RULE · HR ceiling '+Math.round(rhr+.92*hrr)+' bpm',p:'วันคุณภาพให้เพซนำตามปกติ แต่ถ้า HR ทะลุ '+Math.round(rhr+.92*hrr)+' bpm ต่อเนื่องช่วงกลาง-ท้าย ให้ผ่อนเพซทันที ไม่ฝืนให้ครบเพซเป้า'}],
+    warn:(o.raceDist===42.195&&o.goalA<predMar*.97)?('เป้า A เร็วกว่าที่ VCR ทำนาย ('+fmtT(predMar)+') เกิน 3% — ทบทวนความสมเหตุสมผลของเป้า'):null,
+    goals:o.raceDist===42.195?{ma:fmtT(o.goalA),mb:o.goalB?fmtT(o.goalB):'',ha:'',hb:''}:o.raceDist===21.0975?{ma:'',mb:'',ha:fmtT(o.goalA),hb:o.goalB?fmtT(o.goalB):''}:null,
+    today:g_iso(new Date())};
+  return {weeks:weeks,meta:meta};
+}
+
+
+(function(){
+  function $(i){return document.getElementById(i);}
+  var PHC={Base:'#4f8fe0',Specific:'#4fa8e0',Peak:'#ef6b5b',Taper:'#b98af0',Recovery:'#8a9bb0',Race:'#e8c84a'};
+  function nextMon(){var d=new Date();d.setDate(d.getDate()+((8-(d.getDay()||7))%7||7));return g_iso(d);}
+  $('sdate').value=nextMon();
+  var d2=g_parse(nextMon());d2.setDate(d2.getDate()+7*14);$('rdate').value=g_iso(d2);
+  var plan=null;
+  try{ if(localStorage.getItem('atm_custom_plan_v1')) $('existing').hidden=false; }catch(e){}
+  $('f').addEventListener('submit',function(e){
+    e.preventDefault(); var er=$('err'); er.hidden=true;
+    try{
+      var o={raceName:$('name').value.trim(),raceDist:+$('dist').value,raceDate:$('rdate').value,goalA:parseT($('ga').value),goalB:parseT($('gb').value),start:$('sdate').value,
+        testDist:+$('td').value,testTime:parseT($('tt').value),runs:+$('runs').value,longDay:$('long').value,curKm:+$('cur').value||20,maxKm:+$('max').value||0,gym:+$('gym').value,
+        rhr:+$('rhr').value||0,mhr:+$('mhr').value||0,age:+$('age').value||0};
+      if(!o.raceDate||!o.start) throw new Error('ใส่วันเริ่มซ้อมและวันแข่ง');
+      if(!o.goalA) throw new Error('ใส่เป้าหมาย A เป็นรูปแบบ ชม:นาที:วินาที เช่น 3:45:00');
+      if(!o.testTime) throw new Error('ใส่ผลวิ่งล่าสุดเป็นรูปแบบ ชม:นาที:วินาที เช่น 0:50:00');
+      if(o.goalB && o.goalB<o.goalA) throw new Error('เป้า B ควรช้ากว่าเป้า A');
+      if(o.mhr && o.rhr && o.mhr<=o.rhr+40) throw new Error('Max HR ต้องสูงกว่า Resting HR อย่างน้อย 40');
+      if(!o.maxKm) o.maxKm=0; if(!o.maxKm) delete o.maxKm;
+      plan=generatePlan(o);
+    }catch(ex){er.textContent=ex.message;er.hidden=false;er.scrollIntoView({block:'center'});return;}
+    var m=plan.meta, peak=Math.max.apply(null,plan.weeks.map(function(w){return w.plan_km;})), tot=plan.weeks.reduce(function(s,w){return s+w.plan_km;},0);
+    $('sum').innerHTML='<div><b>'+plan.weeks.length+'</b><span>สัปดาห์</span></div><div><b>'+m.vcr_pace+'</b><span>VCR /กม.</span></div><div><b>'+Math.round(peak)+'</b><span>กม. สัปดาห์สูงสุด</span></div><div><b>'+Math.round(tot)+'</b><span>กม. รวมทั้งแผน</span></div><div><b>'+m.goal_a_pace+'</b><span>เพซเป้า A /กม.</span></div><div><b>'+m.start.slice(5).replace('-','/')+'</b><span>เริ่มจันทร์ (เดือน/วัน)</span></div>';
+    var kmh=m.base_kmh, rows=[['ARR ฟื้นฟู',.70],['SCR (ต่ำ) Easy',.75],['SCR ช้าต่อเนื่อง',.80],['SCR-สูง',.85],['MCR / MP',.90],['FCR / Tempo',.94],['FCR บน / Threshold',.97],['VCR',1],['EXT105',1.05],['EXT110',1.10]];
+    $('zones').innerHTML=rows.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+Math.round(r[1]*100)+'%</td><td><b>'+fmtP(3600/(kmh*r[1]))+'</b></td></tr>';}).join('');
+    $('wk').innerHTML=plan.weeks.map(function(w){var pc=PHC[w.phase]||'#999';return '<tr><td>'+w.idx+' <span class="small">'+w.monday.slice(5).replace('-','/')+'</span></td><td><span class="chip" style="background:'+pc+'">'+w.phase+'</span></td><td>'+w.plan_km+'</td><td><div class="bar" style="width:'+Math.round(w.plan_km/peak*100)+'%;background:'+pc+'"></div></td></tr>';}).join('');
+    var wn=$('warn'); if(m.warn){wn.textContent=m.warn;wn.hidden=false;}else wn.hidden=true;
+    $('result').hidden=false; $('result').scrollIntoView({behavior:'smooth'});
+  });
+  $('back').addEventListener('click',function(){$('result').hidden=true;window.scrollTo({top:0,behavior:'smooth'});});
+  $('use').addEventListener('click',function(){
+    if(!plan) return;
+    try{
+      localStorage.setItem('atm_custom_plan_v1',JSON.stringify(plan));
+      localStorage.removeItem('mine_atm_actuals_v1'); localStorage.removeItem('mine_atm_profile_v1');
+      location.href='my.html?v='+Date.now();
+    }catch(e){ $('err').textContent='บันทึกแผนไม่ได้ — เบราว์เซอร์บล็อกที่เก็บข้อมูล (ลองปิดโหมดส่วนตัว)'; $('err').hidden=false; }
+  });
+})();
+</script>
