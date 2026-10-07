@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791342023">
+<meta name="build" content="1791342161">
 <title>แผนซ้อม ATM 42</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -474,7 +474,7 @@ section[hidden]{display:none}
         <input id="p-race" type="date">
       </div>
     </div>
-    <p class="pnote">เปลี่ยนวันแข่ง = เลื่อนทั้งแผนตามจำนวนวันที่ต่างไป · วันเริ่มซ้อม = ซ่อนสัปดาห์ก่อนหน้านั้น · สถิติ (10K ก่อน ถ้าไม่มีใช้ 5K/21K/42K แปลงเป็น 10K) = สเกลเพซทั้งแผนเทียบฐาน 10K 48:07 (VCR 4:54/กม.) · กดบันทึกแล้วหน้าจะโหลดใหม่เอง</p>
+    <p class="pnote">เปลี่ยนวันแข่ง = เลื่อนทั้งแผนตามจำนวนวันที่ต่างไป · วันเริ่มซ้อม = ซ่อนสัปดาห์ก่อนหน้านั้น · สถิติ (10K ก่อน ถ้าไม่มีใช้ 5K/21K/42K แปลงเป็น 10K) → VCR สูตรเดียวกับไฟล์ Excel (ปัดลง 0.1 m/s) แล้วสเกลเพซทั้งแผน (VCR 4:54/กม.) · กดบันทึกแล้วหน้าจะโหลดใหม่เอง</p>
 
     <div class="sectitle">สถิติส่วนตัว (Personal Best)</div>
     <div class="pbgrid">
@@ -613,7 +613,10 @@ section[hidden]{display:none}
   var weeks = data.weeks, meta = data.meta;
 
   // ---- profile-driven plan: race-date shift + pace scaling (10K vs plan baseline) ----
-  var BASE_RACE='2026-11-29', BASE_10K=2887, BASE_VCR=294;
+  var BASE_RACE='2026-11-29', BASE_10K=2886.9, BASE_KMH=12.24;
+  // same formula as the Excel plan: VCR(m/s)=ROUNDDOWN(10000/time,1); speed km/h = VCR*3.6; zone pace = 60/(km/h * %VCR)
+  function vcrKmh(t10){ return t10>0 ? Math.round(Math.floor(10000/t10*10)/10*3.6*100)/100 : BASE_KMH; }
+  function fmtPace(minPerKm){ var m=Math.floor(minPerKm), s=Math.round((minPerKm-m)*60); if(s===60){m++;s=0;} return m+':'+('0'+s).slice(-2); }
   var PLAN=(function(){
     var p=null; try{ p=JSON.parse(localStorage.getItem('atm_profile_v1')||'null'); }catch(e){}
     p=p||{};
@@ -623,7 +626,7 @@ section[hidden]{display:none}
       delta=Math.round((new Date(raceISO+'T00:00:00')-new Date(BASE_RACE+'T00:00:00'))/86400000);
     }
     var t10=eq10(p);
-    var f=t10>0? Math.min(1.3,Math.max(0.8,t10/BASE_10K)) : 1;
+    var f=BASE_KMH/vcrKmh(t10);
     return {delta:delta, raceISO:raceISO, f:f, start:(p.startDate&&/^\d{4}-\d\d-\d\d$/.test(p.startDate))?p.startDate:null};
   })();
   function eq10(pb){
@@ -1250,11 +1253,16 @@ section[hidden]{display:none}
     function g(id){ return parseInt(document.getElementById(id).value,10)||0; }
     var pbs={}; ['5k','10k','21k','42k'].forEach(function(k){ pbs['pb'+k]={h:g('pb-'+k+'-h'),m:g('pb-'+k+'-m'),s:g('pb-'+k+'-s')}; });
     var t=eq10(pbs);
-    var eqEl=document.getElementById('pace-eq'); if(eqEl) eqEl.textContent = t>0 ? ('ใช้ 10K เทียบเท่า '+Math.floor(t/60)+':'+('0'+Math.round(t%60)).slice(-2)+' → VCR '+(function(){var v=Math.round(BASE_VCR*Math.min(1.3,Math.max(0.8,t/BASE_10K)));return Math.floor(v/60)+':'+('0'+(v%60)).slice(-2);})()+'/กม.') : 'ยังไม่ได้ใส่สถิติ — ใช้ค่าฐาน 10K 48:07';
-    var f=t>0? Math.min(1.3,Math.max(0.8,t/BASE_10K)) : 1;
-    var V=BASE_VCR*f;
-    var rows=[['ARR ฟื้นฟู',.70],['SCR ช้าต่อเนื่อง',.80],['SCR-สูง',.85],['MP มาราธอน',.90],['FCR',.94],['VCR',1.0],['EXT105',1.05],['EXT110',1.10]];
-    tb.innerHTML=rows.map(function(r){ var sec=Math.round(V/r[1]); return '<tr><td class="z">'+r[0]+'</td><td>'+Math.round(r[1]*100)+'%</td><td class="bpm">'+Math.floor(sec/60)+':'+('0'+(sec%60)).slice(-2)+'</td></tr>'; }).join('');
+    var kmh=vcrKmh(t);
+    var eqEl=document.getElementById('pace-eq');
+    if(eqEl){
+      var mar=42.195/(kmh*0.9);
+      var mh=Math.floor(mar), mm=Math.floor((mar-mh)*60), ms=Math.round(((mar-mh)*60-mm)*60);
+      if(ms===60){mm++;ms=0;}
+      eqEl.textContent=(t>0?('10K เทียบเท่า '+Math.floor(t/60)+':'+('0'+Math.round(t%60)).slice(-2)):'ยังไม่ได้ใส่สถิติ — ใช้ค่าฐาน 10K 48:07')+' → VCR '+fmtPace(60/kmh)+'/กม. ('+kmh.toFixed(2)+' กม./ชม.) · มาราธอนที่ทำนายได้ '+mh+':'+('0'+mm).slice(-2)+':'+('0'+ms).slice(-2);
+    }
+    var rows=[['ARR ฟื้นฟู',.70],['SCR (ต่ำ) Easy',.75],['SCR ช้าต่อเนื่อง',.80],['SCR-สูง',.85],['MCR / MP',.90],['FCR / Tempo',.94],['FCR บน / Threshold',.97],['VCR',1.0],['EXT105',1.05],['EXT110',1.10]];
+    tb.innerHTML=rows.map(function(r){ return '<tr><td class="z">'+r[0]+'</td><td>'+Math.round(r[1]*100)+'%</td><td class="bpm">'+fmtPace(60/(kmh*r[1]))+'</td></tr>'; }).join('');
   }
 
   fillProfileForm(PROFILE_DEFAULT);
