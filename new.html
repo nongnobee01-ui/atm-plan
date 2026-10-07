@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791343591">
+<meta name="build" content="1791343997">
 <title>สร้างแผนซ้อมของฉัน</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -41,12 +41,13 @@ th{color:var(--faint);font-weight:500;font-size:12px}
 [hidden]{display:none!important}
 .small{font-size:12.5px;color:var(--faint)}
 a{color:var(--accent)}
+.hrow{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line,#2a3a5c);font-size:13px}.hrow .btn{width:auto;padding:6px 12px;font-size:12.5px}
 @media(max-width:520px){.grid{grid-template-columns:1fr}.sum{grid-template-columns:1fr 1fr}}
 </style>
 <div class="wrap">
   <div class="top"><img src="icon-192.png" alt=""><span style="color:var(--dim)">แผนซ้อม</span></div>
-  <h1>สร้างแผนซ้อมของฉัน</h1>
-  <p class="lead">ใส่วันแข่ง เป้าหมาย และผลวิ่งล่าสุด แอปคำนวณเพซทุกโซนด้วยวิธี VCR (Critical Velocity) แล้วสร้างตารางซ้อมรายวันให้ ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้ ไม่ส่งไปที่ไหน</p>
+  <h1 id="ttl">สร้างแผนซ้อมของฉัน</h1>
+  <p class="lead" id="lead">ใส่วันแข่ง เป้าหมาย และผลวิ่งล่าสุด แอปคำนวณเพซทุกโซนด้วยวิธี VCR (Critical Velocity) แล้วสร้างตารางซ้อมรายวันให้ ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้ ไม่ส่งไปที่ไหน</p>
 
   <form id="f" autocomplete="off">
   <div class="card"><h2>1 · รายการแข่ง</h2><div class="grid">
@@ -80,6 +81,7 @@ a{color:var(--accent)}
 
   <div id="err" class="err" hidden></div>
   <button class="btn" type="submit">สร้างแผน</button>
+  <a id="back2" hidden href="my.html" class="small" style="display:block;margin-top:12px">← กลับไปแผนของฉัน</a>
   </form>
 
   <div id="result" hidden>
@@ -92,6 +94,7 @@ a{color:var(--accent)}
     <button class="btn" id="use">ใช้แผนนี้ → เปิดแผนของฉัน</button>
     <button class="btn sec" id="back" type="button">กลับไปแก้ค่า</button>
   </div>
+  <div id="hist" class="card" hidden style="margin-top:22px"><h2>ประวัติแผนก่อนหน้า</h2><div id="histl"></div></div>
   <p class="small" style="margin-top:22px">แผนนี้คำนวณจากสูตรทั่วไป ไม่ใช่คำแนะนำทางการแพทย์ ถ้ามีโรคประจำตัวหรืออาการบาดเจ็บ ปรึกษาแพทย์/โค้ชก่อนเริ่มซ้อม · <a href="index.html">กลับไปแผนของ Bee</a></p>
 </div>
 <script>
@@ -263,7 +266,7 @@ function generatePlan(o){
       if(o.goalB && o.goalB<o.goalA) throw new Error('เป้า B ควรช้ากว่าเป้า A');
       if(o.mhr && o.rhr && o.mhr<=o.rhr+40) throw new Error('Max HR ต้องสูงกว่า Resting HR อย่างน้อย 40');
       if(!o.maxKm) o.maxKm=0; if(!o.maxKm) delete o.maxKm;
-      plan=generatePlan(o);
+      plan=generatePlan(o); plan.meta.inputs=o;
     }catch(ex){er.textContent=ex.message;er.hidden=false;er.scrollIntoView({block:'center'});return;}
     var m=plan.meta, peak=Math.max.apply(null,plan.weeks.map(function(w){return w.plan_km;})), tot=plan.weeks.reduce(function(s,w){return s+w.plan_km;},0);
     $('sum').innerHTML='<div><b>'+plan.weeks.length+'</b><span>สัปดาห์</span></div><div><b>'+m.vcr_pace+'</b><span>VCR /กม.</span></div><div><b>'+Math.round(peak)+'</b><span>กม. สัปดาห์สูงสุด</span></div><div><b>'+Math.round(tot)+'</b><span>กม. รวมทั้งแผน</span></div><div><b>'+m.goal_a_pace+'</b><span>เพซเป้า A /กม.</span></div><div><b>'+m.start.slice(5).replace('-','/')+'</b><span>เริ่มจันทร์ (เดือน/วัน)</span></div>';
@@ -274,13 +277,54 @@ function generatePlan(o){
     $('result').hidden=false; $('result').scrollIntoView({behavior:'smooth'});
   });
   $('back').addEventListener('click',function(){$('result').hidden=true;window.scrollTo({top:0,behavior:'smooth'});});
+  var HK='atm_plan_history_v1';
+  function getHist(){try{return JSON.parse(localStorage.getItem(HK)||'[]')||[];}catch(e){return [];}}
+  function pushHist(p,why){var h=getHist();h.unshift({at:new Date().toISOString(),why:why,race:(p.meta&&p.meta.race_label)||'',date:(p.meta&&p.meta.race_date)||'',goal:(p.meta&&p.meta.goal_a)||'',weeks:p.weeks.length,plan:p});h=h.slice(0,8);localStorage.setItem(HK,JSON.stringify(h));}
   $('use').addEventListener('click',function(){
     if(!plan) return;
     try{
-      localStorage.setItem('atm_custom_plan_v1',JSON.stringify(plan));
-      localStorage.removeItem('mine_atm_actuals_v1'); localStorage.removeItem('mine_atm_profile_v1');
+      if(EDIT){
+        pushHist(OLD,'ก่อนแก้ไข');
+        var first=plan.weeks[0].monday, keep=OLD.weeks.filter(function(w){return w.monday<first;});
+        var merged=keep.concat(plan.weeks);
+        merged.forEach(function(w,i){w.idx=i+1;});
+        plan.weeks=merged; if(OLD.meta&&OLD.meta.start) plan.meta.start=OLD.meta.start;
+        localStorage.setItem('atm_custom_plan_v1',JSON.stringify(plan));
+      } else {
+        localStorage.setItem('atm_custom_plan_v1',JSON.stringify(plan));
+        localStorage.removeItem('mine_atm_actuals_v1'); localStorage.removeItem('mine_atm_profile_v1');
+      }
       location.href='my.html?v='+Date.now();
     }catch(e){ $('err').textContent='บันทึกแผนไม่ได้ — เบราว์เซอร์บล็อกที่เก็บข้อมูล (ลองปิดโหมดส่วนตัว)'; $('err').hidden=false; }
   });
+  // ---- edit mode ----
+  var EDIT=false, OLD=null;
+  try{ OLD=JSON.parse(localStorage.getItem('atm_custom_plan_v1')||'null'); EDIT=/[?&]edit=1/.test(location.search)&&!!(OLD&&OLD.weeks); }catch(e){}
+  function secT(x){return x?fmtT(x):'';}
+  function renderHist(){
+    var h=getHist(), box=$('hist'); if(!box) return;
+    if(!h.length){box.hidden=true;return;}
+    box.hidden=false;
+    $('histl').innerHTML=h.map(function(e,i){var d=new Date(e.at);return '<div class="hrow"><span>'+d.toLocaleDateString('th-TH',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})+' · '+e.race+' · เป้า '+e.goal+' · '+e.weeks+' สัปดาห์</span><button type="button" class="btn sec rb" data-i="'+i+'">ย้อนกลับไปแผนนี้</button></div>';}).join('');
+    [].forEach.call(document.querySelectorAll('.rb'),function(b){b.addEventListener('click',function(){
+      var h2=getHist(),e=h2[+b.getAttribute('data-i')]; if(!e) return;
+      try{ pushHist(OLD,'ก่อนย้อนกลับ'); localStorage.setItem('atm_custom_plan_v1',JSON.stringify(e.plan)); location.href='my.html?v='+Date.now(); }catch(x){}
+    });});
+  }
+  if(EDIT){
+    document.title='แก้ไขแผนซ้อม';
+    $('ttl').textContent='แก้ไขแผนซ้อม';
+    $('lead').textContent='ปรับค่าแล้วระบบสร้างตารางใหม่ตั้งแต่สัปดาห์ถัดไป ส่วนสัปดาห์ที่ผ่านมาและผลที่บันทึกไว้คงเดิม แผนก่อนแก้ไขเก็บไว้ย้อนกลับได้';
+    $('use').textContent='ใช้แผนนี้ (เก็บของเก่าไว้) → เปิดแผนของฉัน';
+    $('existing').hidden=true;
+    var I=(OLD.meta&&OLD.meta.inputs)||{}, M=OLD.meta||{};
+    function sv(id,v){if(v||v==='0')$(id).value=v;}
+    sv('name',I.raceName); sv('dist',I.raceDist); sv('rdate',I.raceDate||M.race_date);
+    sv('ga',secT(I.goalA)); sv('gb',secT(I.goalB)); sv('td',I.testDist); sv('tt',secT(I.testTime));
+    sv('runs',I.runs); sv('long',I.longDay); sv('cur',I.curKm); sv('max',I.maxKm); sv('gym',I.gym===0?'0':I.gym);
+    sv('rhr',I.rhr); sv('mhr',I.mhr); sv('age',I.age);
+    $('back2').hidden=false;
+  }
+  renderHist();
 })();
 </script>
