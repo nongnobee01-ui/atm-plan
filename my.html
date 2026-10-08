@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <script>window.__MINE=true;</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791427717">
+<meta name="build" content="1791427893">
 <title>แผนซ้อมของฉัน</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -207,6 +207,20 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-faint);text-align:center}
 .modal .msub{font-size:12px;color:var(--fg-dim);margin-bottom:12px}
 .modal .mplan{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--fg-dim);line-height:1.5;margin-bottom:14px}
 .modal .mplan:empty{display:none}
+.modal .mplan.rich{padding:12px 14px}
+.mplan .ph-title{font-size:15px;font-weight:700;color:var(--fg);margin-bottom:4px;line-height:1.35}
+.mplan .ph-sub{font-size:12.5px;color:var(--fg-dim);margin-bottom:8px;line-height:1.45}
+.mplan .psteps{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.mplan .psteps li{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;padding:10px 12px}
+.mplan .pn{flex:none;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#06140f;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.mplan .pb{min-width:0;flex:1}
+.mplan .pt{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--fg-dim)}.mplan .pt b{color:var(--fg);font-size:13.5px}
+.mplan .pp{font-size:24px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1.15;margin:2px 0 4px}.mplan .pp small{font-size:12px;font-weight:500;color:var(--fg-faint)}
+.mplan .pc{display:flex;gap:6px;flex-wrap:wrap}.mplan .hc,.mplan .zc{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--border)}.mplan .hc{color:#ef8f8f;border-color:#6b3a46}.mplan .zc{color:var(--fg-dim)}
+.mplan .ptail{margin-top:6px;font-size:12px;color:var(--warn);line-height:1.4}
+.mplan .psingle{background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;padding:10px 12px;margin-top:6px}
+.mplan .ptip{margin-top:10px;font-size:12.5px;color:var(--fg-dim);line-height:1.5;border-top:1px dashed var(--border);padding-top:8px}
+
 .exlist{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:6px}
 .exlist .exrow{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);padding:11px 13px;font-size:13px}
 .exlist .exrow .exname{color:var(--fg)}
@@ -943,6 +957,46 @@ section[hidden]{display:none}
     var t=(d.desc||'').split('(')[0].trim().replace(/\s\d+(\.\d+)?\s*กม\.?/,'').trim();
     return t || d.type;
   }
+  function escH(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function parseSeg(t){
+    var o={label:'',pct:null,pace:null,range:null,hr:null,zone:null,tail:''}, m;
+    m=t.match(/เป้า\s*(\d:\d\d)\s*น\./); if(m) o.pace=m[1];
+    m=t.match(/ช่วง\s*(\d:\d\d\s*[-–]\s*\d:\d\d)/); if(m) o.range=m[1].replace(/\s/g,'');
+    m=t.match(/(\d{2,3})%/); if(m) o.pct=m[1];
+    m=t.match(/(\d{3})\s*[-–]\s*(\d{3})\s*bpm/); if(m) o.hr=m[1]+'–'+m[2];
+    m=t.match(/Zone\s*([\d\w]+(?:ปลาย)?(?:-\d?ต้น)?)/i); if(m) o.zone=m[0];
+    var lab=t.split('เป้า')[0].replace(/\(.*?\)/g,'').replace(/\s*\d+%\s*/,' ').replace(/ช่วง\s*\d+\s*/,'').trim();
+    o.label=lab;
+    var after=t.split(/น\.\s*\/\s*กม\.?/)[1]||'';
+    after=after.replace(/\([^)]*bpm[^)]*\)/,'').replace(/\(ช่วง[^)]*\)/,'').trim();
+    o.tail=after.replace(/^[—\-–\s]+/,'').replace(/Zone[^ ]*\s*~?[\d\-–]*bpm/,'').trim();
+    return o;
+  }
+  function planHTML(d){
+    var desc=(d.desc||''), zone=(d.zone&&d.zone!=='-')?d.zone:'';
+    var head=escH(desc.split('(')[0].trim());
+    var inner=(desc.match(/\(([^)]*)\)/)||[])[1]||'';
+    var parts=zone.split(/\s\/\s/), steps=[];
+    parts.forEach(function(p){ var m=p.match(/^\s*ช่วง\s*(\d+)\s*\(([\d.]+)\s*กม\.?\)\s*(.*)$/); if(m) steps.push({n:m[1],km:m[2],seg:parseSeg(m[3])}); });
+    var h=(head && head!==dayTypeLabel(d))?'<div class="ph-title">'+head+'</div>':'';
+    if(inner && steps.length) h+='<div class="ph-sub">โครงสร้าง: '+escH(inner)+'</div>';
+    if(steps.length>=2){
+      h+='<ol class="psteps">'+steps.map(function(s){var g=s.seg;
+        return '<li><span class="pn">'+s.n+'</span><div class="pb"><div class="pt"><b>'+escH(s.km)+' กม.</b><span class="pz">'+escH(g.label+(g.pct?' '+g.pct+'%':''))+'</span></div>'+
+          (g.pace?'<div class="pp">'+escH(g.pace)+'<small> /กม.</small></div>':'')+
+          '<div class="pc">'+(g.hr?'<span class="hc">♥ '+escH(g.hr)+' bpm</span>':'')+(g.zone?'<span class="zc">'+escH(g.zone)+'</span>':'')+'</div>'+
+          (g.tail?'<div class="ptail">⚠ '+escH(g.tail)+'</div>':'')+'</div></li>';}).join('')+'</ol>';
+    } else if(zone){
+      var g=parseSeg(zone);
+      if(!g.hr){ var hz=hrZone(zone,d); if(hz){ if(hz.bpm) g.hr=hz.bpm; if(!g.zone) g.zone='Zone'+hz.n; } }
+      if(g.pace) h+='<div class="psingle"><div class="pp">'+escH(g.pace)+'<small> /กม.'+(g.range?' · ช่วง '+escH(g.range):'')+'</small></div><div class="pc">'+(g.label?'<span class="zc">'+escH(g.label+(g.pct?' '+g.pct+'%':''))+'</span>':'')+(g.hr?'<span class="hc">♥ '+escH(g.hr)+' bpm</span>':'')+(g.zone?'<span class="zc">'+escH(g.zone)+'</span>':'')+'</div></div>';
+      else h+='<div class="ph-sub">'+escH(zone)+'</div>';
+      if(inner) h+='<div class="ph-sub">'+escH(inner)+'</div>';
+    } else if(inner) h+='<div class="ph-sub">'+escH(inner)+'</div>';
+    var rest=desc.replace(/\([^)]*\)/,'').trim();
+    if(d.note && !/^กรอกระยะ/.test(d.note)) h+='<div class="ptip">💡 '+escH(d.note)+'</div>';
+    return h;
+  }
   function parsePace(z){
     var m=(z||'').match(/(\d):(\d\d)(?:\s*[-–]\s*(\d):(\d\d))?\s*น\./);
     if(!m) return null;
@@ -1192,7 +1246,7 @@ section[hidden]{display:none}
       // gym day — show the exercise list, hide the run-logging form entirely
       document.getElementById('m-title').textContent = routine.title;
       document.getElementById('m-sub').textContent = fmtDateLong(dateStr);
-      document.getElementById('m-plan').textContent = '';
+      document.getElementById('m-plan').classList.remove('rich'); document.getElementById('m-plan').textContent = '';
       renderExlist(routine);
       exlistEl.hidden = false;
       runFields.hidden = true;
@@ -1204,9 +1258,8 @@ section[hidden]{display:none}
       // run / race day — show the logging form as before
       document.getElementById('m-title').textContent = dayTypeLabel(d);
       document.getElementById('m-sub').textContent = fmtDateLong(dateStr)+(d.dist? ' · เป้า '+d.dist+' กม.':'');
-      var planText = (d.desc||'');
-      if(d.zone && d.zone!=='-') planText += '\n'+d.zone;
-      document.getElementById('m-plan').textContent = planText;
+      var mp=document.getElementById('m-plan'); mp.classList.add('rich');
+      try{ mp.innerHTML = planHTML(d); }catch(e){ mp.textContent=(d.desc||'')+(d.zone&&d.zone!=='-'?'\n'+d.zone:''); }
       exlistEl.hidden = true;
       exlistEl.innerHTML = '';
       runFields.hidden = false;
@@ -1221,7 +1274,7 @@ section[hidden]{display:none}
       fHr.value = a && a.hr ? a.hr : '';
       fNote.value = a && a.note ? a.note : '';
       btnDelete.hidden = !actualsCache[dateStr];
-      saveState.textContent = dbNS ? '' : 'โหมดนี้ยังไม่เชื่อมระบบบันทึก — เปิดผ่านลิงก์ artifact เพื่อบันทึกผลได้';
+      saveState.textContent = dbNS ? '' : 'บันทึกไว้ในเครื่อง/เบราว์เซอร์นี้';
       updateDerived();
     }
     overlay.hidden = false;
