@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791427893">
+<meta name="build" content="1791428903">
 <title>แผนซ้อม ATM 42</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -389,6 +389,17 @@ section[hidden]{display:none}
   .day .dcheck{top:12px;right:14px;font-weight:400}
   body::after{opacity:.035}
 }
+/* ---- UI polish: press feedback, 44px targets, text wrapping ---- */
+.btn,.btn-primary,.btn-ghost,.btn-danger,.navtab,.toggle,.week .whead,.day.clickable{transition-property:transform,background-color,border-color,color,opacity;transition-duration:.12s;transition-timing-function:ease-out}
+.btn:active,.btn-primary:active,.btn-ghost:active,.btn-danger:active,.navtab:active,.toggle:active{transform:scale(.96)}
+.day.clickable:active{transform:scale(.985)}
+.btn,.btn-primary,.btn-ghost,.btn-danger{min-height:44px}
+.navtab,.toggle{min-height:44px;display:inline-flex;align-items:center}
+.modal .close{width:44px;height:44px;top:6px;right:6px;display:flex;align-items:center;justify-content:center}
+h1,h2,h3,.ph-title,.wname{text-wrap:balance}
+p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
+.modal .mplan.rich .psteps li{border-radius:8px}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important}}
 </style>
 
 <div class="wrap">
