@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <script>window.__MINE=true;</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791343997">
+<meta name="build" content="1791427135">
 <title>แผนซ้อมของฉัน</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -106,6 +106,8 @@ button{font-family:inherit}
 .timeline{margin-bottom:18px;background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:16px 18px;box-shadow:var(--shadow)}
 .timeline .lbl{font-size:12px;color:var(--fg-faint);margin-bottom:9px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .timeline .lbl b{color:var(--fg-dim)}
+.vkey{margin-left:8px;font-size:11px;color:var(--fg-faint);white-space:nowrap}.vkey i{display:inline-block;width:8px;height:8px;border-radius:2px;margin:0 3px 0 6px;vertical-align:baseline}.vk-p{background:var(--p-specific);opacity:.75}.vk-a{background:var(--fg)}.vk-f{background:var(--p-race)}
+
 .tlbar{display:flex;height:11px;border-radius:5px;overflow:hidden;border:1px solid var(--border);gap:1px;background:var(--border)}
 .tlbar i{flex:1;min-width:2px}
 .tlbar i.today{outline:2px solid var(--fg);outline-offset:-2px;z-index:1}
@@ -431,6 +433,11 @@ section[hidden]{display:none}
     <div class="lbl"><span id="tl-title">ไทม์ไลน์เฟส</span><b id="tl-current">—</b></div>
     <div class="tlbar" id="tlbar"></div>
     <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="timeline" id="volcard">
+    <div class="lbl"><span>ระยะวิ่งรายสัปดาห์ <span class="vkey"><i class="vk-p"></i>แผน <i class="vk-a"></i>จริง <i class="vk-f"></i>วันแข่ง</span></span><b id="vol-meta"></b></div>
+    <div id="volchart"></div>
   </div>
 
   <div class="notes">
@@ -1031,8 +1038,44 @@ section[hidden]{display:none}
     return el;
   }
 
+  // ---- weekly volume chart (plan vs actual, race flags) ----
+  function raceShort(d){
+    var m=/RACE DAY:\s*(.*?)\s*[—-]\s/.exec(d.desc||''), n=m?m[1]:'';
+    n=n.replace(/Amazing Thailand|Marathon|Bangkok|Half|Full/g,'').replace(/\s+/g,' ').trim();
+    if(/^ATM/.test(m?m[1]:'')) n='ATM';
+    if(!n){ var rm=/RACE:\s*(.{0,14})/.exec(d.desc||''); n=rm?rm[1].trim():'แข่ง'; }
+    var k=d.dist?(d.dist>=40?'42K':d.dist>=20?'21K':d.dist>=49?'50K':Math.round(d.dist)+'K'):'';
+    if(d.dist>=49) k='50K';
+    return n.slice(0,12)+(k&&n.indexOf(k)<0?' '+k:'');
+  }
+  function renderVol(){
+    var host=document.getElementById('volchart'); if(!host||!weeks.length) return;
+    var n=weeks.length, slot=22, W=n*slot+34, H=212, top=38, bot=22, ch=H-top-bot, left=30;
+    var act=weeks.map(function(w){var t=0;w.days.forEach(function(d){if(d.type==='Run'||d.type==='Race'){var a=effectiveActual(d);if(a&&isRealNum(a.dist))t+=parseFloat(a.dist);}});return Math.round(t*10)/10;});
+    var mx=0;weeks.forEach(function(w,i){mx=Math.max(mx,w.plan_km||0,act[i]);});
+    var step=mx>120?40:mx>60?20:10, top_v=Math.ceil(mx/step)*step||step;
+    function y(v){return top+ch-(v/top_v)*ch;}
+    var s='<svg viewBox="0 0 '+(W)+' '+H+'" width="100%" role="img" aria-label="กราฟระยะวิ่งรายสัปดาห์ แผนเทียบของจริง" style="display:block;overflow:visible">';
+    for(var g=0;g<=top_v;g+=step){s+='<line x1="'+left+'" x2="'+(W-4)+'" y1="'+y(g)+'" y2="'+y(g)+'" stroke="var(--border-soft)" stroke-width="1"/><text x="'+(left-5)+'" y="'+(y(g)+3)+'" text-anchor="end" font-size="9" fill="var(--fg-faint)">'+g+'</text>';}
+    var flags='', nb=0;
+    weeks.forEach(function(w,i){
+      var x=left+i*slot+3, bw=slot-6, h=(w.plan_km||0)/top_v*ch, cur=w.days.some(function(d){return d.date===today;});
+      var col=PHASE_COLOR[w.phase]||PHASE_COLOR['อื่นๆ'];
+      if(cur) s+='<rect x="'+(x-3)+'" y="'+top+'" width="'+(bw+6)+'" height="'+(ch+6)+'" rx="4" fill="color-mix(in srgb,var(--accent) 10%,transparent)" stroke="var(--accent)" stroke-width="1"/>';
+      s+='<rect x="'+x+'" y="'+y(w.plan_km||0)+'" width="'+bw+'" height="'+Math.max(h,1)+'" rx="2" fill="'+col+'" opacity=".75"><title>สัปดาห์ '+w.idx+' · แผน '+w.plan_km+' กม.'+(act[i]?' · จริง '+act[i]+' กม.':'')+'</title></rect>';
+      if(act[i]>0) s+='<rect x="'+(x+bw*0.3)+'" y="'+y(act[i])+'" width="'+(bw*0.4)+'" height="'+(ch+top-y(act[i]))+'" rx="1" fill="var(--fg)"/>';
+      if(i%4===0||i===n-1) s+='<text x="'+(x+bw/2)+'" y="'+(H-7)+'" text-anchor="middle" font-size="9" fill="var(--fg-faint)">'+(w.monday.slice(8)*1)+'/'+(w.monday.slice(5,7)*1)+'</text>';
+      w.days.forEach(function(d){ if(d.type==='Race'){ var big=d.dist>=20, ly=(nb++%2)?26:12, fx=left+i*slot+slot/2, anc=(fx>W-70)?'end':'start';
+        flags+='<line x1="'+fx+'" x2="'+fx+'" y1="'+(big?ly-6:top-8)+'" y2="'+(y(w.plan_km||0))+'" stroke="var(--p-race)" stroke-width="1" '+(big?'':'stroke-dasharray="2 2" ')+'/>'+(big?'<text x="'+(fx+(anc==='end'?-4:4))+'" y="'+ly+'" text-anchor="'+anc+'" font-size="10" font-weight="700" fill="var(--p-race)">⚑ '+raceShort(d)+'</text>':'<circle cx="'+fx+'" cy="'+(top-8)+'" r="2.5" fill="var(--p-race)"/>'); }});
+    });
+    s+=flags+'</svg>';
+    host.innerHTML=s;
+    var tot=weeks.reduce(function(a,w){return a+(w.plan_km||0);},0), done=act.reduce(function(a,b){return a+b;},0);
+    var m=document.getElementById('vol-meta'); if(m) m.textContent='แผนรวม '+Math.round(tot)+' กม. · จริงแล้ว '+Math.round(done*10)/10+' กม.';
+  }
   function render(){
     weeksEl.innerHTML='';
+    try{renderVol();}catch(e){}
     weeks.forEach(function(w,i){
       var isPast = i < todayIdx;
       if(isPast && !showPast) return;
