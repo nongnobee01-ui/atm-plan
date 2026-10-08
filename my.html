@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <script>window.__MINE=true;</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791427135">
+<meta name="build" content="1791427717">
 <title>แผนซ้อมของฉัน</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -106,6 +106,12 @@ button{font-family:inherit}
 .timeline{margin-bottom:18px;background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:16px 18px;box-shadow:var(--shadow)}
 .timeline .lbl{font-size:12px;color:var(--fg-faint);margin-bottom:9px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .timeline .lbl b{color:var(--fg-dim)}
+.ptrack{position:relative;height:118px;margin:2px 0 8px}
+.pbar{position:absolute;left:0;right:0;top:50px;height:12px;display:flex;gap:2px;border-radius:6px;overflow:hidden}.pbar i{opacity:.8}
+.ppin{position:absolute;width:2px;background:var(--p-race);transform:translateX(-1px)}.ppin.up{top:28px;height:34px}.ppin.dn{top:50px;height:34px}
+.pflag{position:absolute;transform:translateX(-50%);text-align:center;white-space:nowrap;line-height:1.25}.pflag b{display:block;font-size:13px;color:var(--p-race)}.pflag span{font-size:11px;color:var(--fg-dim)}
+.pflag.up{top:0}.pflag.dn{top:86px}
+.pgap{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border-soft);font-size:12.5px}.pgap .pg-t{color:var(--fg-dim)}.pgap em{font-style:normal;color:var(--fg-faint);margin-left:6px}.pgap .pg-s{display:flex;gap:5px;flex-wrap:wrap}.pgap .chip{font-size:10.5px;padding:2px 8px;border-radius:999px;color:#06140f;font-weight:700}
 .vkey{margin-left:8px;font-size:11px;color:var(--fg-faint);white-space:nowrap}.vkey i{display:inline-block;width:8px;height:8px;border-radius:2px;margin:0 3px 0 6px;vertical-align:baseline}.vk-p{background:var(--p-specific);opacity:.75}.vk-a{background:var(--fg)}.vk-f{background:var(--p-race)}
 
 .tlbar{display:flex;height:11px;border-radius:5px;overflow:hidden;border:1px solid var(--border);gap:1px;background:var(--border)}
@@ -438,6 +444,11 @@ section[hidden]{display:none}
   <div class="timeline" id="volcard">
     <div class="lbl"><span>ระยะวิ่งรายสัปดาห์ <span class="vkey"><i class="vk-p"></i>แผน <i class="vk-a"></i>จริง <i class="vk-f"></i>วันแข่ง</span></span><b id="vol-meta"></b></div>
     <div id="volchart"></div>
+  </div>
+
+  <div class="timeline" id="pathcard" hidden>
+    <div class="lbl"><span>เส้นทางสู่หลายสนาม</span><b>เฟสระหว่างสนาม</b></div>
+    <div id="pathbody"></div>
   </div>
 
   <div class="notes">
@@ -1073,9 +1084,34 @@ section[hidden]{display:none}
     var tot=weeks.reduce(function(a,w){return a+(w.plan_km||0);},0), done=act.reduce(function(a,b){return a+b;},0);
     var m=document.getElementById('vol-meta'); if(m) m.textContent='แผนรวม '+Math.round(tot)+' กม. · จริงแล้ว '+Math.round(done*10)/10+' กม.';
   }
+  // ---- multi-race path: today -> last race, flags + gap summaries ----
+  function renderPath(){
+    var card=document.getElementById('pathcard'), host=document.getElementById('pathbody'); if(!card||!host) return;
+    var races=[]; weeks.forEach(function(w,wi){ w.days.forEach(function(d){ if(d.type==='Race'&&d.dist>=20&&d.date>=today) races.push({d:d,wi:wi,w:w}); }); });
+    if(races.length<2){ card.hidden=true; return; }
+    card.hidden=false;
+    var t0=0; weeks.forEach(function(w,i){ if(w.days.some(function(d){return d.date===today;})) t0=i; });
+    var last=races[races.length-1].wi, ws=weeks.slice(t0,last+1), tot=ws.length*7;
+    function pos(date,wi){ var w=weeks[wi], k=0; for(var i=0;i<w.days.length;i++){ if(w.days[i].date===date){k=i;break;} } var dd=Math.round((new Date(date+'T00:00:00')-new Date(w.monday+'T00:00:00'))/86400000); return ((wi-t0)*7+dd+0.5)/tot*100; }
+    var bar=ws.map(function(w){return '<i style="flex:1;background:'+(PHASE_COLOR[w.phase]||PHASE_COLOR['อื่นๆ'])+'" title="สัปดาห์ '+w.idx+' · '+w.phase+'"></i>';}).join('');
+    var flags=races.map(function(r,i){
+      var p=pos(r.d.date,r.wi), up=(i%2===0), left=Math.min(Math.max(p,14),86);
+      var days=Math.round((new Date(r.d.date+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
+            var end=p>80;
+      return '<div class="pflag '+(up?'up':'dn')+'" style="left:'+(end?p:left)+'%'+(end?';transform:translateX(-100%);text-align:right':'')+'"><b>'+raceShort(r.d)+'</b><span>อีก '+days+' วัน</span></div><u class="ppin '+(up?'up':'dn')+'" style="left:'+p+'%"></u>';
+    }).join('');
+    var gaps='';
+    for(var i=0;i<races.length-1;i++){
+      var a=races[i], b=races[i+1], seq=[];
+      weeks.forEach(function(w){ if(w.monday>a.d.date && w.monday<=b.d.date){ if(seq.length&&seq[seq.length-1].p===w.phase) seq[seq.length-1].n++; else seq.push({p:w.phase,n:1}); } });
+      var gw=Math.round((new Date(b.d.date+'T00:00:00')-new Date(a.d.date+'T00:00:00'))/604800000);
+      gaps+='<div class="pgap"><span class="pg-t">'+raceShort(a.d).replace(/ \d+K$/,'')+' → '+raceShort(b.d).replace(/ \d+K$/,'')+' <em>'+gw+' สัปดาห์</em></span><span class="pg-s">'+seq.map(function(s){return '<span class="chip" style="background:'+(PHASE_COLOR[s.p]||PHASE_COLOR['อื่นๆ'])+'">'+s.p+(s.n>1?' ×'+s.n:'')+'</span>';}).join('')+'</span></div>';
+    }
+    host.innerHTML='<div class="ptrack"><div class="pbar">'+bar+'</div>'+flags+'</div>'+gaps;
+  }
   function render(){
     weeksEl.innerHTML='';
-    try{renderVol();}catch(e){}
+    try{renderVol();}catch(e){} try{renderPath();}catch(e){}
     weeks.forEach(function(w,i){
       var isPast = i < todayIdx;
       if(isPast && !showPast) return;
