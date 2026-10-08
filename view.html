@@ -1,0 +1,1840 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="build" content="1791441546">
+<title>แผนซ้อม ATM 42</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a1220">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: a trail-map spine (vertical phase timeline) running down the page,
+   weekly panels read like elevation-profile segments along that spine, each day a
+   clickable waypoint card that opens a logbook entry for its run. */
+:root{
+  --bg:#0a1220;
+  --bg2:#0d1829;
+  --surface:#121e35;
+  --surface2:#17253f;
+  --surface3:#1e2f4e;
+  --border:#283e63;
+  --border-soft:#1b2c48;
+  --fg:#eef2f8;
+  --fg-dim:#9bacca;
+  --fg-faint:#5d719a;
+  --accent:#4fe3ac;
+  --accent-strong:#2fcf96;
+  --accent-dim:#1a4a5c;
+  --warn:#e8b34a;
+  --good:#4fe3ac;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px -16px rgba(0,0,0,.6);
+
+  --p-base:#6fd17a;
+  --p-specific:#4fa8e0;
+  --p-peak:#ef6e5b;
+  --p-taper:#b48bf0;
+  --p-recovery:#7c93a0;
+  --p-race:#f0c84a;
+  --p-sharpen:#49c7c2;
+  --p-rebuild:#8fcf5a;
+  --p-pretaper:#6a7a75;
+  --p-other:#5f7872;
+}
+/* Committed to a single navy look on purpose (per request) — the page no longer
+   switches to a light palette based on device/system theme. */
+:root,
+:root[data-theme="light"],
+:root[data-theme="dark"]{ color-scheme: dark; }
+
+*{box-sizing:border-box}
+.brand .blogo{width:24px;height:24px;border-radius:7px;vertical-align:-6px;margin-right:4px}
+body::after{content:"";position:fixed;right:-30px;bottom:-10px;width:min(300px,62vw);aspect-ratio:305/334;background:url(watermark.png) center/contain no-repeat;opacity:.04;pointer-events:none;z-index:1;-webkit-mask-image:linear-gradient(to top,transparent 0,#000 18%);mask-image:linear-gradient(to top,transparent 0,#000 18%)}
+body{
+  margin:0;
+  background:
+    radial-gradient(ellipse 900px 420px at 15% -10%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 110% 10%, color-mix(in srgb, var(--p-specific) 10%, transparent), transparent 60%),
+    var(--bg);
+  color:var(--fg);
+  font-family:"Noto Sans Thai","IBM Plex Sans Thai","IBM Plex Sans",system-ui,sans-serif;
+  padding-inline:16px;
+  padding-block:20px 48px;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+.wrap{max-width:1180px;margin:0 auto;min-width:0}
+h1,h2,h3{font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-weight:700;text-wrap:balance;margin:0}
+.tnum{font-variant-numeric:tabular-nums}
+button{font-family:inherit}
+
+/* contour-line trail texture behind the hero */
+.topo{
+  position:relative;border-radius:20px;overflow:hidden;
+  background:linear-gradient(165deg, var(--surface3), var(--surface));
+  border:1px solid var(--border);box-shadow:var(--shadow);
+  padding:22px 24px;margin-bottom:18px;
+}
+.topo svg{position:absolute;inset:0;width:100%;height:100%;opacity:.35;pointer-events:none}
+.topo .content{position:relative;z-index:1}
+
+/* ---------- header ---------- */
+.hero{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.hero>div{min-width:0;flex:1 1 220px}
+.hero .eyebrow{font-size:11.5px;letter-spacing:.09em;color:var(--fg-dim);text-transform:uppercase;margin-bottom:8px;opacity:.9;overflow-wrap:break-word;word-break:break-word}
+.hero h1{font-size:clamp(28px,5vw,42px);font-weight:700;color:var(--fg);letter-spacing:.01em;overflow-wrap:break-word}
+.hero .sub{color:var(--fg-dim);font-size:14px;margin-top:7px;overflow-wrap:break-word;word-break:break-word}
+.racepill{
+  display:flex;align-items:center;gap:10px;background:color-mix(in srgb, var(--surface) 60%, transparent);
+  backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:999px;padding:9px 18px;font-size:13px;color:var(--fg-dim);
+}
+.racepill b{color:var(--fg);font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-size:19px}
+.racepill .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent)}
+
+/* ---------- stat tiles ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+@media (max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:15px 16px;min-width:0;box-shadow:var(--shadow)}
+.stat .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-faint);margin-bottom:7px}
+.stat .v{font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-size:25px;font-weight:600;color:var(--fg)}
+.stat .v span{font-size:14px;color:var(--fg-dim);font-weight:500;font-family:"IBM Plex Sans Thai"}
+.stat .d{font-size:11.5px;color:var(--fg-dim);margin-top:4px}
+
+/* ---------- timeline ---------- */
+.timeline{margin-bottom:18px;background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:16px 18px;box-shadow:var(--shadow)}
+.timeline .lbl{font-size:12px;color:var(--fg-faint);margin-bottom:9px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.timeline .lbl b{color:var(--fg-dim)}
+.ptrack{position:relative;height:118px;margin:2px 0 8px}
+.pbar{position:absolute;left:0;right:0;top:50px;height:12px;display:flex;gap:2px;border-radius:6px;overflow:hidden}.pbar i{opacity:.8}
+.ppin{position:absolute;width:2px;background:var(--p-race);transform:translateX(-1px)}.ppin.up{top:28px;height:34px}.ppin.dn{top:50px;height:34px}
+.pflag{position:absolute;transform:translateX(-50%);text-align:center;white-space:nowrap;line-height:1.25}.pflag b{display:block;font-size:13px;color:var(--p-race)}.pflag span{font-size:11px;color:var(--fg-dim)}
+.pflag.up{top:0}.pflag.dn{top:86px}
+.pgap{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border-soft);font-size:12.5px}.pgap .pg-t{color:var(--fg-dim)}.pgap em{font-style:normal;color:var(--fg-faint);margin-left:6px}.pgap .pg-s{display:flex;gap:5px;flex-wrap:wrap}.pgap .chip{font-size:10.5px;padding:2px 8px;border-radius:999px;color:#06140f;font-weight:700}
+.readycard{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:0 0 16px;padding:14px 16px;border-radius:13px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow)}
+.readycard>div{min-width:0}.readycard b{display:block;font-size:14px}.readycard span{display:block;font-size:12px;color:var(--fg-dim);margin-top:2px}
+.readycard .btn{flex:none;white-space:nowrap}
+.readycard.rc-ok{border-color:#2a5a3c}.readycard.rc-warn{border-color:#8a6a1e;background:color-mix(in srgb,var(--warn) 8%,var(--surface))}.readycard.rc-bad{border-color:#8a3a30;background:color-mix(in srgb,#ef6e5b 8%,var(--surface))}
+.rd-card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:16px;display:flex;flex-direction:column;gap:16px}
+.rd-f label{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--fg-dim);margin-bottom:6px}.rd-f label b{color:var(--fg);font-variant-numeric:tabular-nums}
+.rd-f input[type=range]{width:100%;accent-color:var(--accent);min-height:28px}
+.rd-step{display:flex;align-items:center;gap:10px}.rd-step button{width:44px;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--fg);font-size:20px;cursor:pointer}.rd-step .c{flex:1;text-align:center;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.rd-result{border-radius:13px;border:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.rd-result .tg{width:fit-content;font-size:11px;font-weight:700;letter-spacing:.06em;padding:3px 10px;border-radius:999px}
+.rd-result h3{font-size:17px;line-height:1.35}.rd-result p{font-size:13.5px;line-height:1.55;color:var(--fg-dim)}
+.rd-result .eff{margin-top:2px;padding:10px 12px;border-radius:9px;background:var(--surface);border:1px dashed var(--border);font-size:13px;line-height:1.5}
+.rd-result .nt{font-size:12px;color:var(--fg-faint)}
+.rd-ok{background:color-mix(in srgb,#4fe3ac 9%,var(--surface));border-color:#2a5a3c}.rd-ok .tg{background:#2a5a3c;color:#7fe3a3}
+.rd-warn{background:color-mix(in srgb,var(--warn) 9%,var(--surface));border-color:#8a6a1e}.rd-warn .tg{background:#5c4a1a;color:var(--warn)}
+.rd-bad{background:color-mix(in srgb,#ef6e5b 9%,var(--surface));border-color:#8a3a30}.rd-bad .tg{background:#5c2222;color:#ff8a7a}
+.rd-log{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:6px}.rd-row{display:grid;grid-template-columns:48px 1fr auto;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border-soft);font-size:12.5px}.rd-row:last-child{border-bottom:none}
+.rd-d{color:var(--fg-faint);font-size:11.5px;font-variant-numeric:tabular-nums}.rd-l{display:flex;gap:7px;align-items:center;min-width:0}.rd-l i{width:9px;height:9px;border-radius:50%;flex:none}.rd-empty{padding:14px;text-align:center;color:var(--fg-faint);font-size:12.5px}
+.dadj{margin:4px 0 2px;font-size:10.5px;font-weight:700;color:var(--warn)}
+.padj{margin-bottom:8px;padding:7px 10px;border-radius:8px;background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);font-size:12.5px;font-weight:600}
+.vkey{margin-left:8px;font-size:11px;color:var(--fg-faint);white-space:nowrap}.vkey i{display:inline-block;width:8px;height:8px;border-radius:2px;margin:0 3px 0 6px;vertical-align:baseline}.vk-p{background:var(--p-specific);opacity:.75}.vk-a{background:var(--fg)}.vk-f{background:var(--p-race)}
+
+.tlbar{display:flex;height:11px;border-radius:5px;overflow:hidden;border:1px solid var(--border);gap:1px;background:var(--border)}
+.tlbar i{flex:1;min-width:2px}
+.tlbar i.today{outline:2px solid var(--fg);outline-offset:-2px;z-index:1}
+.legend{display:flex;flex-wrap:wrap;gap:9px 16px;margin-top:11px;font-size:11.5px;color:var(--fg-dim)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
+
+/* ---------- decision callouts ---------- */
+.notes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+@media (max-width:760px){.notes{grid-template-columns:1fr}}
+.note{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:13px 15px;box-shadow:var(--shadow)}
+.note .t{font-size:11.5px;color:var(--accent);font-weight:700;letter-spacing:.04em;margin-bottom:5px}
+.note p{margin:0;font-size:13px;color:var(--fg-dim);line-height:1.6}
+
+/* ---------- weeks ---------- */
+.weeksbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+.weeksbar h2{font-size:18px}
+.weeksbar .hint{font-size:12px;color:var(--fg-faint)}
+.toggle{
+  background:var(--surface2);border:1px solid var(--border);color:var(--fg-dim);
+  border-radius:9px;padding:8px 14px;font-size:13px;cursor:pointer;transition:border-color .15s,color .15s;
+}
+.toggle:hover{color:var(--fg);border-color:var(--accent-dim)}
+
+.week{border:1px solid var(--border);border-radius:16px;background:var(--surface);margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow)}
+.week.past{opacity:.68}
+.week .whead{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:13px 17px;
+  border-bottom:1px solid var(--border);background:var(--surface2);
+}
+.week .whead .chip{
+  font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px;color:#06140f;letter-spacing:.03em;
+}
+.week .whead .wname{font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-size:15px;font-weight:600;color:var(--fg)}
+.week .whead .wmeta{margin-left:auto;font-size:12px;color:var(--fg-dim);display:flex;gap:14px}
+.week .whead .wmeta b{color:var(--fg);font-weight:600}
+.week .whead .wtotal b{font-size:17px;font-weight:700}
+
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:0}
+@media (max-width:900px){.days{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:480px){.days{grid-template-columns:1fr}}
+.day{
+  border-right:1px solid var(--border-soft);border-top:1px solid var(--border-soft);
+  border-left:3px solid var(--accent-day, transparent);
+  padding:12px 13px 12px 11px;min-width:0;position:relative;min-height:112px;
+  transition:background .12s;
+}
+.days .day:nth-child(7n){border-right:none}
+@media (max-width:900px){.days .day{border-right:1px solid var(--border-soft)}.days .day:nth-child(2n){border-right:none}}
+.day.today{background:color-mix(in srgb, var(--accent) 9%, transparent)}
+.day.clickable{cursor:pointer}
+.day.clickable:hover{background:var(--surface2)}
+.day .ddate{font-size:11px;color:var(--fg-faint);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.day .ddate .today-tag{background:var(--accent);color:#06140f;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:999px}
+.day .dtype{font-size:12.5px;font-weight:600;color:var(--fg);margin-bottom:3px}
+.day .ddesc{font-size:11.5px;color:var(--fg-dim);line-height:1.42;margin-bottom:5px;word-break:break-word}
+.day .dchip b{font-weight:700}
+.day .dchip .hrt{font-size:1.05em}
+.day .dchip.z1{color:#8fb4d9}.day .dchip.z2{color:#4fe3ac}.day .dchip.z3{color:#e8d34a}.day .dchip.z4{color:#f0993c}.day .dchip.z5{color:#ef5b5b}
+.day .dchip{background:transparent;border:none;padding:0;margin-top:8px}
+.day .dgym{font-size:14px;color:var(--p-specific);font-weight:600;line-height:1.35}
+.day .dcheck{position:absolute;top:10px;right:12px;color:var(--good);font-size:15px;font-weight:700}
+.week .whead .thisweek{font-size:11.5px;padding:2px 9px;border-radius:8px;background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent)}
+.day .pc{white-space:nowrap}
+.day .ddist{font-size:13px;color:var(--fg-dim);line-height:1.3}
+.day .ddist b{font-size:20px;color:var(--fg);font-weight:700}
+.day .ddist small{font-size:11px;color:var(--fg-faint)}
+.day .dtime{font-size:12px;color:var(--fg-dim);margin-top:2px}
+.day .dchip{display:block;white-space:nowrap;margin-top:6px;border:none!important;background:transparent!important;padding:0!important;border-radius:0!important;font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--fg-dim);align-self:flex-start}
+.day .dzone{font-size:11px;color:var(--fg-faint);line-height:1.42}
+.day .dactual{margin-top:7px;font-size:11px;color:var(--good);display:flex;align-items:center;gap:4px;font-weight:600}
+.day .dactual.miss{color:var(--fg-faint);font-weight:400}
+.day.rest{color:var(--fg-faint)}
+.day.rest .dtype{color:var(--fg-faint)}
+.day .editicon{position:absolute;top:10px;right:11px;font-size:10px;color:var(--fg-faint);opacity:0;transition:opacity .12s}
+.day.clickable:hover .editicon{opacity:1}
+
+footer{margin-top:28px;font-size:12px;color:var(--fg-faint);text-align:center}
+
+/* ---------- modal ---------- */
+.overlay{
+  position:fixed;inset:0;background:rgba(5,10,8,.6);backdrop-filter:blur(2px);
+  display:flex;align-items:center;justify-content:center;padding:16px;z-index:50;
+}
+.overlay[hidden]{display:none}
+.modal{
+  width:100%;max-width:420px;max-height:88vh;overflow-y:auto;background:var(--surface);
+  border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:0 20px 60px -20px rgba(0,0,0,.6);
+}
+.modal h3{font-size:17px;margin-bottom:3px}
+.modal .msub{font-size:12px;color:var(--fg-dim);margin-bottom:12px}
+.modal .mplan{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--fg-dim);line-height:1.5;margin-bottom:14px}
+.modal .mplan:empty{display:none}
+.modal .mplan.rich{padding:12px 14px}
+.mplan .ph-title{font-size:15px;font-weight:700;color:var(--fg);margin-bottom:4px;line-height:1.35}
+.mplan .ph-sub{font-size:12.5px;color:var(--fg-dim);margin-bottom:8px;line-height:1.45}
+.mplan .psteps{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.mplan .psteps li{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;padding:10px 12px}
+.mplan .pn{flex:none;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#06140f;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.mplan .pb{min-width:0;flex:1}
+.mplan .pt{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--fg-dim)}.mplan .pt b{color:var(--fg);font-size:13.5px}
+.mplan .pp{font-size:24px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1.15;margin:2px 0 4px}.mplan .pp small{font-size:12px;font-weight:500;color:var(--fg-faint)}
+.mplan .pc{display:flex;gap:6px;flex-wrap:wrap}.mplan .hc,.mplan .zc{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--border)}.mplan .hc{color:#ef8f8f;border-color:#6b3a46}.mplan .zc{color:var(--fg-dim)}
+.mplan .ptail{margin-top:6px;font-size:12px;color:var(--warn);line-height:1.4}
+.mplan .psingle{background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;padding:10px 12px;margin-top:6px}
+.mplan .ptip{margin-top:10px;font-size:12.5px;color:var(--fg-dim);line-height:1.5;border-top:1px dashed var(--border);padding-top:8px}
+
+.exlist{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:6px}
+.exlist .exrow{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);padding:11px 13px;font-size:13px}
+.exlist .exrow .exname{color:var(--fg)}
+.exlist .exrow .exsets{color:var(--fg-dim);font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.modal label{display:block;font-size:11.5px;color:var(--fg-faint);margin-bottom:5px;margin-top:12px;letter-spacing:.02em}
+.modal label:first-of-type{margin-top:0}
+.modal input{
+  width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--fg);
+  border-radius:8px;padding:9px 11px;font-size:14px;font-family:inherit;
+}
+.modal input:focus{outline:2px solid var(--accent-dim);border-color:var(--accent)}
+.timegrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.timegrid span{font-size:10px;color:var(--fg-faint);display:block;margin-top:3px;text-align:center}
+.modal .derived{font-size:12px;color:var(--accent);margin-top:10px;min-height:16px}
+.modal .mbtns{display:flex;gap:8px;margin-top:18px}
+.btn{border-radius:9px;padding:10px 14px;font-size:13.5px;font-weight:600;cursor:pointer;border:1px solid transparent;flex:1}
+.btn-primary{background:var(--accent);color:#06140f}
+.btn-primary:hover{background:var(--accent-strong)}
+.btn-ghost{background:transparent;border-color:var(--border);color:var(--fg-dim)}
+.btn-ghost:hover{color:var(--fg);border-color:var(--fg-faint)}
+.btn-danger{background:transparent;border-color:color-mix(in srgb, #e05a4e 50%, var(--border));color:#e05a4e;flex:0 0 auto}
+.btn-danger:hover{background:color-mix(in srgb, #e05a4e 12%, transparent)}
+.modal .close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--fg-faint);font-size:18px;cursor:pointer;line-height:1}
+.modal{position:relative}
+.savestate{font-size:11.5px;color:var(--fg-faint);margin-top:8px;min-height:14px}
+
+/* ---------- top nav ---------- */
+.topnav{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:30;
+  display:flex;align-items:center;gap:4px;margin-bottom:18px;padding:6px;
+  background:color-mix(in srgb, var(--surface) 88%, transparent);backdrop-filter:blur(10px);
+  border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow);
+}
+.topnav .brand{font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-weight:700;font-size:15px;color:var(--fg);padding:0 10px 0 6px;white-space:nowrap}
+.topnav .tabs{display:flex;gap:2px;flex:1;overflow-x:auto}
+.navtab{
+  border:none;background:transparent;color:var(--fg-dim);font-size:13px;font-weight:600;
+  padding:9px 14px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:background .12s,color .12s;
+}
+.navtab:hover{color:var(--fg)}
+.navtab.active{background:var(--accent);color:#06140f}
+section[hidden]{display:none}
+
+/* ---------- profile view ---------- */
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:600px){.pgrid{grid-template-columns:1fr}}
+.field{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow)}
+.field label{display:block;font-size:11.5px;color:var(--fg-faint);margin-bottom:7px}
+.field input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--fg);border-radius:8px;padding:9px 10px;font-size:15px;font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif}
+.field input:focus{outline:2px solid var(--accent-dim);border-color:var(--accent)}
+.pbgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+@media (max-width:700px){.pbgrid{grid-template-columns:repeat(2,1fr)}}
+.pbfield{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow)}
+.pbfield .pblabel{font-size:11.5px;color:var(--fg-faint);margin-bottom:8px}
+.pbtime{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.pbtime input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--fg);border-radius:7px;padding:7px 6px;font-size:13px;text-align:center;font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif}
+.pbtime span{display:block;font-size:9.5px;color:var(--fg-faint);text-align:center;margin-top:3px}
+.sectitle{font-size:16px;font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-weight:600;margin:22px 0 10px}
+.sectitle.first{margin-top:4px}
+.zonetable{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.zonetable th,.zonetable td{padding:11px 14px;text-align:left;font-size:13px;border-bottom:1px solid var(--border-soft)}
+.zonetable th{color:var(--fg-faint);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;background:var(--surface2)}
+.zonetable tr:last-child td{border-bottom:none}
+.zonetable td.z{display:flex;align-items:center;gap:9px;font-weight:600}
+.zonetable td.z i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.zonetable td.bpm{font-family:"Noto Sans Thai","IBM Plex Sans Thai",sans-serif;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto}
+.tablewrap .zonetable{min-width:520px}
+.pnote{font-size:12.5px;color:var(--fg-faint);line-height:1.55;margin:4px 0 0}
+.field input[type=date]{color-scheme:dark}
+.profilebtns{display:flex;gap:10px;margin-top:18px;align-items:center}
+.profilebtns .btn{flex:0 0 auto;padding:10px 22px}
+.profilebtns .savestate{margin-top:0}
+
+/* ---------- principles view ---------- */
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:12px;box-shadow:var(--shadow)}
+.pcard h3{font-size:15.5px;margin-bottom:8px;color:var(--accent)}
+.pcard p{font-size:13.5px;line-height:1.75;color:var(--fg-dim);margin:0 0 10px}
+.pcard p:last-child{margin-bottom:0}
+.pcard ul{margin:0 0 10px;padding-left:20px;font-size:13.5px;line-height:1.75;color:var(--fg-dim)}
+.pcard b{color:var(--fg)}
+
+/* ---------- mobile readability: bigger type, no stray horizontal scroll ---------- */
+@media (max-width:640px){
+  .hero .eyebrow{font-size:12.5px}
+  .hero .sub{font-size:14.5px}
+  .racepill{font-size:13.5px;flex-wrap:wrap;overflow-wrap:break-word}
+  .racepill b{font-size:20px}
+  .stat .k{font-size:11.5px}
+  .stat .v{font-size:23px}
+  .stat .d{font-size:12.5px}
+  .timeline .lbl{font-size:12.5px}
+  .legend{font-size:12.5px}
+  .note .t{font-size:12px}
+  .note p{font-size:14px}
+  .week{background:transparent;border:none;box-shadow:none;border-radius:0;margin-bottom:22px}
+  .week .whead{background:transparent;border:none;padding:2px 2px 12px;border-radius:0}
+  .week .whead .wname{font-size:16.5px}
+  .week .whead .wmeta{font-size:12.5px;width:100%;margin-left:0;justify-content:space-between;padding-top:4px}
+  .days{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .day{
+    min-height:150px;padding:16px 15px 15px;
+    border:1px solid var(--border);border-top:1px solid var(--border);
+    border-left:4px solid var(--accent-day, var(--border-soft));
+    border-radius:16px;background:var(--surface);box-shadow:var(--shadow);
+  }
+  .days .day,.days .day:nth-child(2n){border-right:1px solid var(--border)}
+  .day.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent), var(--shadow)}
+  .day .ddate{font-size:14px;margin-bottom:8px}
+  .day .dtype{font-size:20px;font-weight:700;line-height:1.25;margin-bottom:7px}
+  .day .ddesc{font-size:15px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .day .ddist{font-size:14px}
+  .day .ddist b{font-size:23px}
+  .day .ddist b{font-size:24px}
+  .day .ddist small{font-size:12.5px}
+  .day .dtime{font-size:14px;margin-top:3px}
+  .day .dchip{font-size:14px;margin-top:8px}
+  .day .dgym{font-size:15px}
+  .day .editicon{display:none}
+  .week .whead .wtotal{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 10px}
+  .week .whead .wtotal b{font-size:22px}
+  .day .dzone{font-size:13.5px;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .day .dactual{font-size:14.5px;line-height:1.35;border:1px solid var(--border);border-radius:8px;padding:6px 9px;background:var(--surface2)}
+  .day .editicon{opacity:.55}
+  .modal .msub{font-size:12.5px}
+  .modal .mplan{font-size:13.5px}
+  .exlist .exrow{font-size:14px;padding:12px 14px}
+  .modal label{font-size:12.5px}
+  .modal input{font-size:16px}
+  .timegrid span{font-size:11px}
+  .modal .derived{font-size:13px}
+  .savestate{font-size:12.5px}
+  .field label{font-size:12.5px}
+  .field input{font-size:16px}
+  .pbfield .pblabel{font-size:12.5px}
+  .pbtime input{font-size:14px}
+  .pbtime span{font-size:10.5px}
+  .zonetable th,.zonetable td{font-size:14px;padding:10px 10px}
+  .zonetable th{font-size:11.5px}
+  .pcard h3{font-size:16px}
+  .pcard p,.pcard ul{font-size:14.5px}
+  footer{font-size:12.5px}
+}
+
+@media (max-width:640px){
+  .week{box-sizing:border-box;max-width:100%;border-left:4px solid var(--wc,var(--border));padding-left:9px;border-radius:6px 0 0 6px}
+  .week .whead{padding:2px 0 12px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .week .whead .wname{font-size:19px;font-weight:600}
+  .week .whead .wmeta{width:100%;justify-content:flex-end;padding:0}
+  .week .whead .wmeta>span:last-child{display:none}
+  .week .whead .wtotal{background:var(--surface2);border:none;border-radius:6px;padding:5px 11px;font-size:14px;color:var(--fg-dim)}
+  .week .whead .wtotal b{font-size:14px;font-weight:500;color:var(--fg-dim)}
+  .days{gap:9px;max-width:100%}
+  .day{min-width:0;box-sizing:border-box}
+  .day{min-height:0;padding:14px 14px 12px;border-radius:12px;border:1px solid var(--border);border-left:3px solid var(--accent-day,var(--border-soft));box-shadow:none;background:var(--surface)}
+  .day .ddate{font-size:15px;margin-bottom:4px;color:var(--fg-dim)}
+  .day .dtype{font-size:18px;font-weight:500;margin-bottom:2px;line-height:1.3}
+  .day .ddist{font-size:15px;color:var(--fg-dim);line-height:1.45}
+  .day .ddist b{font-size:15px;font-weight:400;color:var(--fg-dim)}
+  .day .ddist small{font-size:15px;color:var(--fg-dim)}
+  .day .dtime{font-size:15px;color:var(--fg-dim);margin-top:2px}
+  .day .dchip{font-size:13.5px;margin-top:6px;white-space:nowrap}
+  .day .dchip b{margin-right:5px}
+  .day .dgym{font-size:15px;font-weight:400;color:var(--p-specific)}
+  .day .dactual{font-size:14.5px;margin-top:8px;border-radius:6px;background:var(--bg)}
+  .day.today{border:2px solid var(--p-specific);box-shadow:none}
+  .day .dcheck{top:12px;right:14px;font-weight:400}
+  body::after{opacity:.035}
+}
+/* ---- UI polish: press feedback, 44px targets, text wrapping ---- */
+.btn,.btn-primary,.btn-ghost,.btn-danger,.navtab,.toggle,.week .whead,.day.clickable{transition-property:transform,background-color,border-color,color,opacity;transition-duration:.12s;transition-timing-function:ease-out}
+.btn:active,.btn-primary:active,.btn-ghost:active,.btn-danger:active,.navtab:active,.toggle:active{transform:scale(.96)}
+.day.clickable:active{transform:scale(.985)}
+.btn,.btn-primary,.btn-ghost,.btn-danger{min-height:44px}
+.navtab,.toggle{min-height:44px;display:inline-flex;align-items:center}
+.modal .close{width:44px;height:44px;top:6px;right:6px;display:flex;align-items:center;justify-content:center}
+h1,h2,h3,.ph-title,.wname{text-wrap:balance}
+p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
+.modal .mplan.rich .psteps li{border-radius:8px}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important}}
+/* ---- theme refresh: calmer layered surfaces, readable secondary text, harmonised phase colours ---- */
+:root{
+  --bg:#0a121e; --bg2:#0e1a2b; --surface:#122035; --surface2:#182841; --surface3:#20335242;
+  --border:#2b4166; --border-soft:#1c2f4c;
+  --fg:#f1f5fb; --fg-dim:#aebbd4; --fg-faint:#8497b9;
+  --accent:#52e6b0; --accent-strong:#34d39b; --accent-dim:#1d5160;
+  --warn:#efbb55;
+  --shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 14px 32px -18px rgba(0,0,0,.7);
+  --p-base:#62d28a; --p-specific:#58a8ea; --p-peak:#f27b64; --p-taper:#ab94f2; --p-recovery:#8499a8; --p-race:#f3c85e; --p-sharpen:#4fcac4;
+}
+.timeline,.note,.stat,.rd-card,.readycard{border-radius:14px}
+.stat .v,.hero h1{letter-spacing:-.01em}
+.navtab.active{box-shadow:0 6px 16px -8px color-mix(in srgb,var(--accent) 70%,transparent)}
+.btn-primary{box-shadow:0 8px 18px -10px color-mix(in srgb,var(--accent) 80%,transparent)}
+.day{border-color:var(--border-soft)}
+</style>
+
+<div class="wrap">
+
+  <div class="topnav">
+    <span class="brand"><img class="blogo" src="icon-192.png" alt="" width="24" height="24"> แผนซ้อม Bee</span>
+    <div class="tabs" id="navtabs">
+      <button class="navtab active" data-view="home">หน้าแรก</button>
+      <button class="navtab" data-view="profile">โปรไฟล์</button>
+      <button class="navtab" data-view="principles">หลักการ</button>
+      <button class="navtab" data-view="check">เช็กก่อนวิ่ง</button>
+      <a class="navtab" href="new.html" style="display:inline-flex;align-items:center;text-decoration:none">สร้างแผนใหม่</a>
+    </div>
+  </div>
+
+  <section id="view-home">
+
+  <div class="topo">
+    <svg viewBox="0 0 800 220" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M-20 170 C 100 120, 180 190, 260 140 S 420 60, 520 110 S 680 180, 840 100" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".5"/>
+      <path d="M-20 200 C 120 150, 220 210, 320 160 S 460 90, 560 140 S 720 200, 840 130" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"/>
+      <path d="M-20 140 C 90 95, 190 150, 300 105 S 440 40, 560 80 S 700 140, 840 70" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".25"/>
+    </svg>
+    <div class="content">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">แผนซ้อมต่อเนื่อง · กำแพงแสน 50K → ATM → เชียงใหม่ 21K → บุรีรัมย์</div>
+          <h1>ATM Marathon 42.2K</h1>
+          <div class="sub">วันแข่ง 29 พ.ย. 2569 · สนามหลวง · สตาร์ท 02:00 น.</div>
+        </div>
+        <div class="racepill"><span class="dot"></span><span id="countdown-lbl">เหลืออีก</span> <b id="countdown-num" class="tnum">—</b> วัน</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="k">เป้าหมาย A / B</div>
+      <div class="v" id="stat-goal">—</div>
+      <div class="d" id="stat-goal-pace">—</div>
+    </div>
+    <div class="stat">
+      <div class="k">Adherence</div>
+      <div class="v" id="stat-adh">—<span>%</span></div>
+      <div class="d">ทำตามแผน (เฉพาะวันวิ่ง, ถึงวันนี้)</div>
+    </div>
+    <div class="stat">
+      <div class="k">ระยะสะสม</div>
+      <div class="v" id="stat-km">—<span>กม.</span></div>
+      <div class="d">บันทึกผลจริงแล้วตลอดแผน</div>
+    </div>
+    <div class="stat">
+      <div class="k">PB มาราธอน</div>
+      <div class="v" id="stat-pb">—</div>
+      <div class="d">สถิติส่วนตัว</div>
+    </div>
+  </div>
+
+  <div class="readycard" id="readycard"></div>
+
+  <div class="timeline">
+    <div class="lbl"><span id="tl-title">ไทม์ไลน์เฟส</span><b id="tl-current">—</b></div>
+    <div class="tlbar" id="tlbar"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="timeline" id="volcard">
+    <div class="lbl"><span>ระยะวิ่งรายสัปดาห์ <span class="vkey"><i class="vk-p"></i>แผน <i class="vk-a"></i>จริง <i class="vk-f"></i>วันแข่ง</span></span><b id="vol-meta"></b></div>
+    <div id="volchart"></div>
+  </div>
+
+  <div class="timeline" id="pathcard" hidden>
+    <div class="lbl"><span>เส้นทางสู่หลายสนาม</span><b>เฟสระหว่างสนาม</b></div>
+    <div id="pathbody"></div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <div class="t">DECISION · 1 ต.ค. 2569</div>
+      <p>ปรับเป้า A/B จาก 3:35/3:40 → <b style="color:var(--fg)">3:45:00 / 3:50:00</b> — อิงหลักฐาน 4 แหล่ง: สูตร VCR ของแผน (ทำนาย 3:49:49), VDOT App, ตาราง MCR 90%VCR ในไฟล์เอง และผลจริงจาก FIT file วันที่ 1 ต.ค. (วิ่ง MP ได้ 5:25-5:26/กม.)</p>
+    </div>
+    <div class="note">
+      <div class="t">RULE · HR ceiling 176 bpm</div>
+      <p>วันคุณภาพ (Tempo/Threshold/Interval/MP) เพซนำตามปกติ แต่ถ้า HR ทะลุ 176 bpm ต่อเนื่องช่วงกลาง-ท้าย ให้ผ่อนเพซทันที ไม่ฝืนกดให้ครบตามแผนเป๊ะ</p>
+    </div>
+  </div>
+
+  <div class="weeksbar">
+    <h2>ตารางซ้อมรายสัปดาห์</h2>
+    <span class="hint" id="db-hint"></span>
+    <button class="toggle" id="toggle-past">แสดงสัปดาห์ที่ผ่านมา</button>
+  </div>
+
+  <div id="weeks"></div>
+
+  <footer>อัปเดตจากไฟล์แผนซ้อม ATM.xlsx — คำนวณเพซ/โซนจาก VCR ปัจจุบัน (3.4 m/s) และ HR จาก Karvonen (Resting 53, Max 195) — กดวันที่มีวิ่งเพื่อบันทึกผลจริง</footer>
+  </section>
+
+  <section id="view-check" hidden>
+    <div class="sectitle first">เช็กก่อนวิ่ง</div>
+    <p style="font-size:13px;color:var(--fg-dim);line-height:1.55;margin-bottom:12px">กรอกค่าเช้านี้ แอปจะปรับเพซ/ระยะของวันนี้ในแผนให้ทันที (ตัดความหนัก ช้าลง ลดระยะ หรือแนะนำพัก) ขยับค่าแล้วบันทึกเอง ไม่ต้องกดอะไร</p>
+    <div class="rd-card">
+      <div class="rd-f"><label>HRV เฉลี่ย 7 วัน (baseline) <b id="rd-hrvBase-v"></b></label><input type="range" id="rd-hrvBase" min="30" max="90" step="1"></div>
+      <div class="rd-f"><label>HRV เช้านี้ <b id="rd-hrvToday-v"></b></label><input type="range" id="rd-hrvToday" min="20" max="100" step="1"></div>
+      <div class="rd-f"><label>จำนวนวันติดกันที่ HRV ไม่สมดุล (รวมเช้านี้)</label><div class="rd-step"><button type="button" id="rd-minus" aria-label="ลด">−</button><div class="c" id="rd-days">1</div><button type="button" id="rd-plus" aria-label="เพิ่ม">+</button></div></div>
+      <div class="rd-f"><label>คะแนนนอนหลับ <b id="rd-sleep-v"></b></label><input type="range" id="rd-sleep" min="0" max="100" step="1"></div>
+      <div class="rd-f"><label>Resting HR ปกติ (baseline) <b id="rd-rhrBase-v"></b></label><input type="range" id="rd-rhrBase" min="35" max="80" step="1"></div>
+      <div class="rd-f"><label>Resting HR เช้านี้ <b id="rd-rhrToday-v"></b></label><input type="range" id="rd-rhrToday" min="35" max="90" step="1"></div>
+    </div>
+    <div class="rd-result rd-ok" id="rd-result"><span class="tg" id="rd-tag">—</span><h3 id="rd-title">—</h3><p id="rd-body"></p><div class="eff" id="rd-eff"></div><p class="nt" id="rd-note" hidden></p></div>
+    <div class="sectitle">ประวัติ 7 วันล่าสุด</div>
+    <div class="rd-log" id="rd-log"></div>
+    <p style="font-size:11.5px;color:var(--fg-faint);margin-top:10px">บันทึกในเบราว์เซอร์เครื่องนี้ ไม่ใช่คำแนะนำทางการแพทย์</p>
+  </section>
+
+  <section id="view-profile" hidden>
+    <div class="sectitle first">ข้อมูลนักวิ่ง</div>
+    <div class="pgrid">
+      <div class="field">
+        <label for="p-rhr">Resting HR (bpm)</label>
+        <input id="p-rhr" type="number" min="30" max="120">
+      </div>
+      <div class="field">
+        <label for="p-mhr">Max HR (bpm)</label>
+        <input id="p-mhr" type="number" min="120" max="230">
+      </div>
+      <div class="field">
+        <label for="p-age">อายุ (ปี)</label>
+        <input id="p-age" type="number" min="10" max="100">
+      </div>
+      <div class="field">
+        <label for="p-start">วันเริ่มซ้อม</label>
+        <input id="p-start" type="date">
+      </div>
+      <div class="field">
+        <label for="p-race">วันแข่ง (รายการหลัก)</label>
+        <input id="p-race" type="date">
+      </div>
+    </div>
+    <p class="pnote">เปลี่ยนวันแข่ง = เลื่อนทั้งแผนตามจำนวนวันที่ต่างไป · วันเริ่มซ้อม = ซ่อนสัปดาห์ก่อนหน้านั้น · สถิติ (10K ก่อน ถ้าไม่มีใช้ 5K/21K/42K แปลงเป็น 10K) → VCR สูตรเดียวกับไฟล์ Excel (ปัดลง 0.1 m/s) แล้วสเกลเพซทั้งแผน (VCR 4:54/กม.) · กดบันทึกแล้วหน้าจะโหลดใหม่เอง</p>
+
+    <div class="sectitle">สถิติส่วนตัว (Personal Best)</div>
+    <div class="pbgrid">
+      <div class="pbfield">
+        <div class="pblabel">5K</div>
+        <div class="pbtime">
+          <div><input id="pb-5k-h" type="number" min="0" max="23"><span>ชม.</span></div>
+          <div><input id="pb-5k-m" type="number" min="0" max="59"><span>นาที</span></div>
+          <div><input id="pb-5k-s" type="number" min="0" max="59"><span>วินาที</span></div>
+        </div>
+      </div>
+      <div class="pbfield">
+        <div class="pblabel">10K</div>
+        <div class="pbtime">
+          <div><input id="pb-10k-h" type="number" min="0" max="23"><span>ชม.</span></div>
+          <div><input id="pb-10k-m" type="number" min="0" max="59"><span>นาที</span></div>
+          <div><input id="pb-10k-s" type="number" min="0" max="59"><span>วินาที</span></div>
+        </div>
+      </div>
+      <div class="pbfield">
+        <div class="pblabel">21.1K</div>
+        <div class="pbtime">
+          <div><input id="pb-21k-h" type="number" min="0" max="23"><span>ชม.</span></div>
+          <div><input id="pb-21k-m" type="number" min="0" max="59"><span>นาที</span></div>
+          <div><input id="pb-21k-s" type="number" min="0" max="59"><span>วินาที</span></div>
+        </div>
+      </div>
+      <div class="pbfield">
+        <div class="pblabel">42.2K (มาราธอน)</div>
+        <div class="pbtime">
+          <div><input id="pb-42k-h" type="number" min="0" max="23"><span>ชม.</span></div>
+          <div><input id="pb-42k-m" type="number" min="0" max="59"><span>นาที</span></div>
+          <div><input id="pb-42k-s" type="number" min="0" max="59"><span>วินาที</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="profilebtns">
+      <button class="btn btn-primary" id="p-save">บันทึกโปรไฟล์</button>
+      <span class="savestate" id="p-savestate"></span>
+    </div>
+
+    <div class="sectitle">เพซซ้อมที่คำนวณ (จากสถิติด้านบน)</div>
+    <p class="pnote" id="pace-eq"></p>
+    <table class="zonetable">
+      <thead><tr><th>โซน</th><th>%VCR</th><th>เพซ (น./กม.)</th></tr></thead>
+      <tbody id="pacetable-body"></tbody>
+    </table>
+
+    <div class="sectitle">เป้าหมายวันแข่ง (กรอกเวลาเป้า แล้วคำนวณสปลิตให้)</div>
+    <div class="pgrid">
+      <div class="field"><label for="g-ma">มาราธอน เป้า A</label><input id="g-ma" type="text" inputmode="numeric" placeholder="3:45:00"></div>
+      <div class="field"><label for="g-mb">มาราธอน เป้า B</label><input id="g-mb" type="text" inputmode="numeric" placeholder="3:50:00"></div>
+      <div class="field"><label for="g-ha">ฮาล์ฟ เป้า A</label><input id="g-ha" type="text" inputmode="numeric" placeholder="1:35:00"></div>
+      <div class="field"><label for="g-hb">ฮาล์ฟ เป้า B</label><input id="g-hb" type="text" inputmode="numeric" placeholder="1:40:00"></div>
+    </div>
+    <div class="tablewrap"><table class="zonetable" id="racetable"><thead id="racetable-head"></thead><tbody id="racetable-body"></tbody></table></div>
+    <p class="pnote">5K แรกช้ากว่าเป้า ~8 วิ/กม. · ครึ่งทาง/30K ที่เพซเป้า · ท่อนท้าย (10K สุดท้ายมาราธอน, 6.1K สุดท้ายฮาล์ฟ) เร็วกว่าเป้า 5-6 วิ/กม. ถ้าไหว — ตามไฟล์ Excel</p>
+
+    <div class="sectitle">โซนหัวใจ (Karvonen — คำนวณจาก Resting/Max HR ด้านบน)</div>
+    <table class="zonetable">
+      <thead><tr><th>โซน</th><th>%HRR</th><th>ช่วง bpm</th></tr></thead>
+      <tbody id="zonetable-body"></tbody>
+    </table>
+  </section>
+
+  <section id="view-principles" hidden>
+    <div class="sectitle first">หลักการของแผนนี้</div>
+
+    <div class="pcard">
+      <h3>1. ระบบพื้นฐาน — VCR (Critical Velocity)</h3>
+      <p>แผนนี้สร้างจากตาราง VCR ของ Gunter Lange / อ.เอกวิทย์ — คำนวณ VCR จากผลทดสอบ แล้วแบ่งเพซเป็น 10 โซน ตั้งแต่ ARR (70%) ไปจนถึง EXT110 (110%) โดย VCR ปัจจุบันอิงจากผล 10K race จริง (6 ก.ย. 2569): <b>3.4 m/s</b></p>
+      <p>เหตุผลที่ใช้ผล 10K จากถนนจริงแทนการเทสต์บนลู่ยาง — ลู่ยางสังเคราะห์ได้เปรียบกว่าถนนจริงมาก (energy return, พื้นเรียบ) ขณะที่สนามแข่งจริงทั้งหมดแข่งบนถนน</p>
+    </div>
+
+    <div class="pcard">
+      <h3>2. ปรัชญาการฝึก — Polarized (HR-governed) แทน VCR-pace-only ล้วนๆ</h3>
+      <p>ต้นฉบับ อ.เอกวิทย์/Gunter Lange เป็นระบบ pace-based ล้วนๆ แต่แผนนี้เลือกใช้ Polarized (ARR-heavy, 70/30) แทน MCR-heavy เพราะ:</p>
+      <ul>
+        <li>งานวิจัยนักกีฬา endurance ระดับโลก (Seiler) สนับสนุน 80% เวลาที่ Zone 1-2 ต่ำจริง</li>
+        <li>หลักฐานจากกำแพงแสน 50K — breakdown ชัดเจนช่วง กม.33-51 ขณะที่ HR 72% ของเวลาทั้งหมดอยู่ Zone 3 ขึ้นไป บ่งชี้ว่าร่างกายชินกับ effort สูงเกินจนไม่รู้ตัว</li>
+      </ul>
+      <p><b>กฎ HR-governor:</b> วัน ARR/SCR/Long run — HR นำ เพซตาม (ชะลอทันทีถ้า HR สูงกว่า baseline +8-10bpm) ส่วนวันคุณภาพ (Tempo/Threshold/Interval/MP) — เพซนำตามปกติ แต่มี <b>HR ceiling 176 bpm</b> กันไว้ ถ้าทะลุต่อเนื่องให้ผ่อนเพซทันที</p>
+    </div>
+
+    <div class="pcard">
+      <h3>3. โครงสร้าง MP Tempo แบบ Progressive</h3>
+      <p>Session ที่มี MP tail ยาว (เช่น Dress Rehearsal) แบ่งเป็น 3 ช่วง: ช่วง 1 (~35-40%) @SCR-สูง ฝึกกดตัวเอง → ช่วง 2 (~35-40%) @MP รักษาจังหวะ → ช่วง 3 (~15-20%) เร่งได้ @FCR ถ้า HR ยังไม่เกิน Zone 4 — จำลอง 10 กม.สุดท้ายวันแข่งจริง</p>
+    </div>
+
+    <div class="pcard">
+      <h3>4. โครงสร้างสัปดาห์</h3>
+      <p>จ.เวทบน (เบา) → อ.Quality → พ.Easy → พฤ.Quality → ศ.เวทขา (หนักสุด/สัปดาห์) → ส.พัก/Easy → อา.Long run — เวทขาเหลือแค่ 1 ครั้ง/สัปดาห์ ห่างจาก Quality session ก่อนหน้าและ Long run อย่างน้อย 24-48 ชม. เพื่อไม่ให้กล้ามเนื้อล้าซ้อนทับ</p>
+    </div>
+
+    <div class="pcard">
+      <h3>5. การตัดสินใจล่าสุด (1 ต.ค. 2569)</h3>
+      <p>ปรับเป้า A/B ของ ATM จาก 3:35:00/3:40:00 เป็น <b>3:45:00/3:50:00</b> โดยไม่ต้องรอเทส (ยกเลิก CT 22 ต.ค. แล้ว) — อิงหลักฐาน 5 แหล่งอิสระที่ชี้ไปทางเดียวกัน: สูตร VCR ของแผน, VDOT App, ตาราง VDOT แบบ manual, ตาราง MCR 90%VCR ในไฟล์เอง และผลจริงจาก FIT file วันที่ 1 ต.ค. (วิ่ง MP ได้ 5:25-5:26/กม. ตรงเป๊ะกับที่โมเดลทำนายไว้)</p>
+    </div>
+  </section>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" id="modal">
+    <button class="close" id="modal-close" aria-label="ปิด">✕</button>
+    <h3 id="m-title">—</h3>
+    <div class="msub" id="m-sub">—</div>
+    <div class="mplan" id="m-plan">—</div>
+
+    <div class="exlist" id="exlist" hidden></div>
+
+    <div id="run-fields">
+      <label for="f-dist">ระยะจริง (กม.)</label>
+      <input id="f-dist" type="number" step="0.01" min="0" inputmode="decimal" placeholder="เช่น 23.1">
+
+      <label>เวลาที่ใช้</label>
+      <div class="timegrid">
+        <div><input id="f-h" type="number" min="0" max="23" placeholder="0"><span>ชม.</span></div>
+        <div><input id="f-m" type="number" min="0" max="59" placeholder="0"><span>นาที</span></div>
+        <div><input id="f-s" type="number" min="0" max="59" placeholder="0"><span>วินาที</span></div>
+      </div>
+
+      <label for="f-hr">HR เฉลี่ย (bpm) — ไม่บังคับ</label>
+      <input id="f-hr" type="number" min="0" max="230" placeholder="เช่น 167">
+
+      <label for="f-note">โน้ต — ไม่บังคับ</label>
+      <input id="f-note" type="text" placeholder="เช่น ขาหนักช่วงท้าย">
+
+      <div class="derived" id="m-derived"></div>
+    </div>
+    <div class="savestate" id="m-savestate"></div>
+
+    <div class="mbtns">
+      <button class="btn btn-danger" id="f-delete" hidden>ลบ</button>
+      <button class="btn btn-ghost" id="f-cancel">ยกเลิก</button>
+      <button class="btn btn-primary" id="f-save">บันทึกผล</button>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="plan-data">{}</script>
+<script type="text/plain" id="app-src">
+(function(){
+  "use strict";
+  var VIEW=!!window.__VIEW, MINE=!!window.__MINE, KP=VIEW?'view_':(MINE?'mine_':'');
+  var data;
+  if(VIEW){ data=window.__VIEW.plan; }
+  else if(MINE){
+    try{ data=JSON.parse(localStorage.getItem('atm_custom_plan_v1')||'null'); }catch(e){ data=null; }
+    if(!data||!data.weeks){ location.replace('new.html'); return; }
+  } else { data = JSON.parse(document.getElementById('plan-data').textContent); }
+  var weeks = data.weeks, meta = data.meta;
+
+  // ---- profile-driven plan: race-date shift + pace scaling (10K vs plan baseline) ----
+  var BASE_RACE=VIEW?window.__VIEW.raceISO:(MINE?data.meta.race_date:'2026-11-29'), BASE_10K=2886.9, BASE_KMH=VIEW?window.__VIEW.kmh:(MINE?data.meta.base_kmh:12.24);
+  // same formula as the Excel plan: VCR(m/s)=ROUNDDOWN(10000/time,1); speed km/h = VCR*3.6; zone pace = 60/(km/h * %VCR)
+  function vcrKmh(t10){ return t10>0 ? Math.round(Math.floor(10000/t10*10)/10*3.6*100)/100 : BASE_KMH; }
+  function fmtPace(minPerKm){ var m=Math.floor(minPerKm), s=Math.round((minPerKm-m)*60); if(s===60){m++;s=0;} return m+':'+('0'+s).slice(-2); }
+  var PLAN=(function(){
+    var p=null; try{ p=JSON.parse(localStorage.getItem((KP+'atm_profile_v1'))||'null'); }catch(e){}
+    p=p||{};
+    var delta=0, raceISO=BASE_RACE;
+    if(p.raceDate && /^\d{4}-\d\d-\d\d$/.test(p.raceDate)){
+      raceISO=p.raceDate;
+      delta=Math.round((new Date(raceISO+'T00:00:00')-new Date(BASE_RACE+'T00:00:00'))/86400000);
+    }
+    var t10=eq10(p);
+    var f=BASE_KMH/vcrKmh(t10);
+    return {goals:(p.goals||null), delta:delta, raceISO:raceISO, f:f, start:(p.startDate&&/^\d{4}-\d\d-\d\d$/.test(p.startDate))?p.startDate:null};
+  })();
+  function eq10(pb){
+    pb=pb||{};
+    function sec(o){ return o? ((o.h||0)*3600+(o.m||0)*60+(o.s||0)) : 0; }
+    var t10=sec(pb.pb10k); if(t10>0) return t10;
+    var best=0;
+    [['pb5k',5],['pb21k',21.0975],['pb42k',42.195]].forEach(function(r){
+      var t=sec(pb[r[0]]); if(t>0){ var e=t*Math.pow(10/r[1],1.06); if(!best||e<best) best=e; }
+    });
+    return best;
+  }
+  function parseHMS(t){ if(!t) return 0; var a=String(t).trim().split(':').map(Number); if(a.some(isNaN)) return 0; if(a.length===3) return a[0]*3600+a[1]*60+a[2]; if(a.length===2) return a[0]*60+a[1]; return 0; }
+  function fmtHMS(sec){ sec=Math.round(sec); var h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), x=sec%60; return h+':'+('0'+m).slice(-2)+':'+('0'+x).slice(-2); }
+  function fmtPaceS(sec){ sec=Math.round(sec); return Math.floor(sec/60)+':'+('0'+(sec%60)).slice(-2); }
+  function addDaysISO(iso,n){
+    var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n);
+    return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  }
+  function scalePaces(t){
+    if(!t || PLAN.f===1) return t;
+    return String(t).replace(/(\d):([0-5]\d)(?![\d:])/g,function(m,mm,ss,off,str){
+      if(str.slice(Math.max(0,off-4),off)==='เป้า ' && str.charAt(off+m.length)===')') return m;
+      var sec=Math.round((+mm*60+ +ss)*PLAN.f);
+      return Math.floor(sec/60)+':'+('0'+(sec%60)).slice(-2);
+    });
+  }
+  if(PLAN.delta!==0 || PLAN.f!==1){
+    weeks.forEach(function(w){
+      if(PLAN.delta!==0 && w.monday) w.monday=addDaysISO(w.monday,PLAN.delta);
+      w.days.forEach(function(d){
+        if(PLAN.delta!==0) d.date=addDaysISO(d.date,PLAN.delta);
+        if(PLAN.f!==1){ d.zone=scalePaces(d.zone); d.desc=scalePaces(d.desc); d.note=scalePaces(d.note); }
+      });
+    });
+  }
+  if(PLAN.start){
+    weeks = weeks.filter(function(w){ var last=w.days[w.days.length-1]; return !last || last.date>=PLAN.start; });
+  }
+  function localISO(){var n=new Date();return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2);}
+  var today = localISO();
+
+  var PHASE_COLOR = {
+    Base:'var(--p-base)', Specific:'var(--p-specific)', Peak:'var(--p-peak)',
+    Taper:'var(--p-taper)', Recovery:'var(--p-recovery)', Race:'var(--p-race)',
+    Sharpen:'var(--p-sharpen)', Rebuild:'var(--p-rebuild)', PreTaper:'var(--p-pretaper)',
+    'อื่นๆ':'var(--p-other)'
+  };
+  var PHASE_TH = {
+    Base:'Base — สร้างฐาน aerobic', Specific:'Specific — เจาะจงเป้าหมาย',
+    Peak:'Peak — จุดสูงสุด', Taper:'Taper — ลดโหลดก่อนแข่ง',
+    Recovery:'Recovery — ฟื้นตัว', Race:'Race week — แข่งจริง',
+    Sharpen:'Sharpen — ปรับความเร็ว', Rebuild:'Rebuild — สร้างฟอร์มกลับ',
+    PreTaper:'ก่อนเริ่มแผน', 'อื่นๆ':'อื่นๆ'
+  };
+
+  function fmtDate(iso){
+    var d = new Date(iso+'T00:00:00');
+    var days=['อา','จ','อ','พ','พฤ','ศ','ส'];
+    return days[d.getDay()]+' '+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function fmtDateLong(iso){
+    var months=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    var d = new Date(iso+'T00:00:00');
+    return d.getDate()+' '+months[d.getMonth()]+' '+(d.getFullYear()+543);
+  }
+  function pad2(n){ return String(n).padStart(2,'0'); }
+
+  // ---- stat tiles ----
+  document.getElementById('stat-goal').textContent = meta.goal_a+' / '+meta.goal_b;
+  document.getElementById('stat-goal-pace').textContent = meta.goal_a_pace+'-'+meta.goal_b_pace+' น./กม.';
+  if(PLAN.goals && parseHMS(PLAN.goals.ma) && parseHMS(PLAN.goals.mb)){
+    var gA=parseHMS(PLAN.goals.ma), gB=parseHMS(PLAN.goals.mb);
+    document.getElementById('stat-goal').textContent = fmtHMS(gA)+' / '+fmtHMS(gB);
+    document.getElementById('stat-goal-pace').textContent = fmtPaceS(gA/42.195)+'-'+fmtPaceS(gB/42.195)+' น./กม.';
+  }
+  document.getElementById('stat-adh').innerHTML = meta.adherence.toFixed(0)+'<span>%</span>';
+  document.getElementById('stat-km').innerHTML = meta.total_actual_km.toLocaleString('th-TH',{maximumFractionDigits:1})+'<span>กม.</span>';
+  document.getElementById('stat-pb').textContent = meta.pb;
+  if(MINE){
+    document.title='แผนซ้อมของฉัน — '+meta.title;
+    var brand=document.querySelector('.brand'); if(brand&&brand.lastChild) brand.lastChild.textContent=' แผนซ้อมของฉัน';
+    var ey=document.querySelector('.eyebrow'); if(ey) ey.textContent=meta.eyebrow;
+    var h1=document.querySelector('.hero h1'); if(h1) h1.textContent=meta.title;
+    var pbk=document.getElementById('stat-pb').parentNode.querySelector('.k'); if(pbk) pbk.textContent=meta.pb_label||'ผลล่าสุด';
+    var nt=document.querySelector('.notes'); if(nt){ nt.innerHTML=(meta.notes||[]).map(function(n){return '<div class="note"><div class="t">'+n.t+'</div><p>'+n.p+'</p></div>';}).join(''); }
+    var pt=document.querySelector('[data-view=principles]'); if(pt) pt.style.display='none';
+    var pv=document.getElementById('view-principles'); if(pv) pv.setAttribute('hidden','');
+  }
+
+  var raceDate = new Date(PLAN.raceISO+'T00:00:00');
+  var todayDate = new Date(today+'T00:00:00');
+  var daysLeft = Math.round((raceDate-todayDate)/86400000);
+  document.getElementById('countdown-num').textContent = daysLeft;
+  (function(){ var subs=document.querySelectorAll('.sub'); for(var i=0;i<subs.length;i++){ if(/วันแข่ง/.test(subs[i].textContent)){ subs[i].textContent='วันแข่ง '+fmtDateLong(PLAN.raceISO).replace(/^(\d+) /,'$1 ')+(MINE?(' · '+meta.race_label):' · สนามหลวง · สตาร์ท 02:00 น.'); } } })();
+
+  // ---- phase timeline ----
+  var tlbar = document.getElementById('tlbar');
+  document.getElementById('tl-title').textContent='ไทม์ไลน์เฟส — '+weeks.length+' สัปดาห์';
+  weeks.forEach(function(w){
+    var i = document.createElement('i');
+    i.style.background = PHASE_COLOR[w.phase] || PHASE_COLOR['อื่นๆ'];
+    var isCurrent = w.days.some(function(d){return d.date===today;});
+    if(isCurrent){ i.classList.add('today'); document.getElementById('tl-current').textContent = 'สัปดาห์ '+w.idx+' · '+w.label; }
+    i.title = 'สัปดาห์ '+w.idx+': '+w.label;
+    tlbar.appendChild(i);
+  });
+
+  var legend = document.getElementById('legend');
+  var order = ['Base','Specific','Peak','Taper','Recovery','Sharpen','Rebuild','Race'];
+  order.forEach(function(p){
+    if(!weeks.some(function(w){return w.phase===p;})) return;
+    var span = document.createElement('span');
+    span.innerHTML = '<i style="background:'+PHASE_COLOR[p]+'"></i>'+PHASE_TH[p];
+    legend.appendChild(span);
+  });
+
+  // =====================================================================
+  // db wiring — logged actual results live in the `actuals` collection,
+  // keyed by date (YYYY-MM-DD). Falls back to read-only data baked in
+  // from the Excel plan (data.weeks[].days[].act_dist/act_hr) when a
+  // date has no db entry yet.
+  // =====================================================================
+  var dbNS = null, actualsCol = null;
+  var actualsCache = {}; // date -> {dist,h,m,s,hr,note}
+  var dbHint = document.getElementById('db-hint');
+
+  function findDay(dateStr){
+    for(var i=0;i<weeks.length;i++){
+      for(var j=0;j<weeks[i].days.length;j++){
+        if(weeks[i].days[j].date===dateStr) return weeks[i].days[j];
+      }
+    }
+    return null;
+  }
+
+  // the xlsx plan uses "-" as a placeholder for "not recorded yet" — treat that
+  // (and blanks) as no data, not as a real logged distance
+  function isRealNum(v){
+    return v!==undefined && v!==null && v!=='' && v!=='-' && !isNaN(parseFloat(v));
+  }
+
+  function effectiveActual(d){
+    var a = actualsCache[d.date];
+    if(a) return {dist:a.dist, hr:a.hr, source:'db'};
+    if(isRealNum(d.act_dist)) return {dist:d.act_dist, hr:isRealNum(d.act_hr)?d.act_hr:null, source:'xlsx'};
+    return null;
+  }
+
+  // fallback: when the artifact db is unavailable (e.g. GitHub Pages), keep data in this browser
+  var localMode = false;
+  function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch(e){ return null; } }
+  function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } }
+  function enableLocal(){
+    localMode = true;
+    var a = lsGet((KP+'atm_actuals_v1')) || {};
+    Object.keys(a).forEach(function(k){ actualsCache[k]=a[k]; });
+    dbHint.textContent = 'บันทึกในเบราว์เซอร์เครื่องนี้';
+    render();
+  }
+
+  function initDb(){
+    if(!window.claude || !window.claude.use){ enableLocal(); return; }
+    window.claude.use('db').then(function(ns){
+      dbNS = ns;
+      if(!ns){ enableLocal(); return; }
+      actualsCol = ns.collection('actuals');
+      dbHint.textContent = 'กำลังโหลดผลที่บันทึกไว้…';
+      return actualsCol.limit(1000).get().then(function(snap){
+        snap.docs.forEach(function(doc){ actualsCache[doc.id] = doc.data(); });
+        dbHint.textContent = '';
+        render();
+      });
+    }).catch(function(){ enableLocal(); });
+  }
+
+  // ---- weekly cards ----
+  var weeksEl = document.getElementById('weeks');
+  var showPast = false;
+  var todayIdx = weeks.findIndex(function(w){ return w.days.some(function(d){return d.date===today;}); });
+
+  // gym routines, pulled from the xlsx "Gym Program" sheet
+  var GYM_ROUTINES = {
+    upper: {
+      title:'General Strength — Upper Body (เบา)',
+      note:'เบา ไม่กระทบขา — เตรียมพร้อมสำหรับวัน Quality ถัดไปโดยไม่เสี่ยงล้าขาซ้ำ',
+      ex:[
+        ['Band Pull-Apart','3×15-20'],
+        ['Push-up','3×10-15'],
+        ['Plank + Side Plank','3×30-45วิ'],
+        ["Farmer's Carry เบา",'2×30ม.']
+      ]
+    },
+    genA: {
+      title:'General Strength A',
+      note:'ช่วง Base — เป้าหมาย: สร้างความมั่นคง/ป้องกันบาดเจ็บ · 12-15 ครั้ง/เซ็ต, 3 เซ็ต, พัก 45-60 วิ',
+      ex:[
+        ['Goblet Squat','3×12-15'],
+        ['Romanian Deadlift','3×12'],
+        ['Bulgarian Split Squat','3×10 ต่อข้าง'],
+        ['Step-up','3×10 ต่อข้าง'],
+        ['Glute Bridge / Hip Thrust','3×12'],
+        ['Standing Hip Abduction / Monster Walk','3×12-15 ต่อข้าง'],
+        ['Side-lying Leg Raise / Clamshell','3×12-15 ต่อข้าง'],
+        ['Eccentric Single-leg Calf Raise','3×12-15 ต่อข้าง'],
+        ['Band Pull-Apart','3×15-20'],
+        ['Plank + Side Plank','3×30-45วิ']
+      ]
+    },
+    maxb_opt: {
+      title:'ศุกร์ 9 ต.ค. — เลือก 1 ใน 2',
+      note:'เช้าวันศุกร์ เช็กขาก่อนตัดสินใจ: หลังพฤหัส (MP tempo) ขาไม่ล้า เดินขึ้นบันไดปกติ HRV/RPE ปกติ = เลือก A · ขาหนัก/ปวดตึง, HRV ต่ำ, RHR สูงกว่าปกติ 3+ หรือนอนน้อย = เลือก B (long run อาทิตย์สำคัญกว่าเวต) · ถ้ายกแล้ววิ่ง long run ขาหนักซ้ำ ให้ลดเซตหรือย้ายเวตไปวันจันทร์',
+      ex:[
+        ['A — ขาไม่ล้า: Max Strength B ตามเดิม','3×4-6'],
+        ['  Back Squat / Trap Bar Deadlift','3×5'],
+        ['  Hip Thrust บาร์เบล','3×6'],
+        ['  Bulgarian Split Squat','2×6 ต่อข้าง'],
+        ['  Single-leg RDL','2×8 ต่อข้าง'],
+        ['B — ขาหนัก: เวตเบา (ลดเหลือ 2 เซตต่อท่า)','2 เซต'],
+        ['  Hip Thrust น้ำหนักเบา','2×8'],
+        ['  Split Squat Hold','2×30วิ ต่อข้าง'],
+        ['  Isometric Calf Raise Hold','2×30วิ'],
+        ['  Plank + Side Plank','2×30-45วิ'],
+        ['หรือ พัก — ไม่ยก (ถ้าพฤหัสวิ่งหนักมาก)','ข้ามได้']
+      ]
+    },
+    maxb: {
+      title:'Max Strength B',
+      note:'ช่วง Build/Specific — เป้าหมาย: เพิ่มแรง/ความแข็งแรงสูงสุด · 4-6 ครั้ง/เซ็ต, 3-4 เซ็ต, พัก 2-3 นาที',
+      ex:[
+        ['Pogo jumps / Box jump ต่ำ','3×8-10'],
+        ['Back Squat / Trap Bar Deadlift','4×5'],
+        ['Hip Thrust บาร์เบล','4×6'],
+        ['Bulgarian Split Squat หนัก','3×6 ต่อข้าง'],
+        ['Walking Lunge ถือน้ำหนัก','3×10 ต่อข้าง'],
+        ['Single-leg RDL','3×8 ต่อข้าง']
+      ]
+    },
+    power: {
+      title:'Power / Plyo',
+      note:'ช่วง Peak — เป้าหมาย: คงความแข็งแรง ลด volume · 2-3 ครั้ง/เซ็ต (explosive), 2-3 เซ็ต',
+      ex:[
+        ['Squat Jump','3×5'],
+        ['Single-leg step-down','2×8 ต่อข้าง'],
+        ['Hip Thrust คงน้ำหนักเดิม','3×6'],
+        ['Isometric Calf Raise Hold','2×20-30วิ'],
+        ['Split Squat Hold','2×20-30วิ ต่อข้าง'],
+        ['Pallof Press','3×10 ต่อข้าง']
+      ]
+    },
+    taper: {
+      title:'Taper — ลดโหลด',
+      note:'เป้าหมาย: รักษาความรู้สึก ไม่สร้างความล้าใหม่ — เน้น Isometric Hold เบา',
+      ex:[
+        ['Mobility / Activation เบามาก','10-15 นาที'],
+        ['Isometric Calf Raise Hold','3×30-45วิ'],
+        ['Split Squat Hold','3×30-45วิ ต่อข้าง'],
+        ['Plank สั้นๆ','2×20-30วิ']
+      ]
+    }
+  };
+  function gymRoutineKey(desc){
+    if(!desc) return null;
+    if(/Upper Body/i.test(desc)) return 'upper';
+    if(/ตัวเลือก/.test(desc)) return 'maxb_opt';
+    if(/Max Strength B/i.test(desc)) return 'maxb';
+    if(/Power\s*\/\s*Plyo/i.test(desc)) return 'power';
+    if(/General Strength A/i.test(desc)) return 'genA';
+    if(/Taper/i.test(desc) && /เวท|[Mm]obility/.test(desc)) return 'taper';
+    return null;
+  }
+
+  function dayTypeLabel(d){
+    if(d.type==='Rest') return 'พัก';
+    if(d.type==='Race') return 'วันแข่ง';
+    if(d.type==='Gym') return 'เวท';
+    var t=(d.desc||'').split('(')[0].trim().replace(/\s\d+(\.\d+)?\s*กม\.?/,'').trim();
+    return t || d.type;
+  }
+  function escH(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function parseSeg(t){
+    var o={label:'',pct:null,pace:null,range:null,hr:null,zone:null,tail:''}, m;
+    m=t.match(/เป้า\s*(\d:\d\d)\s*น\./); if(m) o.pace=m[1];
+    m=t.match(/ช่วง\s*(\d:\d\d\s*[-–]\s*\d:\d\d)/); if(m) o.range=m[1].replace(/\s/g,'');
+    m=t.match(/(\d{2,3})%/); if(m) o.pct=m[1];
+    m=t.match(/(\d{3})\s*[-–]\s*(\d{3})\s*bpm/); if(m) o.hr=m[1]+'–'+m[2];
+    m=t.match(/Zone\s*([\d\w]+(?:ปลาย)?(?:-\d?ต้น)?)/i); if(m) o.zone=m[0];
+    var lab=t.split('เป้า')[0].replace(/\(.*?\)/g,'').replace(/\s*\d+%\s*/,' ').replace(/ช่วง\s*\d+\s*/,'').trim();
+    o.label=lab;
+    var after=t.split(/น\.\s*\/\s*กม\.?/)[1]||'';
+    after=after.replace(/\([^)]*bpm[^)]*\)/,'').replace(/\(ช่วง[^)]*\)/,'').trim();
+    o.tail=after.replace(/^[—\-–\s]+/,'').replace(/Zone[^ ]*\s*~?[\d\-–]*bpm/,'').trim();
+    return o;
+  }
+  function planHTML(d){
+    var desc=(d.desc||''), zone=(d.zone&&d.zone!=='-')?d.zone:'';
+    var head=escH(desc.split('(')[0].trim());
+    var inner=(desc.match(/\(([^)]*)\)/)||[])[1]||'';
+    var parts=zone.split(/\s\/\s/), steps=[];
+    parts.forEach(function(p){ var m=p.match(/^\s*ช่วง\s*(\d+)\s*\(([\d.]+)\s*กม\.?\)\s*(.*)$/); if(m) steps.push({n:m[1],km:m[2],seg:parseSeg(m[3])}); });
+    var h=(d._adj?'<div class="padj">⚠ ปรับตามเช็กก่อนวิ่งเช้านี้</div>':'')+((head && head!==dayTypeLabel(d))?'<div class="ph-title">'+head+'</div>':'');
+    if(inner && steps.length) h+='<div class="ph-sub">โครงสร้าง: '+escH(inner)+'</div>';
+    if(steps.length>=2){
+      h+='<ol class="psteps">'+steps.map(function(s){var g=s.seg;
+        return '<li><span class="pn">'+s.n+'</span><div class="pb"><div class="pt"><b>'+escH(s.km)+' กม.</b><span class="pz">'+escH(g.label+(g.pct?' '+g.pct+'%':''))+'</span></div>'+
+          (g.pace?'<div class="pp">'+escH(g.pace)+'<small> /กม.</small></div>':'')+
+          '<div class="pc">'+(g.hr?'<span class="hc">♥ '+escH(g.hr)+' bpm</span>':'')+(g.zone?'<span class="zc">'+escH(g.zone)+'</span>':'')+'</div>'+
+          (g.tail?'<div class="ptail">⚠ '+escH(g.tail)+'</div>':'')+'</div></li>';}).join('')+'</ol>';
+    } else if(zone){
+      var g=parseSeg(zone);
+      if(!g.hr){ var hz=hrZone(zone,d); if(hz){ if(hz.bpm) g.hr=hz.bpm; if(!g.zone) g.zone='Zone'+hz.n; } }
+      if(g.pace) h+='<div class="psingle"><div class="pp">'+escH(g.pace)+'<small> /กม.'+(g.range?' · ช่วง '+escH(g.range):'')+'</small></div><div class="pc">'+(g.label?'<span class="zc">'+escH(g.label+(g.pct?' '+g.pct+'%':''))+'</span>':'')+(g.hr?'<span class="hc">♥ '+escH(g.hr)+' bpm</span>':'')+(g.zone?'<span class="zc">'+escH(g.zone)+'</span>':'')+'</div></div>';
+      else h+='<div class="ph-sub">'+escH(zone)+'</div>';
+      if(inner) h+='<div class="ph-sub">'+escH(inner)+'</div>';
+    } else if(inner) h+='<div class="ph-sub">'+escH(inner)+'</div>';
+    var rest=desc.replace(/\([^)]*\)/,'').trim();
+    if(d.note && !/^กรอกระยะ/.test(d.note)) h+='<div class="ptip">💡 '+escH(d.note)+'</div>';
+    return h;
+  }
+  function parsePace(z){
+    var m=(z||'').match(/(\d):(\d\d)(?:\s*[-–]\s*(\d):(\d\d))?\s*น\./);
+    if(!m) return null;
+    var a=+m[1]*60+ +m[2], b=m[3]?(+m[3]*60+ +m[4]):a;
+    function f(x){return Math.floor(x/60)+':'+('0'+(x%60)).slice(-2);}
+    return {txt: m[3]? f(a)+'-'+f(b) : f(a), mid:(a+b)/2};
+  }
+  function parseHR(z){
+    var m=(z||'').match(/(\d{3})\s*[-–]\s*(\d{3})\s*bpm/);
+    return m? m[1]+'-'+m[2] : null;
+  }
+  function hrZone(z,d){
+    z=z||'';
+    var hr=z.match(/(\d{3})\s*[-–]\s*(\d{3})\s*bpm/);
+    var zn=z.match(/Zone\s*(\d)/i)||z.match(/\bZ(\d)\b/);
+    var n=zn? +zn[1] : null;
+    if(!n && hr){ var lo=+hr[1]; n = lo>=164?4 : lo>=152?3 : lo>=137?2 : 1; }
+    if(!n){
+      var t=((d&&d.desc)||'')+' '+z;
+      if(/threshold|vo2|interval|ext\d|tempo/i.test(t) && !/\bMP\b/.test(t)) return {n:4,bpm:'164–178'};
+      if(/\bMP\b|marathon/i.test(t)) return {n:3,bpm:'158–165'};
+      if(/easy|long|recovery|ฟื้น/i.test(t)) return {n:2,bpm:'138–150'};
+      return null;
+    }
+    return {n:n, bpm: hr? hr[1]+'–'+hr[2] : null};
+  }
+  function fmtDur(sec){
+    var h=Math.floor(sec/3600), mi=Math.round((sec%3600)/60);
+    if(mi===60){h++;mi=0;}
+    return h? h+':'+('0'+mi).slice(-2)+' ชม.' : mi+' นาที';
+  }
+
+  // left-edge accent color per day card — mirrors PaceDee's easy/quality color coding,
+  // falls back to the week's phase color when the workout type can't be classified
+  function dayAccent(d, phaseColor){
+    if(d.type==='Rest') return 'var(--fg-faint)';
+    if(d.type==='Race') return 'var(--p-race)';
+    if(d.type==='Gym') return 'var(--p-specific)';
+    var t = ((d.desc||'')+' '+(d.zone||'')).toLowerCase();
+    if(/tempo|threshold|interval|vo2|repetition|progression|race ?pace|speed|สปีด|แข่งขัน|quality|ext\d|z4|z5/.test(t)) return 'var(--warn)';
+    if(/easy|recovery|aerobic|long|arr|z1|z2|ฟื้นฟู|ยาว/.test(t)) return 'var(--good)';
+    return phaseColor || 'var(--border-soft)';
+  }
+
+  // =====================================================================
+  // เช็กก่อนวิ่ง (readiness) — HRV / sleep / RHR -> adjusts TODAY's workout
+  // =====================================================================
+  var RK = KP+'atm_ready_v1', RLOG = KP+'atm_ready_log_v1';
+  function loadReady(){ try{ return JSON.parse(localStorage.getItem(RK)||'null'); }catch(e){ return null; } }
+  function saveReady(o){ try{ localStorage.setItem(RK, JSON.stringify(o)); }catch(e){} }
+  function todayReady(){ var r=loadReady(); return (r && r.date===today && r.level) ? r : null; }
+  function isQuality(d){ return d && d.type==='Run' && /threshold|tempo|vo2|interval|fartlek|ext\d|fcr|\bMP\b|เร่ง/i.test((d.desc||'')+' '+(d.zone||'')); }
+  function paceShiftTxt(txt, sec){ return String(txt||'').replace(/(\d):(\d\d)/g, function(m,a,b){ var t=+a*60+ +b+sec; return Math.floor(t/60)+':'+('0'+(t%60)).slice(-2); }); }
+  function hrCfg(){ var p=null; try{ p=JSON.parse(localStorage.getItem(KP+'atm_profile_v1')||'null'); }catch(e){} p=p||{}; var mp=(MINE&&meta.profile)||{}; return {rhr:+p.rhr||+mp.rhr||53, mhr:+p.mhr||+mp.mhr||195}; }
+  function adjustDay(d){
+    if(!d || d.date!==today || d.type!=='Run') return d;
+    var r=todayReady(); if(!r || r.level==='ok') return d;
+    var kmh=BASE_KMH/PLAN.f, hc=hrCfg();
+    function hrp(x){ return Math.round(hc.rhr+x*(hc.mhr-hc.rhr)); }
+    function zstr(name,pct,zn,lo,hi){ var p=3600/(kmh*pct); return name+' เป้า '+fmtPaceS(p)+' น./กม. (ช่วง '+fmtPaceS(p-4)+'-'+fmtPaceS(p+4)+') — Zone'+zn+' ~'+hrp(lo)+'-'+hrp(hi)+'bpm'; }
+    var c=JSON.parse(JSON.stringify(d)); c._adj=r.level; c._orig=d;
+    var orig=(d.desc||'').split('(')[0].trim(), q=isQuality(d);
+    if(r.level==='bad'){
+      if(r.rhrElevated){ c.type='Rest'; c.desc='พัก หรือเดินเบา/ยืดเหยียด 20–30 นาที'; c.dist=null; c.zone='-'; }
+      else { if(d.dist) c.dist=Math.max(3, Math.round(d.dist*0.6*2)/2); c.desc='ARR วิ่งฟื้นฟูเบาๆ (ลดโหลด)'; c.zone=zstr('ARR',.70,1,.5,.6); }
+    } else {
+      if(q){ c.desc='SCR วิ่งสบาย (ตัดความหนัก)'; c.zone=zstr('SCR',.80,2,.6,.7); }
+      else { c.zone=paceShiftTxt(d.zone,10); }
+    }
+    c.note='ปรับจากเช็กก่อนวิ่งเช้านี้ ('+r.title+')'+(orig?' · แผนเดิม: '+orig+(d.dist?' '+d.dist+' กม.':''):'');
+    return c;
+  }
+  function readyCompute(i){
+    var imb = i.hrvToday <= i.hrvBase*0.9, rhrEl = i.rhrToday >= i.rhrBase+3, sleepLow = i.sleep < 75, days=i.days, mp=i.mp;
+    var level, tag, title, body, note;
+    if(!imb && !sleepLow && days===0){ level='ok'; tag='พร้อมเต็มที่'; title=mp?'ซ้อมเต็มตามแผน รวม MP ได้':'ซ้อม Easy/SCR ตามแผนได้ปกติ'; body='HRV สมดุล นอนหลับ '+i.sleep+' คะแนน และไม่มีสัญญาณล้าสะสม — ร่างกายพร้อมรับโหลดตามแผน'; note='เช็กซ้ำพรุ่งนี้เช้าก่อนออกวิ่งเหมือนเดิม'; }
+    else if(imb && days<=1 && !(rhrEl && days>=1)){ level='warn'; tag='ระวัง — วันเดียว'; title=mp?'ตัด MP ออก เหลือแค่ Easy/SCR':'วิ่ง Easy/SCR ได้ตามแผน แต่ช้าลงเล็กน้อย'; body='HRV เช้านี้ ('+i.hrvToday+' ms) ต่ำกว่าค่าเฉลี่ย 7 วัน ('+i.hrvBase+' ms) เกิน 10% — สัญญาณเตือนระยะสั้น ยังไม่ต้องหยุด แต่ลดความหนักของวันนี้ลง'; note='ถ้าพรุ่งนี้ HRV กลับมาสมดุล กลับไปตามแผนเดิมได้เลย'; }
+    else if(imb && days>=2){ level='bad'; tag='พัก / ลดโหลด'; title=rhrEl?'สลับเป็นวันพัก หรือลดระยะทั้งหมดลง':'ลดระยะทั้งหมดลง ไม่ใช่แค่ตัด MP'; body='HRV ไม่สมดุลติดกัน '+days+' วัน'+(rhrEl?' และ Resting HR สูงกว่าปกติ ('+i.rhrToday+' เทียบ '+i.rhrBase+' bpm)':'')+' — เป็นสัญญาณล้าสะสมเรื้อรัง ฝืนซ้อมมีโอกาสพังกลางทางสูง'; note='พักหรือลดโหลดก่อน แล้วค่อยกลับไปดันเป้าใหม่เมื่อ HRV กลับมาสมดุล 2 วันติด'; }
+    else if(sleepLow && !imb){ level='warn'; tag='นอนไม่พอ'; title='ซ้อมได้ แต่ช้าลงเล็กน้อยและจับตาความหนัก'; body='คะแนนนอนหลับ '+i.sleep+' ต่ำกว่าเกณฑ์ 75 ทั้งที่ HRV ยังสมดุล — ให้ความสำคัญกับการฟื้นตัวคืนนี้เป็นพิเศษ'; note='ถ้าคืนนี้นอนไม่พออีก ให้ตัด MP ออกแม้ HRV จะยังโอเคอยู่'; }
+    else { level='warn'; tag='ระวัง'; title='ลดความหนักลงหนึ่งขั้น'; body='ค่าที่กรอกอยู่ระหว่างเกณฑ์ปลอดภัยกับเกณฑ์เตือน — เลือกฝั่งปลอดภัยไว้ก่อน ตัดท่อนหนักออกถ้ามี'; note=''; }
+    return {level:level, tag:tag, title:title, body:body, note:note, rhrElevated:rhrEl};
+  }
+  function todayRunDay(){ var d=findDay(today); return (d && d.type==='Run') ? d : null; }
+  var RS = {hrvBase:55, hrvToday:48, days:1, sleep:79, rhrBase:55, rhrToday:53};
+  (function(){ var r=loadReady(); if(r){ ['hrvBase','rhrBase'].forEach(function(k){ if(r[k]) RS[k]=r[k]; }); if(r.date===today){ ['hrvToday','days','sleep','rhrToday'].forEach(function(k){ if(r[k]!=null) RS[k]=r[k]; }); } } })();
+  function readyLogSave(r){
+    var log=[]; try{ log=JSON.parse(localStorage.getItem(RLOG)||'[]')||[]; }catch(e){}
+    log=log.filter(function(e){return e.date!==r.date;}); log.unshift({date:r.date, level:r.level, title:r.title, hrvToday:r.hrvToday, hrvBase:r.hrvBase});
+    try{ localStorage.setItem(RLOG, JSON.stringify(log.slice(0,14))); }catch(e){}
+  }
+  function readyApply(persist){
+    var td=todayRunDay(), mp=td?isQuality(td):false;
+    var res=readyCompute({hrvBase:RS.hrvBase,hrvToday:RS.hrvToday,days:RS.days,sleep:RS.sleep,rhrBase:RS.rhrBase,rhrToday:RS.rhrToday,mp:mp});
+    var box=document.getElementById('rd-result'); if(box){
+      box.className='rd-result rd-'+res.level;
+      document.getElementById('rd-tag').textContent=res.tag; document.getElementById('rd-title').textContent=res.title;
+      document.getElementById('rd-body').textContent=res.body; var n=document.getElementById('rd-note'); n.textContent=res.note; n.hidden=!res.note;
+      var eff=document.getElementById('rd-eff'); var adj=null;
+      if(persist){ var rec={date:today,level:res.level,title:res.title,rhrElevated:res.rhrElevated,hrvBase:RS.hrvBase,hrvToday:RS.hrvToday,days:RS.days,sleep:RS.sleep,rhrBase:RS.rhrBase,rhrToday:RS.rhrToday}; saveReady(rec); readyLogSave(rec); }
+      if(td){ var cur=todayReady(); adj=(cur&&cur.level!=='ok')?adjustDay(td):null; }
+      eff.innerHTML = !td ? '<b>วันนี้ไม่มีวิ่งในแผน</b> — ค่าที่กรอกจะใช้กับวันที่มีวิ่งถัดไปเมื่อกรอกในเช้าวันนั้น'
+        : adj ? '<b>วันนี้ปรับเป็น:</b> '+escH(adj.type==='Rest'?adj.desc:(adj.desc.split('(')[0].trim()+(adj.dist?' · '+adj.dist+' กม.':'')+(parsePace(adj.zone)?' · '+parsePace(adj.zone).txt+' /กม.':'')))
+        : '<b>วันนี้ทำตามแผนเดิม:</b> '+escH((td.desc||'').split('(')[0].trim());
+    }
+    renderReadyLog(); renderReadyCard();
+    return res;
+  }
+  function renderReadyLog(){
+    var host=document.getElementById('rd-log'); if(!host) return; var log=[]; try{ log=JSON.parse(localStorage.getItem(RLOG)||'[]')||[]; }catch(e){}
+    if(!log.length){ host.innerHTML='<div class="rd-empty">ยังไม่มีประวัติ — ขยับค่าด้านบนเพื่อบันทึกเช้านี้</div>'; return; }
+    var col={ok:'var(--good)',warn:'var(--warn)',bad:'#ef6e5b'};
+    host.innerHTML=log.slice(0,7).map(function(e){ return '<div class="rd-row"><span class="rd-d">'+e.date.slice(8)+'/'+e.date.slice(5,7)+'</span><span class="rd-l"><i style="background:'+(col[e.level]||col.warn)+'"></i>'+escH(e.title)+'</span><span class="rd-d">HRV '+e.hrvToday+'/'+e.hrvBase+'</span></div>'; }).join('');
+  }
+  function renderReadyCard(){
+    var c=document.getElementById('readycard'); if(!c) return; var r=todayReady();
+    if(!r){ c.className='readycard'; c.innerHTML='<div><b>เช็กก่อนวิ่งเช้านี้</b><span>ใส่ HRV / นอน / RHR แล้วแอปปรับเพซวันนี้ให้</span></div><button class="btn btn-ghost" data-go="check">เช็กเลย</button>'; return; }
+    c.className='readycard rc-'+r.level;
+    c.innerHTML='<div><b>'+escH(r.title)+'</b><span>HRV '+r.hrvToday+'/'+r.hrvBase+' ms · นอน '+r.sleep+' · RHR '+r.rhrToday+'</span></div><button class="btn btn-ghost" data-go="check">แก้ค่า</button>';
+  }
+  function initReady(){
+    var ids={hrvBase:'rd-hrvBase',hrvToday:'rd-hrvToday',sleep:'rd-sleep',rhrBase:'rd-rhrBase',rhrToday:'rd-rhrToday'}, units={hrvBase:' ms',hrvToday:' ms',sleep:'',rhrBase:' bpm',rhrToday:' bpm'};
+    function paint(){ Object.keys(ids).forEach(function(k){ var el=document.getElementById(ids[k]); if(el){ el.value=RS[k]; document.getElementById(ids[k]+'-v').textContent=RS[k]+units[k]; } }); document.getElementById('rd-days').textContent=RS.days; }
+    paint();
+    Object.keys(ids).forEach(function(k){ var el=document.getElementById(ids[k]); if(!el) return; el.addEventListener('input',function(){ RS[k]=+el.value; paint(); readyApply(true); }); });
+    document.getElementById('rd-minus').addEventListener('click',function(){ RS.days=Math.max(0,RS.days-1); paint(); readyApply(true); });
+    document.getElementById('rd-plus').addEventListener('click',function(){ RS.days=Math.min(14,RS.days+1); paint(); readyApply(true); });
+    var rr=todayReady(); readyApply(false);
+    document.addEventListener('click',function(e){ var g=e.target.closest&&e.target.closest('[data-go]'); if(g){ var t=document.querySelector('.navtab[data-view="'+g.getAttribute('data-go')+'"]'); if(t) t.click(); } });
+    if(location.hash==='#check'){ var t=document.querySelector('.navtab[data-view="check"]'); if(t) t.click(); }
+  }
+  // =====================================================================
+  // share (read-only snapshot link) + viewer mode
+  // =====================================================================
+  function b64u(bytes){ var s=''; for(var i=0;i<bytes.length;i+=0x8000) s+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000)); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+  async function encodePayload(obj){
+    var bytes=new TextEncoder().encode(JSON.stringify(obj));
+    if(window.CompressionStream){ var cs=new CompressionStream('gzip'), w=cs.writable.getWriter(); w.write(bytes); w.close(); var buf=await new Response(cs.readable).arrayBuffer(); return 'g.'+b64u(new Uint8Array(buf)); }
+    return 'r.'+b64u(bytes);
+  }
+  function initShare(){
+    var nav=document.getElementById('navtabs'); if(!nav) return;
+    var b=document.createElement('button'); b.className='navtab'; b.id='share-btn'; b.type='button'; b.textContent='แชร์'; nav.appendChild(b);
+    b.addEventListener('click', openShare);
+  }
+  function openShare(){
+    var old=document.getElementById('share-dlg'); if(old) old.remove();
+    var dlg=document.createElement('div'); dlg.id='share-dlg'; dlg.className='shdlg';
+    dlg.innerHTML='<div class="shbox"><button class="shx" type="button" aria-label="ปิด">✕</button><h3>แชร์แบบดูอย่างเดียว</h3>'+
+      '<p class="shp">คนที่ได้ลิงก์เปิดดูตารางได้ แต่แก้ไขหรือบันทึกอะไรในแผนของคุณไม่ได้ ลิงก์เป็นภาพ ณ ตอนนี้ ถ้าแผนเปลี่ยนต้องสร้างลิงก์ใหม่</p>'+
+      '<label class="shl">ชื่อที่แสดง</label><input id="sh-name" class="shi" placeholder="เช่น Bee" value="'+escH(MINE?'':'Bee')+'">'+
+      '<label class="shc"><input type="checkbox" id="sh-act" checked> รวมผลซ้อมที่บันทึกไว้ (ระยะ / HR / โน้ต)</label>'+
+      '<button class="btn btn-primary" id="sh-go" type="button">สร้างลิงก์</button>'+
+      '<div id="sh-out" hidden><textarea id="sh-link" class="shi" rows="3" readonly></textarea><button class="btn btn-ghost" id="sh-copy" type="button">คัดลอกลิงก์</button><div class="shp" id="sh-msg"></div></div></div>';
+    document.body.appendChild(dlg);
+    dlg.addEventListener('click',function(e){ if(e.target===dlg||e.target.closest('.shx')) dlg.remove(); });
+    document.getElementById('sh-go').addEventListener('click',async function(){
+      var btn=this; btn.disabled=true; btn.textContent='กำลังสร้าง...';
+      try{
+        var acts={}; if(document.getElementById('sh-act').checked){ try{ acts=JSON.parse(localStorage.getItem(KP+'atm_actuals_v1')||'{}')||{}; }catch(e){} }
+        var payload={v:1,name:document.getElementById('sh-name').value.trim(),mine:MINE,plan:{weeks:weeks,meta:meta},actuals:acts,raceISO:PLAN.raceISO,kmh:BASE_KMH/PLAN.f,goals:PLAN.goals,at:today};
+        var enc=await encodePayload(payload);
+        var link=location.origin+location.pathname.replace(/[^\/]*$/,'')+'view.html#s='+enc;
+        var ta=document.getElementById('sh-link'); ta.value=link; document.getElementById('sh-out').hidden=false;
+        document.getElementById('sh-msg').textContent='ความยาวลิงก์ประมาณ '+Math.round(link.length/1000)+' พันตัวอักษร — ส่งทางไลน์/แชตได้ ถ้าแอปตัดลิงก์ ให้ส่งเป็นข้อความเดี่ยว';
+        btn.hidden=true;
+        document.getElementById('sh-copy').addEventListener('click',function(){ ta.select(); var done=function(){ document.getElementById('sh-copy').textContent='คัดลอกแล้ว ✓'; }; try{ navigator.clipboard.writeText(link).then(done,function(){ document.execCommand('copy'); done(); }); }catch(e){ try{document.execCommand('copy');done();}catch(x){} } });
+      }catch(e){ btn.disabled=false; btn.textContent='สร้างลิงก์'; document.getElementById('sh-msg')&&0; alert&&0; var m=document.createElement('p'); m.className='shp'; m.textContent='สร้างลิงก์ไม่สำเร็จ'; btn.parentNode.appendChild(m); }
+    });
+  }
+  function initView(){
+    document.body.classList.add('viewmode');
+    var V=window.__VIEW||{};
+    ['profile','check'].forEach(function(v){ var t=document.querySelector('.navtab[data-view="'+v+'"]'); if(t) t.style.display='none'; });
+    [].forEach.call(document.querySelectorAll('a.navtab'),function(a){ a.style.display='none'; });
+    var rc=document.getElementById('readycard'); if(rc) rc.remove();
+    var vc=document.getElementById('view-check'); if(vc) vc.remove && vc.setAttribute('hidden','');
+    var h=document.getElementById('db-hint'); if(h) h.style.display='none';
+    var bn=document.createElement('div'); bn.className='viewbn';
+    bn.innerHTML='<b>👁 ดูอย่างเดียว</b><span>'+(V.name?'แชร์โดย '+escH(V.name)+' · ':'')+'ข้อมูล ณ '+escH(V.at||'')+'</span>';
+    var home=document.getElementById('view-home'); if(home) home.insertBefore(bn, home.firstChild);
+    if(V.name) document.title='แผนซ้อมของ '+V.name+' · ดูอย่างเดียว';
+  }
+  function renderDay(d, phaseColor){
+    d = adjustDay(d);
+    var isToday = d.date===today;
+    var gymKey = d.type==='Gym' ? gymRoutineKey(d.desc) : null;
+    var isClickable = (d.type==='Run' || d.type==='Race' || (d.type==='Gym' && gymKey));
+    var cls = 'day'+(isToday?' today':'')+(d.type==='Rest'?' rest':'')+(isClickable?' clickable':'');
+    var actual = (d.type==='Run'||d.type==='Race') ? effectiveActual(d) : null;
+    var accent = dayAccent(d, phaseColor);
+    var html = '<div class="'+cls+'" data-date="'+d.date+'" style="--accent-day:'+accent+'">';
+    if(actual) html += '<span class="dcheck">✓</span>';
+    if(isClickable) html += '<span class="editicon">'+(d.type==='Gym'?'ดูท่า':'แก้ไข')+' ✎</span>';
+    html += '<div class="ddate">'+fmtDate(d.date)+(isToday?'<span class="today-tag">วันนี้</span>':'')+'</div>';
+    html += '<div class="dtype">'+dayTypeLabel(d)+'</div>'+(d._adj?'<div class="dadj">⚠ ปรับตามเช็กก่อนวิ่ง</div>':'');
+    if(d.type==='Run'){
+      var pc=parsePace(d.zone), hr=parseHR(d.zone);
+      if(pc && d.dist){
+        html += '<div class="ddist"><b>'+d.dist+'</b> กม. · <span class="pc">'+pc.txt+'<small>/กม.</small></span></div>';
+        html += '<div class="dtime">⏱ ~'+fmtDur(d.dist*pc.mid)+'</div>';
+        var hz=hrZone(d.zone,d);
+        if(hz) html += '<div class="dchip z'+hz.n+'"><span class="hrt">♥</span> <b>Z'+hz.n+'</b>'+(hz.bpm?' '+hz.bpm+' bpm':'')+'</div>';
+      } else {
+        html += '<div class="ddist"><b>'+(d.dist||'')+'</b>'+(d.dist?' กม.':'')+'</div>';
+        if(d.zone && d.zone!=='-') html += '<div class="dzone">'+d.zone+'</div>';
+        var hz2=hrZone(d.zone,d);
+        if(hz2) html += '<div class="dchip z'+hz2.n+'"><span class="hrt">♥</span> <b>Z'+hz2.n+'</b>'+(hz2.bpm?' '+hz2.bpm+' bpm':'')+'</div>';
+      }
+      if(actual){
+        html += '<div class="dactual">✓ จริง '+actual.dist+' กม.'+(actual.hr? ' · '+actual.hr+' bpm':'')+'</div>';
+      } else if(new Date(d.date+'T00:00:00') < todayDate){
+        html += '<div class="dactual miss">— ยังไม่ได้บันทึกผล</div>';
+      }
+    } else if(d.type==='Gym'){
+      html += '<div class="dgym">+ '+(d.desc||'').split(' — ')[0].replace(/\s*\(.*$/,'').trim()+'</div>';
+    } else if(d.type==='Race'){
+      html += '<div class="ddesc">'+(d.desc||'')+'</div>';
+      if(actual) html += '<div class="dactual">✓ จริง '+actual.dist+' กม.'+(actual.hr? ' · '+actual.hr+' bpm':'')+'</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function wkSec(w){
+    var t=0; w.days.forEach(function(d){ if(d.type==='Run'||d.type==='Race'){ var p=parsePace(d.zone); if(p&&d.dist) t+=d.dist*p.mid; } });
+    return t;
+  }
+  function fmtDurLong(sec){
+    var h=Math.floor(sec/3600), m=Math.round((sec%3600)/60); if(m===60){h++;m=0;}
+    return h+' ชม. '+m+' น.';
+  }
+  function renderWeek(w, isPast){
+    var chipColor = PHASE_COLOR[w.phase] || PHASE_COLOR['อื่นๆ'];
+    var el = document.createElement('div');
+    el.className = 'week'+(isPast?' past':''); el.style.setProperty('--wc', chipColor);
+    var head = '<div class="whead">'+
+      '<span class="chip" style="background:'+chipColor+'">'+w.phase+'</span>'+
+      '<span class="wname">สัปดาห์ '+w.idx+' · '+w.label+'</span>'+(w.days.some(function(d){return d.date===today;})?'<span class="thisweek">สัปดาห์นี้</span>':'')+
+      '<span class="wmeta"><span class="wtotal">รวม <b>'+w.plan_km+'</b> กม.'+(wkSec(w)?' · ~'+fmtDurLong(wkSec(w)):'')+'</span><span>จริง <b>'+w.actual_km+'</b> กม.</span></span>'+
+      '</div>';
+    var days = '<div class="days">'+w.days.map(function(d){ return renderDay(d, chipColor); }).join('')+'</div>';
+    el.innerHTML = head+days;
+    return el;
+  }
+
+  // ---- weekly volume chart (plan vs actual, race flags) ----
+  function raceShort(d){
+    var m=/RACE DAY:\s*(.*?)\s*[—-]\s/.exec(d.desc||''), n=m?m[1]:'';
+    n=n.replace(/Amazing Thailand|Marathon|Bangkok|Half|Full/g,'').replace(/\s+/g,' ').trim();
+    if(/^ATM/.test(m?m[1]:'')) n='ATM';
+    if(!n){ var rm=/RACE:\s*(.{0,14})/.exec(d.desc||''); n=rm?rm[1].trim():'แข่ง'; }
+    var k=d.dist?(d.dist>=40?'42K':d.dist>=20?'21K':d.dist>=49?'50K':Math.round(d.dist)+'K'):'';
+    if(d.dist>=49) k='50K';
+    return n.slice(0,12)+(k&&n.indexOf(k)<0?' '+k:'');
+  }
+  function renderVol(){
+    var host=document.getElementById('volchart'); if(!host||!weeks.length) return;
+    var n=weeks.length, slot=22, W=n*slot+34, H=212, top=38, bot=22, ch=H-top-bot, left=30;
+    var act=weeks.map(function(w){var t=0;w.days.forEach(function(d){if(d.type==='Run'||d.type==='Race'){var a=effectiveActual(d);if(a&&isRealNum(a.dist))t+=parseFloat(a.dist);}});return Math.round(t*10)/10;});
+    var mx=0;weeks.forEach(function(w,i){mx=Math.max(mx,w.plan_km||0,act[i]);});
+    var step=mx>120?40:mx>60?20:10, top_v=Math.ceil(mx/step)*step||step;
+    function y(v){return top+ch-(v/top_v)*ch;}
+    var s='<svg viewBox="0 0 '+(W)+' '+H+'" width="100%" role="img" aria-label="กราฟระยะวิ่งรายสัปดาห์ แผนเทียบของจริง" style="display:block;overflow:visible">';
+    for(var g=0;g<=top_v;g+=step){s+='<line x1="'+left+'" x2="'+(W-4)+'" y1="'+y(g)+'" y2="'+y(g)+'" stroke="var(--border-soft)" stroke-width="1"/><text x="'+(left-5)+'" y="'+(y(g)+3)+'" text-anchor="end" font-size="9" fill="var(--fg-faint)">'+g+'</text>';}
+    var flags='', nb=0;
+    weeks.forEach(function(w,i){
+      var x=left+i*slot+3, bw=slot-6, h=(w.plan_km||0)/top_v*ch, cur=w.days.some(function(d){return d.date===today;});
+      var col=PHASE_COLOR[w.phase]||PHASE_COLOR['อื่นๆ'];
+      if(cur) s+='<rect x="'+(x-3)+'" y="'+top+'" width="'+(bw+6)+'" height="'+(ch+6)+'" rx="4" fill="color-mix(in srgb,var(--accent) 10%,transparent)" stroke="var(--accent)" stroke-width="1"/>';
+      s+='<rect x="'+x+'" y="'+y(w.plan_km||0)+'" width="'+bw+'" height="'+Math.max(h,1)+'" rx="2" fill="'+col+'" opacity=".75"><title>สัปดาห์ '+w.idx+' · แผน '+w.plan_km+' กม.'+(act[i]?' · จริง '+act[i]+' กม.':'')+'</title></rect>';
+      if(act[i]>0) s+='<rect x="'+(x+bw*0.3)+'" y="'+y(act[i])+'" width="'+(bw*0.4)+'" height="'+(ch+top-y(act[i]))+'" rx="1" fill="var(--fg)"/>';
+      if(i%4===0||i===n-1) s+='<text x="'+(x+bw/2)+'" y="'+(H-7)+'" text-anchor="middle" font-size="9" fill="var(--fg-faint)">'+(w.monday.slice(8)*1)+'/'+(w.monday.slice(5,7)*1)+'</text>';
+      w.days.forEach(function(d){ if(d.type==='Race'){ var big=d.dist>=20, ly=(nb++%2)?26:12, fx=left+i*slot+slot/2, anc=(fx>W-70)?'end':'start';
+        flags+='<line x1="'+fx+'" x2="'+fx+'" y1="'+(big?ly-6:top-8)+'" y2="'+(y(w.plan_km||0))+'" stroke="var(--p-race)" stroke-width="1" '+(big?'':'stroke-dasharray="2 2" ')+'/>'+(big?'<text x="'+(fx+(anc==='end'?-4:4))+'" y="'+ly+'" text-anchor="'+anc+'" font-size="10" font-weight="700" fill="var(--p-race)">⚑ '+raceShort(d)+'</text>':'<circle cx="'+fx+'" cy="'+(top-8)+'" r="2.5" fill="var(--p-race)"/>'); }});
+    });
+    s+=flags+'</svg>';
+    host.innerHTML=s;
+    var tot=weeks.reduce(function(a,w){return a+(w.plan_km||0);},0), done=act.reduce(function(a,b){return a+b;},0);
+    var m=document.getElementById('vol-meta'); if(m) m.textContent='แผนรวม '+Math.round(tot)+' กม. · จริงแล้ว '+Math.round(done*10)/10+' กม.';
+  }
+  // ---- multi-race path: today -> last race, flags + gap summaries ----
+  function renderPath(){
+    var card=document.getElementById('pathcard'), host=document.getElementById('pathbody'); if(!card||!host) return;
+    var races=[]; weeks.forEach(function(w,wi){ w.days.forEach(function(d){ if(d.type==='Race'&&d.dist>=20&&d.date>=today) races.push({d:d,wi:wi,w:w}); }); });
+    if(races.length<2){ card.hidden=true; return; }
+    card.hidden=false;
+    var t0=0; weeks.forEach(function(w,i){ if(w.days.some(function(d){return d.date===today;})) t0=i; });
+    var last=races[races.length-1].wi, ws=weeks.slice(t0,last+1), tot=ws.length*7;
+    function pos(date,wi){ var w=weeks[wi], k=0; for(var i=0;i<w.days.length;i++){ if(w.days[i].date===date){k=i;break;} } var dd=Math.round((new Date(date+'T00:00:00')-new Date(w.monday+'T00:00:00'))/86400000); return ((wi-t0)*7+dd+0.5)/tot*100; }
+    var bar=ws.map(function(w){return '<i style="flex:1;background:'+(PHASE_COLOR[w.phase]||PHASE_COLOR['อื่นๆ'])+'" title="สัปดาห์ '+w.idx+' · '+w.phase+'"></i>';}).join('');
+    var flags=races.map(function(r,i){
+      var p=pos(r.d.date,r.wi), up=(i%2===0), left=Math.min(Math.max(p,14),86);
+      var days=Math.round((new Date(r.d.date+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
+            var end=p>80;
+      return '<div class="pflag '+(up?'up':'dn')+'" style="left:'+(end?p:left)+'%'+(end?';transform:translateX(-100%);text-align:right':'')+'"><b>'+raceShort(r.d)+'</b><span>อีก '+days+' วัน</span></div><u class="ppin '+(up?'up':'dn')+'" style="left:'+p+'%"></u>';
+    }).join('');
+    var gaps='';
+    for(var i=0;i<races.length-1;i++){
+      var a=races[i], b=races[i+1], seq=[];
+      weeks.forEach(function(w){ if(w.monday>a.d.date && w.monday<=b.d.date){ if(seq.length&&seq[seq.length-1].p===w.phase) seq[seq.length-1].n++; else seq.push({p:w.phase,n:1}); } });
+      var gw=Math.round((new Date(b.d.date+'T00:00:00')-new Date(a.d.date+'T00:00:00'))/604800000);
+      gaps+='<div class="pgap"><span class="pg-t">'+raceShort(a.d).replace(/ \d+K$/,'')+' → '+raceShort(b.d).replace(/ \d+K$/,'')+' <em>'+gw+' สัปดาห์</em></span><span class="pg-s">'+seq.map(function(s){return '<span class="chip" style="background:'+(PHASE_COLOR[s.p]||PHASE_COLOR['อื่นๆ'])+'">'+s.p+(s.n>1?' ×'+s.n:'')+'</span>';}).join('')+'</span></div>';
+    }
+    host.innerHTML='<div class="ptrack"><div class="pbar">'+bar+'</div>'+flags+'</div>'+gaps;
+  }
+  function render(){
+    weeksEl.innerHTML='';
+    try{renderVol();}catch(e){} try{renderReadyCard();}catch(e){} try{renderPath();}catch(e){}
+    weeks.forEach(function(w,i){
+      var isPast = i < todayIdx;
+      if(isPast && !showPast) return;
+      weeksEl.appendChild(renderWeek(w, isPast));
+    });
+  }
+  render();
+  if(VIEW){ initView(); } else { initReady(); initShare(); }
+  initDb();
+
+  // auto-update: reload when the date rolls over or a newer version of this page is published
+  (function(){
+    var myBuild=(document.querySelector('meta[name="build"]')||{}).content;
+    var shownDay=today, busy=false;
+    function modalOpen(){var o=document.getElementById('overlay');return o && !o.hidden;}
+    var newB=null;
+    function goFresh(){ location.replace(location.pathname+'?v='+(newB||Date.now())+location.hash); }
+    function reloadSoon(){ if(modalOpen()){ showBanner(); } else { goFresh(); } }
+    function showBanner(){
+      if(document.getElementById('upd-banner')) return;
+      var b=document.createElement('div'); b.id='upd-banner';
+      b.style.cssText='position:fixed;left:12px;right:12px;bottom:14px;z-index:99;padding:12px 14px;border-radius:12px;background:var(--accent);color:#06251b;font-weight:700;text-align:center;cursor:pointer';
+      b.textContent='มีอัปเดตใหม่ — แตะเพื่อโหลด';
+      b.addEventListener('click',goFresh);
+      document.body.appendChild(b);
+    }
+    function check(){
+      if(busy) return; busy=true;
+      if(localISO()!==shownDay){ busy=false; return reloadSoon(); }
+      fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
+        var m=t.match(/name="build" content="(\d+)"/);
+        if(m && myBuild && m[1]!==myBuild){ newB=m[1]; reloadSoon(); }
+      }).catch(function(){}).then(function(){busy=false;});
+    }
+    document.addEventListener('visibilitychange',function(){ if(!document.hidden) check(); });
+    window.addEventListener('focus',check);
+    window.addEventListener('pageshow',check);
+    setInterval(check,60*1000);
+    setTimeout(check,1500);
+  })();
+
+
+  document.getElementById('toggle-past').addEventListener('click', function(){
+    showPast = !showPast;
+    this.textContent = showPast ? 'ซ่อนสัปดาห์ที่ผ่านมา' : 'แสดงสัปดาห์ที่ผ่านมา';
+    render();
+  });
+
+  // =====================================================================
+  // modal — log/edit/delete an actual result
+  // =====================================================================
+  var overlay = document.getElementById('overlay');
+  var fDist = document.getElementById('f-dist'), fH = document.getElementById('f-h'),
+      fM = document.getElementById('f-m'), fS = document.getElementById('f-s'),
+      fHr = document.getElementById('f-hr'), fNote = document.getElementById('f-note'),
+      derived = document.getElementById('m-derived'), saveState = document.getElementById('m-savestate'),
+      btnDelete = document.getElementById('f-delete'), btnSave = document.getElementById('f-save'),
+      btnCancel = document.getElementById('f-cancel'),
+      runFields = document.getElementById('run-fields'), exlistEl = document.getElementById('exlist');
+  var currentDate = null;
+
+  function renderExlist(routine){
+    var html = '';
+    if(routine.note) html += '<div class="mplan">'+routine.note+'</div>';
+    routine.ex.forEach(function(row){
+      html += '<div class="exrow"><span class="exname">'+row[0]+'</span><span class="exsets">'+row[1]+'</span></div>';
+    });
+    exlistEl.innerHTML = html;
+  }
+
+  function openModal(dateStr){
+    var d = adjustDay(findDay(dateStr));
+    if(!d) return;
+    currentDate = dateStr;
+    var gymKey = d.type==='Gym' ? gymRoutineKey(d.desc) : null;
+    var routine = gymKey ? GYM_ROUTINES[gymKey] : null;
+
+    if(routine){
+      // gym day — show the exercise list, hide the run-logging form entirely
+      document.getElementById('m-title').textContent = routine.title;
+      document.getElementById('m-sub').textContent = fmtDateLong(dateStr);
+      document.getElementById('m-plan').classList.remove('rich'); document.getElementById('m-plan').textContent = '';
+      renderExlist(routine);
+      exlistEl.hidden = false;
+      runFields.hidden = true;
+      saveState.textContent = '';
+      btnDelete.hidden = true;
+      btnSave.hidden = true;
+      btnCancel.textContent = 'ปิด';
+    } else {
+      // run / race day — show the logging form as before
+      document.getElementById('m-title').textContent = dayTypeLabel(d);
+      document.getElementById('m-sub').textContent = fmtDateLong(dateStr)+(d.dist? ' · เป้า '+d.dist+' กม.':'');
+      var mp=document.getElementById('m-plan'); mp.classList.add('rich');
+      try{ mp.innerHTML = planHTML(d); }catch(e){ mp.textContent=(d.desc||'')+(d.zone&&d.zone!=='-'?'\n'+d.zone:''); }
+      exlistEl.hidden = true;
+      exlistEl.innerHTML = '';
+      runFields.hidden = false;
+      btnSave.hidden = false;
+      btnCancel.textContent = 'ยกเลิก';
+
+      var a = actualsCache[dateStr] || (isRealNum(d.act_dist) ? {dist:d.act_dist, h:0, m:0, s:0, hr:isRealNum(d.act_hr)?d.act_hr:null, note:''} : null);
+      fDist.value = a ? a.dist : '';
+      fH.value = a && a.h ? a.h : '';
+      fM.value = a && a.m ? a.m : '';
+      fS.value = a && a.s ? a.s : '';
+      fHr.value = a && a.hr ? a.hr : '';
+      fNote.value = a && a.note ? a.note : '';
+      btnDelete.hidden = !actualsCache[dateStr];
+      saveState.textContent = dbNS ? '' : 'บันทึกไว้ในเครื่อง/เบราว์เซอร์นี้';
+      updateDerived();
+    }
+    if(VIEW){ runFields.hidden=true; btnSave.hidden=true; btnDelete.hidden=true; btnCancel.textContent='ปิด'; var ea=effectiveActual(d._orig||d); saveState.textContent=ea?('ผลที่บันทึก: '+ea.dist+' กม.'+(ea.hr?' · HR '+ea.hr+' bpm':'')):''; }
+    overlay.hidden = false;
+  }
+  function closeModal(){ overlay.hidden = true; currentDate = null; }
+
+  function updateDerived(){
+    var dist = parseFloat(fDist.value);
+    var h = parseInt(fH.value||'0',10), m = parseInt(fM.value||'0',10), s = parseInt(fS.value||'0',10);
+    var totalSec = h*3600+m*60+s;
+    if(dist>0 && totalSec>0){
+      var paceSec = totalSec/dist;
+      var pm = Math.floor(paceSec/60), ps = Math.round(paceSec%60);
+      if(ps===60){pm++;ps=0;}
+      derived.textContent = 'เพซเฉลี่ย '+pm+':'+pad2(ps)+' น./กม. · เวลารวม '+h+'ชม. '+m+'น. '+s+'วิ.';
+    } else {
+      derived.textContent = '';
+    }
+  }
+  [fDist,fH,fM,fS].forEach(function(el){ el.addEventListener('input', updateDerived); });
+
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('f-cancel').addEventListener('click', closeModal);
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) closeModal(); });
+
+  weeksEl.addEventListener('click', function(e){
+    var card = e.target.closest('.day.clickable');
+    if(card) openModal(card.getAttribute('data-date'));
+  });
+
+  document.getElementById('f-save').addEventListener('click', function(){
+    var dist = parseFloat(fDist.value);
+    if(!(dist>0)){ saveState.textContent='ใส่ระยะจริง (กม.) ก่อนบันทึก'; return; }
+    var body = {
+      dist: dist,
+      h: parseInt(fH.value||'0',10), m: parseInt(fM.value||'0',10), s: parseInt(fS.value||'0',10),
+      hr: fHr.value ? parseInt(fHr.value,10) : null,
+      note: fNote.value || '',
+      updatedAt: new Date().toISOString()
+    };
+    if(localMode && (!dbNS || !actualsCol)){
+      var all = lsGet((KP+'atm_actuals_v1')) || {};
+      all[currentDate] = body;
+      if(!lsSet((KP+'atm_actuals_v1'), all)){ saveState.textContent='บันทึกไม่ได้ — เบราว์เซอร์บล็อกที่เก็บข้อมูล'; return; }
+      actualsCache[currentDate] = body;
+      saveState.textContent = 'บันทึกแล้ว (เครื่องนี้)';
+      render();
+      setTimeout(closeModal, 350);
+      return;
+    }
+    if(!dbNS || !actualsCol){
+      saveState.textContent = 'บันทึกไม่ได้ — ยังโหลดไม่เสร็จ ลองอีกครั้ง';
+      return;
+    }
+    saveState.textContent = 'กำลังบันทึก…';
+    actualsCol.doc(currentDate).set(body).then(function(){
+      actualsCache[currentDate] = body;
+      saveState.textContent = 'บันทึกแล้ว';
+      render();
+      setTimeout(closeModal, 350);
+    }).catch(function(err){
+      saveState.textContent = 'บันทึกไม่สำเร็จ ('+(err&&err.code||'error')+')';
+    });
+  });
+
+  btnDelete.addEventListener('click', function(){
+    if(localMode && (!dbNS || !actualsCol) && currentDate){
+      var all2 = lsGet((KP+'atm_actuals_v1')) || {};
+      delete all2[currentDate]; lsSet((KP+'atm_actuals_v1'), all2);
+      delete actualsCache[currentDate]; render(); closeModal(); return;
+    }
+    if(!dbNS || !actualsCol || !currentDate) return;
+    saveState.textContent = 'กำลังลบ…';
+    actualsCol.doc(currentDate).delete().then(function(){
+      delete actualsCache[currentDate];
+      render();
+      closeModal();
+    }).catch(function(err){
+      saveState.textContent = 'ลบไม่สำเร็จ ('+(err&&err.code||'error')+')';
+    });
+  });
+
+  // =====================================================================
+  // tabs
+  // =====================================================================
+  var VIEWS = ['home','profile','principles','check'];
+  document.getElementById('navtabs').addEventListener('click', function(e){
+    var btn = e.target.closest('.navtab');
+    if(!btn) return;
+    var view = btn.getAttribute('data-view');
+    VIEWS.forEach(function(v){
+      document.getElementById('view-'+v).hidden = (v!==view);
+    });
+    document.querySelectorAll('.navtab').forEach(function(t){ t.classList.toggle('active', t===btn); });
+    window.scrollTo(0,0);
+  });
+
+  // =====================================================================
+  // profile — Resting/Max HR, age, PB times — persisted to db:profile/me
+  // =====================================================================
+  var PROFILE_DEFAULT = {
+    rhr:53, mhr:195, age:43, startDate:'2026-07-13', raceDate:'2026-11-29', goals:{ma:'3:45:00',mb:'3:50:00',ha:'1:35:00',hb:'1:40:00'},
+    pb5k:{h:0,m:0,s:0}, pb10k:{h:0,m:48,s:7}, pb21k:{h:0,m:0,s:0}, pb42k:{h:3,m:46,s:8}
+  };
+  if(MINE){
+    var mp=meta.profile||{}, tk={5:'pb5k',10:'pb10k',21.0975:'pb21k',42.195:'pb42k'}[meta.test.dist], ts=meta.test.time;
+    PROFILE_DEFAULT={rhr:mp.rhr||55, mhr:mp.mhr||190, age:mp.age||null, startDate:mp.startDate||meta.start, raceDate:mp.raceDate||meta.race_date, goals:meta.goals||{ma:'',mb:'',ha:'',hb:''},
+      pb5k:{h:0,m:0,s:0}, pb10k:{h:0,m:0,s:0}, pb21k:{h:0,m:0,s:0}, pb42k:{h:0,m:0,s:0}};
+    if(tk) PROFILE_DEFAULT[tk]={h:Math.floor(ts/3600),m:Math.floor((ts%3600)/60),s:Math.round(ts%60)};
+  }
+  var profileDoc = null, profileData = null;
+
+  var ZONES = [
+    {name:'Z1 · Recovery', lo:.50, hi:.60, color:'#4f8fe0'},
+    {name:'Z2 · Aerobic',  lo:.60, hi:.70, color:'#6fd17a'},
+    {name:'Z3 · Tempo',    lo:.70, hi:.80, color:'#e8c84a'},
+    {name:'Z4 · Threshold',lo:.80, hi:.90, color:'#ef8e5b'},
+    {name:'Z5 · VO2max',   lo:.90, hi:1.0, color:'#ef5b6e'}
+  ];
+
+  function renderZoneTable(){
+    var rhr = parseInt(document.getElementById('p-rhr').value,10) || PROFILE_DEFAULT.rhr;
+    var mhr = parseInt(document.getElementById('p-mhr').value,10) || PROFILE_DEFAULT.mhr;
+    var hrr = mhr - rhr;
+    var tbody = document.getElementById('zonetable-body');
+    if(!tbody) return;
+    tbody.innerHTML = ZONES.map(function(z){
+      var lo = Math.round(rhr + z.lo*hrr), hi = Math.round(rhr + z.hi*hrr);
+      return '<tr><td class="z"><i style="background:'+z.color+'"></i>'+z.name+'</td>'+
+        '<td>'+Math.round(z.lo*100)+'–'+Math.round(z.hi*100)+'%</td>'+
+        '<td class="bpm">'+lo+'–'+hi+'</td></tr>';
+    }).join('');
+  }
+
+  function fillProfileForm(p){
+    document.getElementById('p-rhr').value = p.rhr || '';
+    document.getElementById('p-mhr').value = p.mhr || '';
+    document.getElementById('p-age').value = p.age || '';
+    document.getElementById('p-start').value = p.startDate || PROFILE_DEFAULT.startDate;
+    document.getElementById('p-race').value = p.raceDate || PROFILE_DEFAULT.raceDate;
+    ['5k','10k','21k','42k'].forEach(function(k){
+      var pb = p['pb'+k] || {h:0,m:0,s:0};
+      document.getElementById('pb-'+k+'-h').value = pb.h || '';
+      document.getElementById('pb-'+k+'-m').value = pb.m || '';
+      document.getElementById('pb-'+k+'-s').value = pb.s || '';
+    });
+    var gg=p.goals||PROFILE_DEFAULT.goals;
+    document.getElementById('g-ma').value=gg.ma||''; document.getElementById('g-mb').value=gg.mb||''; document.getElementById('g-ha').value=gg.ha||''; document.getElementById('g-hb').value=gg.hb||'';
+    renderZoneTable(); renderPaceTable(); renderRaceTable();
+  }
+
+
+  function renderRaceTable(){
+    var head=document.getElementById('racetable-head'), body=document.getElementById('racetable-body'); if(!head||!body) return;
+    function v(id){ return parseHMS(document.getElementById(id).value); }
+    var rows='';
+    var mar=[['มาราธอน A',v('g-ma')],['มาราธอน B',v('g-mb')]].filter(function(r){return r[1]>0;});
+    var hal=[['ฮาล์ฟ A',v('g-ha')],['ฮาล์ฟ B',v('g-hb')]].filter(function(r){return r[1]>0;});
+    var h='<tr><th>เป้า</th><th>เวลา</th><th>เพซ/กม.</th><th>ต้นทาง</th><th>กลาง</th><th>ปลาย</th><th>ท่อนท้าย</th></tr>';
+    head.innerHTML=h;
+    mar.forEach(function(r){ var p=r[1]/42.195;
+      rows+='<tr><td class="z">'+r[0]+'</td><td>'+fmtHMS(r[1])+'</td><td class="bpm">'+fmtPaceS(p)+'</td><td>5K '+fmtHMS(5*(p+8))+'</td><td>21.1K '+fmtHMS(21.1*p)+'</td><td>30K '+fmtHMS(30*p)+'</td><td>10K สุดท้าย '+fmtPaceS(p-5)+'</td></tr>'; });
+    hal.forEach(function(r){ var p=r[1]/21.0975;
+      rows+='<tr><td class="z">'+r[0]+'</td><td>'+fmtHMS(r[1])+'</td><td class="bpm">'+fmtPaceS(p)+'</td><td>5K '+fmtHMS(5*(p+8))+'</td><td>10K '+fmtHMS(10*p+38)+'</td><td>15K '+fmtHMS(15*p+35)+'</td><td>6.1K สุดท้าย '+fmtPaceS(p-6)+'</td></tr>'; });
+    body.innerHTML=rows||'<tr><td colspan="7" style="color:var(--fg-faint)">ยังไม่ได้กรอกเวลาเป้า</td></tr>';
+  }
+
+  function renderPaceTable(){
+    var tb=document.getElementById('pacetable-body'); if(!tb) return;
+    function g(id){ return parseInt(document.getElementById(id).value,10)||0; }
+    var pbs={}; ['5k','10k','21k','42k'].forEach(function(k){ pbs['pb'+k]={h:g('pb-'+k+'-h'),m:g('pb-'+k+'-m'),s:g('pb-'+k+'-s')}; });
+    var t=eq10(pbs);
+    var kmh=vcrKmh(t);
+    var eqEl=document.getElementById('pace-eq');
+    if(eqEl){
+      var mar=42.195/(kmh*0.9);
+      var mh=Math.floor(mar), mm=Math.floor((mar-mh)*60), ms=Math.round(((mar-mh)*60-mm)*60);
+      if(ms===60){mm++;ms=0;}
+      eqEl.textContent=(t>0?('10K เทียบเท่า '+Math.floor(t/60)+':'+('0'+Math.round(t%60)).slice(-2)):'ยังไม่ได้ใส่สถิติ — ใช้ค่าฐานของแผน')+' → VCR '+fmtPace(60/kmh)+'/กม. ('+kmh.toFixed(2)+' กม./ชม.) · มาราธอนที่ทำนายได้ '+mh+':'+('0'+mm).slice(-2)+':'+('0'+ms).slice(-2);
+    }
+    var rows=[['ARR ฟื้นฟู',.70],['SCR (ต่ำ) Easy',.75],['SCR ช้าต่อเนื่อง',.80],['SCR-สูง',.85],['MCR / MP',.90],['FCR / Tempo',.94],['FCR บน / Threshold',.97],['VCR',1.0],['EXT105',1.05],['EXT110',1.10]];
+    tb.innerHTML=rows.map(function(r){ return '<tr><td class="z">'+r[0]+'</td><td>'+Math.round(r[1]*100)+'%</td><td class="bpm">'+fmtPace(60/(kmh*r[1]))+'</td></tr>'; }).join('');
+  }
+
+  fillProfileForm(PROFILE_DEFAULT);
+  ['5k','10k','21k','42k'].forEach(function(k){ ['h','m','s'].forEach(function(u){ document.getElementById('pb-'+k+'-'+u).addEventListener('input', renderPaceTable); }); });
+  ['g-ma','g-mb','g-ha','g-hb'].forEach(function(id){ document.getElementById(id).addEventListener('input', renderRaceTable); });
+  ['p-rhr','p-mhr'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', renderZoneTable);
+  });
+
+  function loadLocalProfile(){
+    var p = lsGet((KP+'atm_profile_v1'));
+    if(p){ profileData = p; fillProfileForm(p); }
+  }
+  function initProfileDb(){
+    if(!window.claude || !window.claude.use){ loadLocalProfile(); return; }
+    window.claude.use('db').then(function(ns){
+      if(!ns){ loadLocalProfile(); return; }
+      profileDoc = ns.doc('profile/me');
+      return profileDoc.get().then(function(snap){
+        if(snap.exists()){
+          profileData = snap.data();
+          fillProfileForm(profileData);
+        }
+      });
+    }).catch(function(){});
+  }
+  initProfileDb();
+
+  document.getElementById('p-save').addEventListener('click', function(){
+    var body = {
+      rhr: parseInt(document.getElementById('p-rhr').value,10) || null,
+      mhr: parseInt(document.getElementById('p-mhr').value,10) || null,
+      age: parseInt(document.getElementById('p-age').value,10) || null,
+      startDate: document.getElementById('p-start').value || null,
+      raceDate: document.getElementById('p-race').value || null,
+      goals:{ma:document.getElementById('g-ma').value.trim(),mb:document.getElementById('g-mb').value.trim(),ha:document.getElementById('g-ha').value.trim(),hb:document.getElementById('g-hb').value.trim()}
+    };
+    ['5k','10k','21k','42k'].forEach(function(k){
+      body['pb'+k] = {
+        h: parseInt(document.getElementById('pb-'+k+'-h').value,10) || 0,
+        m: parseInt(document.getElementById('pb-'+k+'-m').value,10) || 0,
+        s: parseInt(document.getElementById('pb-'+k+'-s').value,10) || 0
+      };
+    });
+    var st = document.getElementById('p-savestate');
+    if(!profileDoc){
+      if(lsSet((KP+'atm_profile_v1'), body)){ profileData = body; st.textContent = 'บันทึกแล้ว — กำลังคำนวณแผนใหม่…'; setTimeout(function(){ location.replace(location.pathname+'?v='+Date.now()); }, 700); }
+      else st.textContent = 'บันทึกไม่ได้ — เบราว์เซอร์บล็อกที่เก็บข้อมูล';
+      return;
+    }
+    st.textContent = 'กำลังบันทึก…';
+    profileDoc.set(body).then(function(){
+      profileData = body;
+      st.textContent = 'บันทึกแล้ว';
+      setTimeout(function(){ st.textContent=''; }, 1500);
+    }).catch(function(err){
+      st.textContent = 'บันทึกไม่สำเร็จ ('+(err&&err.code||'error')+')';
+    });
+  });
+})();
+</script>
+<script>
+(async function(){
+  function fail(m){document.body.insertAdjacentHTML('afterbegin','<div style="padding:24px;font:16px/1.6 sans-serif;color:#b00">'+m+'</div>');}
+  try{
+    var h=location.hash||''; var m=h.match(/^#s=(g|r)\.(.+)$/);
+    if(!m) throw new Error('nolink');
+    var b=m[2].replace(/-/g,'+').replace(/_/g,'/'); while(b.length%4) b+='=';
+    var bin=atob(b), u8=new Uint8Array(bin.length); for(var k=0;k<bin.length;k++) u8[k]=bin.charCodeAt(k);
+    var txt;
+    if(m[1]==='g'){
+      var ds=new DecompressionStream('gzip'); var w=ds.writable.getWriter(); w.write(u8); w.close();
+      txt=await new Response(ds.readable).text();
+    } else txt=new TextDecoder().decode(u8);
+    var p=JSON.parse(txt);
+    window.__VIEW=p; window.__MINE=!!p.mine;
+    try{
+      localStorage.setItem('view_atm_actuals_v1',JSON.stringify(p.actuals||{}));
+      localStorage.setItem('view_atm_profile_v1',JSON.stringify({goals:p.goals,raceDate:p.raceISO}));
+    }catch(e){}
+    var sc=document.createElement('script'); sc.textContent=document.getElementById('app-src').textContent;
+    document.body.appendChild(sc);
+  }catch(e){ fail('ลิงก์แชร์ไม่ถูกต้องหรือไม่สมบูรณ์ — ขอลิงก์ใหม่จากเจ้าของตาราง'); }
+})();
+</script>
+<style>
+.tdbtn{display:block;width:100%;text-align:left;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font:inherit;font-size:16px;padding:10px 11px;min-height:44px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tdbtn:focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 60%,transparent);border-color:var(--accent)}
+.tdbtn .ph{color:var(--fg-faint)}.tdbtn svg{flex:none;opacity:.7}
+.tdpop{position:absolute;z-index:200;width:min(320px,calc(100vw - 24px));background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:0 18px 40px -12px rgba(0,0,0,.7)}
+.tdpop .tdh{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px}
+.tdpop .tdh b{font-size:15px;color:var(--fg)}
+.tdpop .tdh button{width:40px;height:40px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--fg);font-size:18px;cursor:pointer}
+.tdpop .tdg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.tdpop .tdw{font-size:11.5px;color:var(--fg-faint,#8497b9);padding:4px 0}
+.tdpop .tdd{height:38px;border:none;border-radius:9px;background:transparent;color:var(--fg);font:inherit;font-size:14px;cursor:pointer;font-variant-numeric:tabular-nums}
+.tdpop .tdd:hover{background:var(--surface2)}
+.tdpop .tdd.o{color:var(--fg-faint,#6f7f9c);opacity:.55}
+.tdpop .tdd.t{box-shadow:inset 0 0 0 1px var(--accent)}
+.tdpop .tdd.s{background:var(--accent);color:#06140f;font-weight:700}
+.tdpop .tdf{display:flex;justify-content:space-between;margin-top:8px}
+.tdpop .tdf button{background:none;border:none;color:var(--accent);font:inherit;font-size:13.5px;min-height:40px;padding:0 8px;cursor:pointer}
+.shdlg{position:fixed;inset:0;z-index:300;background:rgba(4,8,16,.72);display:flex;align-items:flex-end;justify-content:center;padding:12px}
+@media(min-width:600px){.shdlg{align-items:center}}
+.shbox{position:relative;width:100%;max-width:440px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px 18px 18px;display:flex;flex-direction:column;gap:10px;max-height:92vh;overflow:auto}
+.shbox h3{font-size:17px;padding-right:44px}.shx{position:absolute;top:6px;right:6px;width:44px;height:44px;border:none;background:none;color:var(--fg-faint);font-size:18px;cursor:pointer}
+.shp{font-size:12.5px;color:var(--fg-dim);line-height:1.55}.shl{font-size:12.5px;color:var(--fg-dim)}
+.shi{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font:inherit;font-size:15px;padding:10px 11px}
+textarea.shi{font-size:12px;word-break:break-all;resize:none}
+.shc{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.45;color:var(--fg)}.shc input{margin-top:3px;accent-color:var(--accent);width:18px;height:18px}
+.viewbn{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 14px;padding:10px 14px;border-radius:12px;background:color-mix(in srgb,var(--accent) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 40%,var(--border))}
+.viewbn b{font-size:13.5px}.viewbn span{font-size:12px;color:var(--fg-dim)}
+.viewmode .editicon{display:none!important}
+.viewmode #toggle-past{display:inline-flex}
+</style>
+<script>
+(function(){
+  var MN=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  var MS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  var WD=['อา','จ','อ','พ','พฤ','ศ','ส'];
+  function pad(n){return ('0'+n).slice(-2);}
+  function iso(y,m,d){return y+'-'+pad(m+1)+'-'+pad(d);}
+  var pop=null, popFor=null;
+  function closePop(){ if(pop){ pop.remove(); pop=null; popFor=null; } }
+  document.addEventListener('click',function(e){ if(pop && !pop.contains(e.target) && !(e.target.closest&&e.target.closest('.tdbtn'))) closePop(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closePop(); });
+  function thaiDate(el){
+    var desc=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+    var btn=document.createElement('button'); btn.type='button'; btn.className='tdbtn';
+    el.type='hidden'; el.parentNode.insertBefore(btn, el.nextSibling);
+    function paint(){
+      var v=desc.get.call(el), m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(v||'');
+      btn.innerHTML=(m?'<span>'+(+m[3])+' '+MS[+m[2]-1]+' '+(+m[1]+543)+'</span>':'<span class="ph">เลือกวันที่</span>')+'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+    }
+    Object.defineProperty(el,'value',{configurable:true,get:function(){return desc.get.call(el);},set:function(v){desc.set.call(el,v);paint();}});
+    paint();
+    function setVal(v){ desc.set.call(el,v); paint(); el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); }
+    btn.addEventListener('click',function(ev){
+      ev.stopPropagation();
+      if(pop && popFor===el){ closePop(); return; }
+      closePop();
+      var cur=/^(\d{4})-(\d\d)-(\d\d)$/.exec(desc.get.call(el)||''), now=new Date();
+      var vy=cur?+cur[1]:now.getFullYear(), vm=cur?+cur[2]-1:now.getMonth();
+      pop=document.createElement('div'); pop.className='tdpop'; popFor=el;
+      document.body.appendChild(pop);
+      function draw(){
+        var first=new Date(vy,vm,1).getDay(), dim=new Date(vy,vm+1,0).getDate(), prev=new Date(vy,vm,0).getDate();
+        var sel=desc.get.call(el), td=iso(now.getFullYear(),now.getMonth(),now.getDate()), h='';
+        h+='<div class="tdh"><button type="button" data-n="-1" aria-label="เดือนก่อน">‹</button><b>'+MN[vm]+' '+(vy+543)+'</b><button type="button" data-n="1" aria-label="เดือนถัดไป">›</button></div><div class="tdg">';
+        WD.forEach(function(w){h+='<div class="tdw">'+w+'</div>';});
+        for(var i=0;i<42;i++){
+          var dn=i-first+1, y=vy, m=vm, o=false;
+          if(dn<1){ dn=prev+dn; m=vm-1; o=true; } else if(dn>dim){ dn=dn-dim; m=vm+1; o=true; }
+          if(m<0){m=11;y=vy-1;} if(m>11){m=0;y=vy+1;}
+          var s=iso(y,m,dn);
+          h+='<button type="button" class="tdd'+(o?' o':'')+(s===td?' t':'')+(s===sel?' s':'')+'" data-d="'+s+'">'+dn+'</button>';
+        }
+        h+='</div><div class="tdf"><button type="button" data-a="clear">ล้าง</button><button type="button" data-a="today">วันนี้</button></div>';
+        pop.innerHTML=h;
+      }
+      draw();
+      pop.addEventListener('click',function(e){
+        var b=e.target.closest('button'); if(!b) return;
+        if(b.dataset.n){ vm+=+b.dataset.n; if(vm<0){vm=11;vy--;} if(vm>11){vm=0;vy++;} draw(); return; }
+        if(b.dataset.d){ setVal(b.dataset.d); closePop(); return; }
+        if(b.dataset.a==='clear'){ setVal(''); closePop(); }
+        if(b.dataset.a==='today'){ setVal(iso(now.getFullYear(),now.getMonth(),now.getDate())); closePop(); }
+      });
+      var r=btn.getBoundingClientRect(), top=r.bottom+window.scrollY+6, left=Math.max(12,Math.min(r.left+window.scrollX,window.scrollX+document.documentElement.clientWidth-pop.offsetWidth-12));
+      pop.style.top=top+'px'; pop.style.left=left+'px';
+    });
+  }
+  ['p-start','p-race','rdate','sdate'].forEach(function(id){ var el=document.getElementById(id); if(el && el.type==='date') thaiDate(el); });
+})();
+</script>
+
