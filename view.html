@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791442079">
+<meta name="build" content="1791471362">
 <title>แผนซ้อม ATM 42</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -706,6 +706,7 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
     </div>
     <div class="savestate" id="m-savestate"></div>
 
+    <div class="mvbox" id="mv-box" hidden><button class="btn btn-ghost" id="mv-open" type="button">↔ ย้าย / สลับวัน</button><div id="mv-panel" hidden><label for="mv-sel">สลับเซสชันของวันนี้กับ</label><select id="mv-sel"></select><div class="mvb"><button class="btn btn-primary" id="mv-go" type="button">สลับ</button><button class="btn btn-ghost" id="mv-undo" type="button" hidden>ยกเลิกการสลับล่าสุด</button></div><p class="mvn">ผลซ้อมที่บันทึกไว้ยังอยู่ที่วันเดิม สลับเฉพาะแผน</p></div></div>
     <div class="mbtns">
       <button class="btn btn-danger" id="f-delete" hidden>ลบ</button>
       <button class="btn btn-ghost" id="f-cancel">ยกเลิก</button>
@@ -783,6 +784,17 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
   }
   function localISO(){var n=new Date();return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2);}
   var today = localISO();
+  var MOVES=[]; try{ MOVES=JSON.parse(localStorage.getItem(KP+'atm_moves_v1')||'[]')||[]; }catch(e){ MOVES=[]; }
+  function dayRef(iso){ for(var i=0;i<weeks.length;i++){ for(var j=0;j<weeks[i].days.length;j++){ if(weeks[i].days[j].date===iso) return {w:weeks[i],d:weeks[i].days[j]}; } } return null; }
+  (function(){
+    var K=['type','desc','dist','zone','note','gymimpact'];
+    MOVES.forEach(function(m){
+      var A=dayRef(m[0]), B=dayRef(m[1]); if(!A||!B||A.d===B.d) return;
+      K.forEach(function(k){ var t=A.d[k]; A.d[k]=B.d[k]; B.d[k]=t; });
+      var oa=A.d._from||A.d.date, ob=B.d._from||B.d.date; A.d._from=(ob===A.d.date)?null:ob; B.d._from=(oa===B.d.date)?null:oa;
+      if(A.w!==B.w){ var na=+A.d.dist||0, nb=+B.d.dist||0; A.w.plan_km=Math.round(((+A.w.plan_km||0)+na-nb)*10)/10; B.w.plan_km=Math.round(((+B.w.plan_km||0)+nb-na)*10)/10; }
+    });
+  })();
 
   var PHASE_COLOR = {
     Base:'var(--p-base)', Specific:'var(--p-specific)', Peak:'var(--p-peak)',
@@ -1376,7 +1388,7 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
     });
   }
   render();
-  if(VIEW){ initView(); } else { initReady(); initShare(); }
+  if(VIEW){ initView(); } else { initReady(); initShare(); initMove(); }
   initDb();
 
   // auto-update: reload when the date rolls over or a newer version of this page is published
@@ -1439,6 +1451,30 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
     exlistEl.innerHTML = html;
   }
 
+  function refreshMove(dateStr){
+    var box=document.getElementById('mv-box'); if(!box) return;
+    var ok=!VIEW && dateStr>=today && !!findDay(dateStr);
+    box.hidden=!ok; document.getElementById('mv-panel').hidden=true; if(!ok) return;
+    var sel=document.getElementById('mv-sel'); sel.innerHTML='';
+    var t0=new Date(dateStr+'T00:00:00').getTime();
+    weeks.forEach(function(w){ w.days.forEach(function(d){
+      if(d.date===dateStr||d.date<today||!d.type) return;
+      var diff=Math.abs(new Date(d.date+'T00:00:00').getTime()-t0)/86400000; if(diff>7) return;
+      var o=document.createElement('option'); o.value=d.date; o.textContent=fmtDate(d.date)+' — '+dayTypeLabel(d)+(d.dist?' '+d.dist+' กม.':''); sel.appendChild(o);
+    }); });
+    document.getElementById('mv-go').disabled=!sel.options.length;
+    document.getElementById('mv-undo').hidden=!MOVES.some(function(m){ return m[0]===dateStr||m[1]===dateStr; });
+  }
+  function saveMoves(){ try{ localStorage.setItem(KP+'atm_moves_v1',JSON.stringify(MOVES)); }catch(e){} location.replace(location.pathname+'?v='+Date.now()+location.hash); }
+  function initMove(){
+    var o=document.getElementById('mv-open'); if(!o) return;
+    o.addEventListener('click',function(){ var p=document.getElementById('mv-panel'); p.hidden=!p.hidden; });
+    document.getElementById('mv-go').addEventListener('click',function(){ var v=document.getElementById('mv-sel').value; if(!v||!currentDate) return; MOVES.push([currentDate,v]); saveMoves(); });
+    document.getElementById('mv-undo').addEventListener('click',function(){
+      for(var i=MOVES.length-1;i>=0;i--){ if(MOVES[i][0]===currentDate||MOVES[i][1]===currentDate){ MOVES.splice(i,1); break; } }
+      saveMoves();
+    });
+  }
   function openModal(dateStr){
     var d = adjustDay(findDay(dateStr));
     if(!d) return;
@@ -1482,6 +1518,8 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
       updateDerived();
     }
     if(VIEW){ runFields.hidden=true; btnSave.hidden=true; btnDelete.hidden=true; btnCancel.textContent='ปิด'; var ea=effectiveActual(d._orig||d); saveState.textContent=ea?('ผลที่บันทึก: '+ea.dist+' กม.'+(ea.hr?' · HR '+ea.hr+' bpm':'')):''; }
+    refreshMove(dateStr);
+    var fd=findDay(dateStr); if(fd&&fd._from){ var ms=document.getElementById('m-sub'); ms.textContent+=' · ย้ายมาจาก '+fmtDate(fd._from); }
     overlay.hidden = false;
   }
   function closeModal(){ overlay.hidden = true; currentDate = null; }
@@ -1708,7 +1746,7 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
     });
     var st = document.getElementById('p-savestate');
     if(!profileDoc){
-      if(lsSet((KP+'atm_profile_v1'), body)){ profileData = body; st.textContent = 'บันทึกแล้ว — กำลังคำนวณแผนใหม่…'; setTimeout(function(){ location.replace(location.pathname+'?v='+Date.now()); }, 700); }
+      if(lsSet((KP+'atm_profile_v1'), body)){ try{ localStorage.removeItem(KP+'atm_moves_v1'); }catch(e){} profileData = body; st.textContent = 'บันทึกแล้ว — กำลังคำนวณแผนใหม่…'; setTimeout(function(){ location.replace(location.pathname+'?v='+Date.now()); }, 700); }
       else st.textContent = 'บันทึกไม่ได้ — เบราว์เซอร์บล็อกที่เก็บข้อมูล';
       return;
     }
@@ -1776,6 +1814,7 @@ textarea.shi{font-size:12px;word-break:break-all;resize:none}
 .viewbn b{font-size:13.5px}.viewbn span{font-size:12px;color:var(--fg-dim)}
 .viewmode .editicon{display:none!important}
 .viewmode #toggle-past{display:inline-flex}
+.mvbox{margin-top:14px}.mvbox select{width:100%;margin:6px 0 10px;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--fg);font:inherit}.mvbox label{font-size:13px;color:var(--fg-dim)}.mvb{display:flex;gap:8px;flex-wrap:wrap}.mvn{font-size:12px;color:var(--fg-faint);margin:8px 0 0}
 </style>
 <script>
 (function(){
