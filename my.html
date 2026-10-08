@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <script>window.__MINE=true;</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791428903">
+<meta name="build" content="1791439272">
 <title>แผนซ้อมของฉัน</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -112,6 +112,26 @@ button{font-family:inherit}
 .pflag{position:absolute;transform:translateX(-50%);text-align:center;white-space:nowrap;line-height:1.25}.pflag b{display:block;font-size:13px;color:var(--p-race)}.pflag span{font-size:11px;color:var(--fg-dim)}
 .pflag.up{top:0}.pflag.dn{top:86px}
 .pgap{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border-soft);font-size:12.5px}.pgap .pg-t{color:var(--fg-dim)}.pgap em{font-style:normal;color:var(--fg-faint);margin-left:6px}.pgap .pg-s{display:flex;gap:5px;flex-wrap:wrap}.pgap .chip{font-size:10.5px;padding:2px 8px;border-radius:999px;color:#06140f;font-weight:700}
+.readycard{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:0 0 16px;padding:14px 16px;border-radius:13px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow)}
+.readycard>div{min-width:0}.readycard b{display:block;font-size:14px}.readycard span{display:block;font-size:12px;color:var(--fg-dim);margin-top:2px}
+.readycard .btn{flex:none;white-space:nowrap}
+.readycard.rc-ok{border-color:#2a5a3c}.readycard.rc-warn{border-color:#8a6a1e;background:color-mix(in srgb,var(--warn) 8%,var(--surface))}.readycard.rc-bad{border-color:#8a3a30;background:color-mix(in srgb,#ef6e5b 8%,var(--surface))}
+.rd-card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:16px;display:flex;flex-direction:column;gap:16px}
+.rd-f label{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--fg-dim);margin-bottom:6px}.rd-f label b{color:var(--fg);font-variant-numeric:tabular-nums}
+.rd-f input[type=range]{width:100%;accent-color:var(--accent);min-height:28px}
+.rd-step{display:flex;align-items:center;gap:10px}.rd-step button{width:44px;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--fg);font-size:20px;cursor:pointer}.rd-step .c{flex:1;text-align:center;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.rd-result{border-radius:13px;border:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.rd-result .tg{width:fit-content;font-size:11px;font-weight:700;letter-spacing:.06em;padding:3px 10px;border-radius:999px}
+.rd-result h3{font-size:17px;line-height:1.35}.rd-result p{font-size:13.5px;line-height:1.55;color:var(--fg-dim)}
+.rd-result .eff{margin-top:2px;padding:10px 12px;border-radius:9px;background:var(--surface);border:1px dashed var(--border);font-size:13px;line-height:1.5}
+.rd-result .nt{font-size:12px;color:var(--fg-faint)}
+.rd-ok{background:color-mix(in srgb,#4fe3ac 9%,var(--surface));border-color:#2a5a3c}.rd-ok .tg{background:#2a5a3c;color:#7fe3a3}
+.rd-warn{background:color-mix(in srgb,var(--warn) 9%,var(--surface));border-color:#8a6a1e}.rd-warn .tg{background:#5c4a1a;color:var(--warn)}
+.rd-bad{background:color-mix(in srgb,#ef6e5b 9%,var(--surface));border-color:#8a3a30}.rd-bad .tg{background:#5c2222;color:#ff8a7a}
+.rd-log{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:6px}.rd-row{display:grid;grid-template-columns:48px 1fr auto;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border-soft);font-size:12.5px}.rd-row:last-child{border-bottom:none}
+.rd-d{color:var(--fg-faint);font-size:11.5px;font-variant-numeric:tabular-nums}.rd-l{display:flex;gap:7px;align-items:center;min-width:0}.rd-l i{width:9px;height:9px;border-radius:50%;flex:none}.rd-empty{padding:14px;text-align:center;color:var(--fg-faint);font-size:12.5px}
+.dadj{margin:4px 0 2px;font-size:10.5px;font-weight:700;color:var(--warn)}
+.padj{margin-bottom:8px;padding:7px 10px;border-radius:8px;background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);font-size:12.5px;font-weight:600}
 .vkey{margin-left:8px;font-size:11px;color:var(--fg-faint);white-space:nowrap}.vkey i{display:inline-block;width:8px;height:8px;border-radius:2px;margin:0 3px 0 6px;vertical-align:baseline}.vk-p{background:var(--p-specific);opacity:.75}.vk-a{background:var(--fg)}.vk-f{background:var(--p-race)}
 
 .tlbar{display:flex;height:11px;border-radius:5px;overflow:hidden;border:1px solid var(--border);gap:1px;background:var(--border)}
@@ -401,6 +421,21 @@ h1,h2,h3,.ph-title,.wname{text-wrap:balance}
 p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
 .modal .mplan.rich .psteps li{border-radius:8px}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important}}
+/* ---- theme refresh: calmer layered surfaces, readable secondary text, harmonised phase colours ---- */
+:root{
+  --bg:#0a121e; --bg2:#0e1a2b; --surface:#122035; --surface2:#182841; --surface3:#20335242;
+  --border:#2b4166; --border-soft:#1c2f4c;
+  --fg:#f1f5fb; --fg-dim:#aebbd4; --fg-faint:#8497b9;
+  --accent:#52e6b0; --accent-strong:#34d39b; --accent-dim:#1d5160;
+  --warn:#efbb55;
+  --shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 14px 32px -18px rgba(0,0,0,.7);
+  --p-base:#62d28a; --p-specific:#58a8ea; --p-peak:#f27b64; --p-taper:#ab94f2; --p-recovery:#8499a8; --p-race:#f3c85e; --p-sharpen:#4fcac4;
+}
+.timeline,.note,.stat,.rd-card,.readycard{border-radius:14px}
+.stat .v,.hero h1{letter-spacing:-.01em}
+.navtab.active{box-shadow:0 6px 16px -8px color-mix(in srgb,var(--accent) 70%,transparent)}
+.btn-primary{box-shadow:0 8px 18px -10px color-mix(in srgb,var(--accent) 80%,transparent)}
+.day{border-color:var(--border-soft)}
 </style>
 
 <div class="wrap">
@@ -411,7 +446,7 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
       <button class="navtab active" data-view="home">หน้าแรก</button>
       <button class="navtab" data-view="profile">โปรไฟล์</button>
       <button class="navtab" data-view="principles">หลักการ</button>
-      <a class="navtab" href="prerun_check.html" style="display:inline-flex;align-items:center;text-decoration:none">เช็กก่อนวิ่ง</a>
+      <button class="navtab" data-view="check">เช็กก่อนวิ่ง</button>
       <a class="navtab" href="new.html?edit=1" style="display:inline-flex;align-items:center;text-decoration:none">แก้ไขแผน</a>
       <a class="navtab" href="new.html" style="display:inline-flex;align-items:center;text-decoration:none">แผนใหม่</a>
     </div>
@@ -460,6 +495,8 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
     </div>
   </div>
 
+  <div class="readycard" id="readycard"></div>
+
   <div class="timeline">
     <div class="lbl"><span id="tl-title">ไทม์ไลน์เฟส</span><b id="tl-current">—</b></div>
     <div class="tlbar" id="tlbar"></div>
@@ -496,6 +533,23 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
   <div id="weeks"></div>
 
   <footer>อัปเดตจากไฟล์แผนซ้อม ATM.xlsx — คำนวณเพซ/โซนจาก VCR ปัจจุบัน (3.4 m/s) และ HR จาก Karvonen (Resting 53, Max 195) — กดวันที่มีวิ่งเพื่อบันทึกผลจริง</footer>
+  </section>
+
+  <section id="view-check" hidden>
+    <div class="sectitle first">เช็กก่อนวิ่ง</div>
+    <p style="font-size:13px;color:var(--fg-dim);line-height:1.55;margin-bottom:12px">กรอกค่าเช้านี้ แอปจะปรับเพซ/ระยะของวันนี้ในแผนให้ทันที (ตัดความหนัก ช้าลง ลดระยะ หรือแนะนำพัก) ขยับค่าแล้วบันทึกเอง ไม่ต้องกดอะไร</p>
+    <div class="rd-card">
+      <div class="rd-f"><label>HRV เฉลี่ย 7 วัน (baseline) <b id="rd-hrvBase-v"></b></label><input type="range" id="rd-hrvBase" min="30" max="90" step="1"></div>
+      <div class="rd-f"><label>HRV เช้านี้ <b id="rd-hrvToday-v"></b></label><input type="range" id="rd-hrvToday" min="20" max="100" step="1"></div>
+      <div class="rd-f"><label>จำนวนวันติดกันที่ HRV ไม่สมดุล (รวมเช้านี้)</label><div class="rd-step"><button type="button" id="rd-minus" aria-label="ลด">−</button><div class="c" id="rd-days">1</div><button type="button" id="rd-plus" aria-label="เพิ่ม">+</button></div></div>
+      <div class="rd-f"><label>คะแนนนอนหลับ <b id="rd-sleep-v"></b></label><input type="range" id="rd-sleep" min="0" max="100" step="1"></div>
+      <div class="rd-f"><label>Resting HR ปกติ (baseline) <b id="rd-rhrBase-v"></b></label><input type="range" id="rd-rhrBase" min="35" max="80" step="1"></div>
+      <div class="rd-f"><label>Resting HR เช้านี้ <b id="rd-rhrToday-v"></b></label><input type="range" id="rd-rhrToday" min="35" max="90" step="1"></div>
+    </div>
+    <div class="rd-result rd-ok" id="rd-result"><span class="tg" id="rd-tag">—</span><h3 id="rd-title">—</h3><p id="rd-body"></p><div class="eff" id="rd-eff"></div><p class="nt" id="rd-note" hidden></p></div>
+    <div class="sectitle">ประวัติ 7 วันล่าสุด</div>
+    <div class="rd-log" id="rd-log"></div>
+    <p style="font-size:11.5px;color:var(--fg-faint);margin-top:10px">บันทึกในเบราว์เซอร์เครื่องนี้ ไม่ใช่คำแนะนำทางการแพทย์</p>
   </section>
 
   <section id="view-profile" hidden>
@@ -989,7 +1043,7 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
     var inner=(desc.match(/\(([^)]*)\)/)||[])[1]||'';
     var parts=zone.split(/\s\/\s/), steps=[];
     parts.forEach(function(p){ var m=p.match(/^\s*ช่วง\s*(\d+)\s*\(([\d.]+)\s*กม\.?\)\s*(.*)$/); if(m) steps.push({n:m[1],km:m[2],seg:parseSeg(m[3])}); });
-    var h=(head && head!==dayTypeLabel(d))?'<div class="ph-title">'+head+'</div>':'';
+    var h=(d._adj?'<div class="padj">⚠ ปรับตามเช็กก่อนวิ่งเช้านี้</div>':'')+((head && head!==dayTypeLabel(d))?'<div class="ph-title">'+head+'</div>':'');
     if(inner && steps.length) h+='<div class="ph-sub">โครงสร้าง: '+escH(inner)+'</div>';
     if(steps.length>=2){
       h+='<ol class="psteps">'+steps.map(function(s){var g=s.seg;
@@ -1052,7 +1106,94 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
     return phaseColor || 'var(--border-soft)';
   }
 
+  // =====================================================================
+  // เช็กก่อนวิ่ง (readiness) — HRV / sleep / RHR -> adjusts TODAY's workout
+  // =====================================================================
+  var RK = KP+'atm_ready_v1', RLOG = KP+'atm_ready_log_v1';
+  function loadReady(){ try{ return JSON.parse(localStorage.getItem(RK)||'null'); }catch(e){ return null; } }
+  function saveReady(o){ try{ localStorage.setItem(RK, JSON.stringify(o)); }catch(e){} }
+  function todayReady(){ var r=loadReady(); return (r && r.date===today && r.level) ? r : null; }
+  function isQuality(d){ return d && d.type==='Run' && /threshold|tempo|vo2|interval|fartlek|ext\d|fcr|\bMP\b|เร่ง/i.test((d.desc||'')+' '+(d.zone||'')); }
+  function paceShiftTxt(txt, sec){ return String(txt||'').replace(/(\d):(\d\d)/g, function(m,a,b){ var t=+a*60+ +b+sec; return Math.floor(t/60)+':'+('0'+(t%60)).slice(-2); }); }
+  function hrCfg(){ var p=null; try{ p=JSON.parse(localStorage.getItem(KP+'atm_profile_v1')||'null'); }catch(e){} p=p||{}; var mp=(MINE&&meta.profile)||{}; return {rhr:+p.rhr||+mp.rhr||53, mhr:+p.mhr||+mp.mhr||195}; }
+  function adjustDay(d){
+    if(!d || d.date!==today || d.type!=='Run') return d;
+    var r=todayReady(); if(!r || r.level==='ok') return d;
+    var kmh=BASE_KMH/PLAN.f, hc=hrCfg();
+    function hrp(x){ return Math.round(hc.rhr+x*(hc.mhr-hc.rhr)); }
+    function zstr(name,pct,zn,lo,hi){ var p=3600/(kmh*pct); return name+' เป้า '+fmtPaceS(p)+' น./กม. (ช่วง '+fmtPaceS(p-4)+'-'+fmtPaceS(p+4)+') — Zone'+zn+' ~'+hrp(lo)+'-'+hrp(hi)+'bpm'; }
+    var c=JSON.parse(JSON.stringify(d)); c._adj=r.level; c._orig=d;
+    var orig=(d.desc||'').split('(')[0].trim(), q=isQuality(d);
+    if(r.level==='bad'){
+      if(r.rhrElevated){ c.type='Rest'; c.desc='พัก หรือเดินเบา/ยืดเหยียด 20–30 นาที'; c.dist=null; c.zone='-'; }
+      else { if(d.dist) c.dist=Math.max(3, Math.round(d.dist*0.6*2)/2); c.desc='ARR วิ่งฟื้นฟูเบาๆ (ลดโหลด)'; c.zone=zstr('ARR',.70,1,.5,.6); }
+    } else {
+      if(q){ c.desc='SCR วิ่งสบาย (ตัดความหนัก)'; c.zone=zstr('SCR',.80,2,.6,.7); }
+      else { c.zone=paceShiftTxt(d.zone,10); }
+    }
+    c.note='ปรับจากเช็กก่อนวิ่งเช้านี้ ('+r.title+')'+(orig?' · แผนเดิม: '+orig+(d.dist?' '+d.dist+' กม.':''):'');
+    return c;
+  }
+  function readyCompute(i){
+    var imb = i.hrvToday <= i.hrvBase*0.9, rhrEl = i.rhrToday >= i.rhrBase+3, sleepLow = i.sleep < 75, days=i.days, mp=i.mp;
+    var level, tag, title, body, note;
+    if(!imb && !sleepLow && days===0){ level='ok'; tag='พร้อมเต็มที่'; title=mp?'ซ้อมเต็มตามแผน รวม MP ได้':'ซ้อม Easy/SCR ตามแผนได้ปกติ'; body='HRV สมดุล นอนหลับ '+i.sleep+' คะแนน และไม่มีสัญญาณล้าสะสม — ร่างกายพร้อมรับโหลดตามแผน'; note='เช็กซ้ำพรุ่งนี้เช้าก่อนออกวิ่งเหมือนเดิม'; }
+    else if(imb && days<=1 && !(rhrEl && days>=1)){ level='warn'; tag='ระวัง — วันเดียว'; title=mp?'ตัด MP ออก เหลือแค่ Easy/SCR':'วิ่ง Easy/SCR ได้ตามแผน แต่ช้าลงเล็กน้อย'; body='HRV เช้านี้ ('+i.hrvToday+' ms) ต่ำกว่าค่าเฉลี่ย 7 วัน ('+i.hrvBase+' ms) เกิน 10% — สัญญาณเตือนระยะสั้น ยังไม่ต้องหยุด แต่ลดความหนักของวันนี้ลง'; note='ถ้าพรุ่งนี้ HRV กลับมาสมดุล กลับไปตามแผนเดิมได้เลย'; }
+    else if(imb && days>=2){ level='bad'; tag='พัก / ลดโหลด'; title=rhrEl?'สลับเป็นวันพัก หรือลดระยะทั้งหมดลง':'ลดระยะทั้งหมดลง ไม่ใช่แค่ตัด MP'; body='HRV ไม่สมดุลติดกัน '+days+' วัน'+(rhrEl?' และ Resting HR สูงกว่าปกติ ('+i.rhrToday+' เทียบ '+i.rhrBase+' bpm)':'')+' — เป็นสัญญาณล้าสะสมเรื้อรัง ฝืนซ้อมมีโอกาสพังกลางทางสูง'; note='พักหรือลดโหลดก่อน แล้วค่อยกลับไปดันเป้าใหม่เมื่อ HRV กลับมาสมดุล 2 วันติด'; }
+    else if(sleepLow && !imb){ level='warn'; tag='นอนไม่พอ'; title='ซ้อมได้ แต่ช้าลงเล็กน้อยและจับตาความหนัก'; body='คะแนนนอนหลับ '+i.sleep+' ต่ำกว่าเกณฑ์ 75 ทั้งที่ HRV ยังสมดุล — ให้ความสำคัญกับการฟื้นตัวคืนนี้เป็นพิเศษ'; note='ถ้าคืนนี้นอนไม่พออีก ให้ตัด MP ออกแม้ HRV จะยังโอเคอยู่'; }
+    else { level='warn'; tag='ระวัง'; title='ลดความหนักลงหนึ่งขั้น'; body='ค่าที่กรอกอยู่ระหว่างเกณฑ์ปลอดภัยกับเกณฑ์เตือน — เลือกฝั่งปลอดภัยไว้ก่อน ตัดท่อนหนักออกถ้ามี'; note=''; }
+    return {level:level, tag:tag, title:title, body:body, note:note, rhrElevated:rhrEl};
+  }
+  function todayRunDay(){ var d=findDay(today); return (d && d.type==='Run') ? d : null; }
+  var RS = {hrvBase:55, hrvToday:48, days:1, sleep:79, rhrBase:55, rhrToday:53};
+  (function(){ var r=loadReady(); if(r){ ['hrvBase','rhrBase'].forEach(function(k){ if(r[k]) RS[k]=r[k]; }); if(r.date===today){ ['hrvToday','days','sleep','rhrToday'].forEach(function(k){ if(r[k]!=null) RS[k]=r[k]; }); } } })();
+  function readyLogSave(r){
+    var log=[]; try{ log=JSON.parse(localStorage.getItem(RLOG)||'[]')||[]; }catch(e){}
+    log=log.filter(function(e){return e.date!==r.date;}); log.unshift({date:r.date, level:r.level, title:r.title, hrvToday:r.hrvToday, hrvBase:r.hrvBase});
+    try{ localStorage.setItem(RLOG, JSON.stringify(log.slice(0,14))); }catch(e){}
+  }
+  function readyApply(persist){
+    var td=todayRunDay(), mp=td?isQuality(td):false;
+    var res=readyCompute({hrvBase:RS.hrvBase,hrvToday:RS.hrvToday,days:RS.days,sleep:RS.sleep,rhrBase:RS.rhrBase,rhrToday:RS.rhrToday,mp:mp});
+    var box=document.getElementById('rd-result'); if(box){
+      box.className='rd-result rd-'+res.level;
+      document.getElementById('rd-tag').textContent=res.tag; document.getElementById('rd-title').textContent=res.title;
+      document.getElementById('rd-body').textContent=res.body; var n=document.getElementById('rd-note'); n.textContent=res.note; n.hidden=!res.note;
+      var eff=document.getElementById('rd-eff'); var adj=null;
+      if(persist){ var rec={date:today,level:res.level,title:res.title,rhrElevated:res.rhrElevated,hrvBase:RS.hrvBase,hrvToday:RS.hrvToday,days:RS.days,sleep:RS.sleep,rhrBase:RS.rhrBase,rhrToday:RS.rhrToday}; saveReady(rec); readyLogSave(rec); }
+      if(td){ var cur=todayReady(); adj=(cur&&cur.level!=='ok')?adjustDay(td):null; }
+      eff.innerHTML = !td ? '<b>วันนี้ไม่มีวิ่งในแผน</b> — ค่าที่กรอกจะใช้กับวันที่มีวิ่งถัดไปเมื่อกรอกในเช้าวันนั้น'
+        : adj ? '<b>วันนี้ปรับเป็น:</b> '+escH(adj.type==='Rest'?adj.desc:(adj.desc.split('(')[0].trim()+(adj.dist?' · '+adj.dist+' กม.':'')+(parsePace(adj.zone)?' · '+parsePace(adj.zone).txt+' /กม.':'')))
+        : '<b>วันนี้ทำตามแผนเดิม:</b> '+escH((td.desc||'').split('(')[0].trim());
+    }
+    renderReadyLog(); renderReadyCard();
+    return res;
+  }
+  function renderReadyLog(){
+    var host=document.getElementById('rd-log'); if(!host) return; var log=[]; try{ log=JSON.parse(localStorage.getItem(RLOG)||'[]')||[]; }catch(e){}
+    if(!log.length){ host.innerHTML='<div class="rd-empty">ยังไม่มีประวัติ — ขยับค่าด้านบนเพื่อบันทึกเช้านี้</div>'; return; }
+    var col={ok:'var(--good)',warn:'var(--warn)',bad:'#ef6e5b'};
+    host.innerHTML=log.slice(0,7).map(function(e){ return '<div class="rd-row"><span class="rd-d">'+e.date.slice(8)+'/'+e.date.slice(5,7)+'</span><span class="rd-l"><i style="background:'+(col[e.level]||col.warn)+'"></i>'+escH(e.title)+'</span><span class="rd-d">HRV '+e.hrvToday+'/'+e.hrvBase+'</span></div>'; }).join('');
+  }
+  function renderReadyCard(){
+    var c=document.getElementById('readycard'); if(!c) return; var r=todayReady();
+    if(!r){ c.className='readycard'; c.innerHTML='<div><b>เช็กก่อนวิ่งเช้านี้</b><span>ใส่ HRV / นอน / RHR แล้วแอปปรับเพซวันนี้ให้</span></div><button class="btn btn-ghost" data-go="check">เช็กเลย</button>'; return; }
+    c.className='readycard rc-'+r.level;
+    c.innerHTML='<div><b>'+escH(r.title)+'</b><span>HRV '+r.hrvToday+'/'+r.hrvBase+' ms · นอน '+r.sleep+' · RHR '+r.rhrToday+'</span></div><button class="btn btn-ghost" data-go="check">แก้ค่า</button>';
+  }
+  function initReady(){
+    var ids={hrvBase:'rd-hrvBase',hrvToday:'rd-hrvToday',sleep:'rd-sleep',rhrBase:'rd-rhrBase',rhrToday:'rd-rhrToday'}, units={hrvBase:' ms',hrvToday:' ms',sleep:'',rhrBase:' bpm',rhrToday:' bpm'};
+    function paint(){ Object.keys(ids).forEach(function(k){ var el=document.getElementById(ids[k]); if(el){ el.value=RS[k]; document.getElementById(ids[k]+'-v').textContent=RS[k]+units[k]; } }); document.getElementById('rd-days').textContent=RS.days; }
+    paint();
+    Object.keys(ids).forEach(function(k){ var el=document.getElementById(ids[k]); if(!el) return; el.addEventListener('input',function(){ RS[k]=+el.value; paint(); readyApply(true); }); });
+    document.getElementById('rd-minus').addEventListener('click',function(){ RS.days=Math.max(0,RS.days-1); paint(); readyApply(true); });
+    document.getElementById('rd-plus').addEventListener('click',function(){ RS.days=Math.min(14,RS.days+1); paint(); readyApply(true); });
+    var rr=todayReady(); readyApply(false);
+    document.addEventListener('click',function(e){ var g=e.target.closest&&e.target.closest('[data-go]'); if(g){ var t=document.querySelector('.navtab[data-view="'+g.getAttribute('data-go')+'"]'); if(t) t.click(); } });
+    if(location.hash==='#check'){ var t=document.querySelector('.navtab[data-view="check"]'); if(t) t.click(); }
+  }
   function renderDay(d, phaseColor){
+    d = adjustDay(d);
     var isToday = d.date===today;
     var gymKey = d.type==='Gym' ? gymRoutineKey(d.desc) : null;
     var isClickable = (d.type==='Run' || d.type==='Race' || (d.type==='Gym' && gymKey));
@@ -1063,7 +1204,7 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
     if(actual) html += '<span class="dcheck">✓</span>';
     if(isClickable) html += '<span class="editicon">'+(d.type==='Gym'?'ดูท่า':'แก้ไข')+' ✎</span>';
     html += '<div class="ddate">'+fmtDate(d.date)+(isToday?'<span class="today-tag">วันนี้</span>':'')+'</div>';
-    html += '<div class="dtype">'+dayTypeLabel(d)+'</div>';
+    html += '<div class="dtype">'+dayTypeLabel(d)+'</div>'+(d._adj?'<div class="dadj">⚠ ปรับตามเช็กก่อนวิ่ง</div>':'');
     if(d.type==='Run'){
       var pc=parsePace(d.zone), hr=parseHR(d.zone);
       if(pc && d.dist){
@@ -1176,7 +1317,7 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
   }
   function render(){
     weeksEl.innerHTML='';
-    try{renderVol();}catch(e){} try{renderPath();}catch(e){}
+    try{renderVol();}catch(e){} try{renderReadyCard();}catch(e){} try{renderPath();}catch(e){}
     weeks.forEach(function(w,i){
       var isPast = i < todayIdx;
       if(isPast && !showPast) return;
@@ -1184,6 +1325,7 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
     });
   }
   render();
+  initReady();
   initDb();
 
   // auto-update: reload when the date rolls over or a newer version of this page is published
@@ -1247,7 +1389,7 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
   }
 
   function openModal(dateStr){
-    var d = findDay(dateStr);
+    var d = adjustDay(findDay(dateStr));
     if(!d) return;
     currentDate = dateStr;
     var gymKey = d.type==='Gym' ? gymRoutineKey(d.desc) : null;
@@ -1371,7 +1513,7 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
   // =====================================================================
   // tabs
   // =====================================================================
-  var VIEWS = ['home','profile','principles'];
+  var VIEWS = ['home','profile','principles','check'];
   document.getElementById('navtabs').addEventListener('click', function(e){
     var btn = e.target.closest('.navtab');
     if(!btn) return;
