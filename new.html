@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791428903">
+<meta name="build" content="1791439540">
 <title>สร้างแผนซ้อมของฉัน</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -330,3 +330,82 @@ function generatePlan(o){
   renderHist();
 })();
 </script>
+<style>
+.tdbtn{display:block;width:100%;text-align:left;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font:inherit;font-size:16px;padding:10px 11px;min-height:44px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tdbtn:focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 60%,transparent);border-color:var(--accent)}
+.tdbtn .ph{color:var(--fg-faint)}.tdbtn svg{flex:none;opacity:.7}
+.tdpop{position:absolute;z-index:200;width:min(320px,calc(100vw - 24px));background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:0 18px 40px -12px rgba(0,0,0,.7)}
+.tdpop .tdh{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px}
+.tdpop .tdh b{font-size:15px;color:var(--fg)}
+.tdpop .tdh button{width:40px;height:40px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--fg);font-size:18px;cursor:pointer}
+.tdpop .tdg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.tdpop .tdw{font-size:11.5px;color:var(--fg-faint,#8497b9);padding:4px 0}
+.tdpop .tdd{height:38px;border:none;border-radius:9px;background:transparent;color:var(--fg);font:inherit;font-size:14px;cursor:pointer;font-variant-numeric:tabular-nums}
+.tdpop .tdd:hover{background:var(--surface2)}
+.tdpop .tdd.o{color:var(--fg-faint,#6f7f9c);opacity:.55}
+.tdpop .tdd.t{box-shadow:inset 0 0 0 1px var(--accent)}
+.tdpop .tdd.s{background:var(--accent);color:#06140f;font-weight:700}
+.tdpop .tdf{display:flex;justify-content:space-between;margin-top:8px}
+.tdpop .tdf button{background:none;border:none;color:var(--accent);font:inherit;font-size:13.5px;min-height:40px;padding:0 8px;cursor:pointer}
+</style>
+<script>
+(function(){
+  var MN=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  var MS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  var WD=['อา','จ','อ','พ','พฤ','ศ','ส'];
+  function pad(n){return ('0'+n).slice(-2);}
+  function iso(y,m,d){return y+'-'+pad(m+1)+'-'+pad(d);}
+  var pop=null, popFor=null;
+  function closePop(){ if(pop){ pop.remove(); pop=null; popFor=null; } }
+  document.addEventListener('click',function(e){ if(pop && !pop.contains(e.target) && !(e.target.closest&&e.target.closest('.tdbtn'))) closePop(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closePop(); });
+  function thaiDate(el){
+    var desc=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+    var btn=document.createElement('button'); btn.type='button'; btn.className='tdbtn';
+    el.type='hidden'; el.parentNode.insertBefore(btn, el.nextSibling);
+    function paint(){
+      var v=desc.get.call(el), m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(v||'');
+      btn.innerHTML=(m?'<span>'+(+m[3])+' '+MS[+m[2]-1]+' '+(+m[1]+543)+'</span>':'<span class="ph">เลือกวันที่</span>')+'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+    }
+    Object.defineProperty(el,'value',{configurable:true,get:function(){return desc.get.call(el);},set:function(v){desc.set.call(el,v);paint();}});
+    paint();
+    function setVal(v){ desc.set.call(el,v); paint(); el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); }
+    btn.addEventListener('click',function(ev){
+      ev.stopPropagation();
+      if(pop && popFor===el){ closePop(); return; }
+      closePop();
+      var cur=/^(\d{4})-(\d\d)-(\d\d)$/.exec(desc.get.call(el)||''), now=new Date();
+      var vy=cur?+cur[1]:now.getFullYear(), vm=cur?+cur[2]-1:now.getMonth();
+      pop=document.createElement('div'); pop.className='tdpop'; popFor=el;
+      document.body.appendChild(pop);
+      function draw(){
+        var first=new Date(vy,vm,1).getDay(), dim=new Date(vy,vm+1,0).getDate(), prev=new Date(vy,vm,0).getDate();
+        var sel=desc.get.call(el), td=iso(now.getFullYear(),now.getMonth(),now.getDate()), h='';
+        h+='<div class="tdh"><button type="button" data-n="-1" aria-label="เดือนก่อน">‹</button><b>'+MN[vm]+' '+(vy+543)+'</b><button type="button" data-n="1" aria-label="เดือนถัดไป">›</button></div><div class="tdg">';
+        WD.forEach(function(w){h+='<div class="tdw">'+w+'</div>';});
+        for(var i=0;i<42;i++){
+          var dn=i-first+1, y=vy, m=vm, o=false;
+          if(dn<1){ dn=prev+dn; m=vm-1; o=true; } else if(dn>dim){ dn=dn-dim; m=vm+1; o=true; }
+          if(m<0){m=11;y=vy-1;} if(m>11){m=0;y=vy+1;}
+          var s=iso(y,m,dn);
+          h+='<button type="button" class="tdd'+(o?' o':'')+(s===td?' t':'')+(s===sel?' s':'')+'" data-d="'+s+'">'+dn+'</button>';
+        }
+        h+='</div><div class="tdf"><button type="button" data-a="clear">ล้าง</button><button type="button" data-a="today">วันนี้</button></div>';
+        pop.innerHTML=h;
+      }
+      draw();
+      pop.addEventListener('click',function(e){
+        var b=e.target.closest('button'); if(!b) return;
+        if(b.dataset.n){ vm+=+b.dataset.n; if(vm<0){vm=11;vy--;} if(vm>11){vm=0;vy++;} draw(); return; }
+        if(b.dataset.d){ setVal(b.dataset.d); closePop(); return; }
+        if(b.dataset.a==='clear'){ setVal(''); closePop(); }
+        if(b.dataset.a==='today'){ setVal(iso(now.getFullYear(),now.getMonth(),now.getDate())); closePop(); }
+      });
+      var r=btn.getBoundingClientRect(), top=r.bottom+window.scrollY+6, left=Math.max(12,Math.min(r.left+window.scrollX,window.scrollX+document.documentElement.clientWidth-pop.offsetWidth-12));
+      pop.style.top=top+'px'; pop.style.left=left+'px';
+    });
+  }
+  ['p-start','p-race','rdate','sdate'].forEach(function(id){ var el=document.getElementById(id); if(el && el.type==='date') thaiDate(el); });
+})();
+</script>
+
