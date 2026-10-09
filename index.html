@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791521292">
+<meta name="build" content="1791521739">
 <title>แผนซ้อม ATM 42</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -1502,7 +1502,7 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
     });
     function analyseCSV(txt){
       var rows=parseCSV(txt); if(rows.length<2) throw 0; var h=rows[0];
-      var M={ date:pickCol(h,[/^(date|วันที่)/i]), dist:pickCol(h,[/^(distance|ระยะทาง)/i]), time:pickCol(h,[/^(time|เวลา)$/i,/^(elapsed time|เวลาที่ผ่านไป)/i,/^(เวลา)/]), hr:pickCol(h,[/^(avg hr|average hr|avg heart|ค่าเฉลี่ย hr|hr เฉลี่ย|อัตราการเต้นของหัวใจเฉลี่ย)/i]), type:pickCol(h,[/^(activity type|ประเภทกิจกรรม|ประเภท)/i]) };
+      var M={ date:pickCol(h,[/^(date|วันที่)/i]), dist:pickCol(h,[/^(distance|ระยะทาง)/i]), time:pickCol(h,[/^(time|เวลา)$/i,/^(elapsed time|เวลาที่ผ่านไป)/i,/^(เวลา)/]), hr:pickCol(h,[/^(avg hr|average hr|avg heart|ค่าเฉลี่ย hr|hr เฉลี่ย|อัตราการเต้นของหัวใจเฉลี่ย)/i]), type:pickCol(h,[/^(activity type|ประเภทกิจกรรม)/i,/^ประเภท$/]) };
       var mp=document.getElementById('imp-map'); mp.hidden=false;
       var opts=function(sel){ return '<option value="-1">— ไม่มี —</option>'+h.map(function(x,i){ return '<option value="'+i+'"'+(i===sel?' selected':'')+'>'+escH(x)+'</option>'; }).join(''); };
       mp.innerHTML='ตรวจคอลัมน์ (แก้ได้ถ้าไม่ตรง):<br>'+[['date','วันที่'],['dist','ระยะทาง (กม.)'],['time','เวลา'],['hr','HR เฉลี่ย'],['type','ประเภท']].map(function(p){ return '<label class="shl">'+p[1]+'</label><select class="shi" data-k="'+p[0]+'">'+opts(M[p[0]])+'</select>'; }).join('');
@@ -1511,11 +1511,11 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
         var by={};
         var single=M.date<0, dv=document.getElementById('imp-date'); dv.hidden=!single; document.getElementById('imp-date-l').hidden=!single; if(single&&!dv.value) dv.value=today;
         var src=rows.slice(1);
-        if(single){ var sm=src.filter(function(r){ return /สรุป|summary|total|รวม/i.test(r[0]||''); }); src=sm.length?[sm[sm.length-1]]:src; }
+        if(single){ var sm=src.filter(function(r){ return r.some(function(c){ return /^(สรุป|summary|total|รวม)$/i.test(String(c||'').trim()); }); }); src=sm.length?[sm[sm.length-1]]:src; }
         src.forEach(function(r){
           if(M.dist<0) return;
           var ds=single?(dv.value||'').match(/(\d{4})-(\d\d)-(\d\d)/):(r[M.date]||'').trim().match(/(\d{4})-(\d\d)-(\d\d)/); if(!ds) return;
-          var ty=M.type>=0?(r[M.type]||''):'วิ่ง'; if(M.type>=0&&!(/run|วิ่ง/i.test(ty))||/walk|เดิน/i.test(ty)) return;
+          var ty=(!single&&M.type>=0)?(r[M.type]||''):'วิ่ง'; if(!single&&M.type>=0&&!(/run|วิ่ง/i.test(ty))||/walk|เดิน/i.test(ty)) return;
           var iso=ds[1]+'-'+ds[2]+'-'+ds[3], km=parseFloat(String(r[M.dist]||'').replace(/,/g,'')); if(!(km>0)) return;
           var sec=M.time>=0?hmsSec(r[M.time]):0, hr=M.hr>=0?parseFloat(r[M.hr]):NaN;
           var o=by[iso]||(by[iso]={km:0,sec:0,hw:0,hs:0}); o.km+=km; o.sec+=sec; if(hr>0&&sec>0){ o.hw+=hr*sec; o.hs+=sec; }
