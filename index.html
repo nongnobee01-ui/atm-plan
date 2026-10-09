@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="1791520979">
+<meta name="build" content="1791521292">
 <title>แผนซ้อม ATM 42</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -1488,6 +1488,7 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
     dlg.innerHTML='<div class="shbox"><button class="shx" type="button" aria-label="ปิด">✕</button><h3>นำเข้าผลวิ่งจาก Garmin</h3>'+
       '<p class="shp">Garmin Connect → กิจกรรม → กด <b>เอ็กซ์ปอร์ต CSV</b> แล้วเลือกไฟล์ที่ได้ แอปจะกรอกผลวิ่ง (ระยะ เวลา HR) ให้เฉพาะวันที่เป็นวันวิ่งในแผน วันที่วิ่งหลายรอบจะรวมกัน</p>'+
       '<input type="file" id="imp-file" accept=".csv,text/csv" class="shi">'+
+      '<label class="shl" id="imp-date-l" hidden>ไฟล์นี้เป็นกิจกรรมเดียว (ไม่มีวันที่) — เลือกวันที่วิ่ง</label><input type="date" id="imp-date" class="shi" hidden>'+
       '<div id="imp-map" class="shp" hidden></div><div id="imp-prev" hidden></div>'+
       '<label class="shc" id="imp-ow-l" hidden><input type="checkbox" id="imp-ow"> เขียนทับผลที่บันทึกไว้แล้ว</label>'+
       '<button class="btn btn-primary" id="imp-go" type="button" hidden>นำเข้า</button><div class="shp" id="imp-msg"></div></div>';
@@ -1508,9 +1509,12 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
       var rebuild=function(){
         [].forEach.call(mp.querySelectorAll('select'),function(s){ M[s.getAttribute('data-k')]=+s.value; });
         var by={};
-        rows.slice(1).forEach(function(r){
-          if(M.date<0||M.dist<0) return;
-          var ds=(r[M.date]||'').trim().match(/(\d{4})-(\d\d)-(\d\d)/); if(!ds) return;
+        var single=M.date<0, dv=document.getElementById('imp-date'); dv.hidden=!single; document.getElementById('imp-date-l').hidden=!single; if(single&&!dv.value) dv.value=today;
+        var src=rows.slice(1);
+        if(single){ var sm=src.filter(function(r){ return /สรุป|summary|total|รวม/i.test(r[0]||''); }); src=sm.length?[sm[sm.length-1]]:src; }
+        src.forEach(function(r){
+          if(M.dist<0) return;
+          var ds=single?(dv.value||'').match(/(\d{4})-(\d\d)-(\d\d)/):(r[M.date]||'').trim().match(/(\d{4})-(\d\d)-(\d\d)/); if(!ds) return;
           var ty=M.type>=0?(r[M.type]||''):'วิ่ง'; if(M.type>=0&&!(/run|วิ่ง/i.test(ty))||/walk|เดิน/i.test(ty)) return;
           var iso=ds[1]+'-'+ds[2]+'-'+ds[3], km=parseFloat(String(r[M.dist]||'').replace(/,/g,'')); if(!(km>0)) return;
           var sec=M.time>=0?hmsSec(r[M.time]):0, hr=M.hr>=0?parseFloat(r[M.hr]):NaN;
@@ -1518,18 +1522,18 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
         });
         var list=[]; Object.keys(by).sort().forEach(function(iso){
           var o=by[iso], d=findDay(iso), why='';
-          if(!d) why='ไม่อยู่ในแผน'; else if(d.type==='Gym') why='วันยิม'; else if(!d.type||d.type==='Rest') why='วันพัก';
+          if(!d) why='ไม่อยู่ในแผน'; else if(!d.type||d.type==='Rest') why='วันพัก';
           var ex=actualsCache[iso]||(d&&isRealNum(d.act_dist)); if(!why && ex) why='มีผลบันทึกแล้ว';
           list.push({iso:iso,km:o.km,sec:o.sec,hr:o.hs>0?Math.round(o.hw/o.hs):null,why:why,ex:!!ex,ok:!why||why==='มีผลบันทึกแล้ว'});
         });
         var pv=document.getElementById('imp-prev'); pv.hidden=false;
-        pv.innerHTML='<div class="imptb">'+(list.length?list.map(function(x){ var p=x.sec>0?fmtPaceS(x.sec/x.km):'–'; return '<div class="impr'+(x.ok?'':' impx')+'"><b>'+fmtDate(x.iso)+'</b><span>'+x.km.toFixed(2)+' กม. · '+p+'/กม.'+(x.hr?' · HR '+x.hr:'')+'</span><i>'+(x.why||'นำเข้า')+'</i></div>'; }).join(''):'<div class="shp">ไม่พบกิจกรรมวิ่งในไฟล์ (ลองแก้คอลัมน์ด้านบน)</div>')+'</div>';
+        pv.innerHTML='<div class="imptb">'+(list.length?list.map(function(x){ var p=x.sec>0?fmtPaceS(x.sec/x.km):'–'; return '<div class="impr'+(x.ok?'':' impx')+'"><b>'+fmtDate(x.iso)+'</b><span>'+x.km.toFixed(2)+' กม. · '+p+'/กม.'+(x.hr?' · HR '+x.hr:'')+'</span><i>'+(x.why||(findDay(x.iso)&&findDay(x.iso).type==='Gym'?'นำเข้า (วิ่งเสริม)':'นำเข้า'))+'</i></div>'; }).join(''):'<div class="shp">ไม่พบกิจกรรมวิ่งในไฟล์ (ลองแก้คอลัมน์ด้านบน)</div>')+'</div>';
         plan={list:list};
         var n=list.filter(function(x){ return x.ok && (!x.ex || document.getElementById('imp-ow').checked); }).length;
         var go=document.getElementById('imp-go'); go.hidden=!list.length; go.textContent='นำเข้า '+n+' วัน'; go.disabled=!n;
         document.getElementById('imp-ow-l').hidden=!list.some(function(x){ return x.ex; });
       };
-      mp.addEventListener('change',rebuild); document.getElementById('imp-ow').addEventListener('change',rebuild); rebuild(); return plan;
+      mp.addEventListener('change',rebuild); document.getElementById('imp-date').addEventListener('change',rebuild); document.getElementById('imp-ow').addEventListener('change',rebuild); rebuild(); return plan;
     }
     document.getElementById('imp-go').addEventListener('click',function(){
       if(!plan) return; var ow=document.getElementById('imp-ow').checked, all=lsGet(KP+'atm_actuals_v1')||{}, n=0;
@@ -1587,7 +1591,7 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
       renderExlist(routine);
       exlistEl.hidden = false;
       runFields.hidden = true;
-      saveState.textContent = '';
+      var ga=actualsCache[dateStr]; saveState.textContent = ga?('วิ่งเสริมวันนี้: '+ga.dist+' กม.'+(ga.hr?' · HR '+ga.hr:'')):'';
       btnDelete.hidden = true;
       btnSave.hidden = true;
       btnCancel.textContent = 'ปิด';
