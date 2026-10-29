@@ -780,6 +780,13 @@ p,.note,.mplan .ph-sub,.mplan .ptip{text-wrap:pretty}
       });
     });
   }
+  // Coach Tan (29 Oct 2026): easy days run at HR ~125-135 -> pace follows HR (~7:05-7:35), not the SCR pace
+  weeks.forEach(function(w){ w.days.forEach(function(d){
+    var z=d.zone||'', ds=d.desc||'';
+    if(/^SCR เป้า/.test(z) && z.indexOf(' / ')<0 && /^(Easy|Shakeout|Strides)/i.test(ds) && !/long|medium|MCR|TPR/i.test(ds)){
+      d.zone='SCR เป้า 7:20 น./กม. (ช่วง 7:05-7:35) — Zone1 ~125-135bpm';
+    }
+  }); });
   if(PLAN.start){
     weeks = weeks.filter(function(w){ var last=w.days[w.days.length-1]; return !last || last.date>=PLAN.start; });
   }
